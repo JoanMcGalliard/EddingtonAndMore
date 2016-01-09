@@ -539,7 +539,7 @@
         return res;
     }
 
-    // TODO: remove 'name' arg after deprecation is removed
+    // TO DO: remove 'name' arg after deprecation is removed
     function createAdder(direction, name) {
         return function (val, period) {
             var dur, tmp;
@@ -1287,7 +1287,7 @@
             dow = 1;
             doy = 4;
 
-            // TODO: We need to take the current isoWeekYear, but that depends on
+            // TO DO: We need to take the current isoWeekYear, but that depends on
             // how we interpret now (local, utc, fixed offset). So create
             // a now version of current config (take local/utc/offset flags, and
             // create now).
@@ -2512,10 +2512,10 @@
     function rawMonthSetter(mom, value) {
         var dayOfMonth;
 
-        // TODO: Move this out of here!
+        // TO DO: Move this out of here!
         if (typeof value === 'string') {
             value = mom.localeData().monthsParse(value);
-            // TODO: Another silent failure?
+            // TO DO: Another silent failure?
             if (typeof value !== 'number') {
                 return mom;
             }
@@ -2620,7 +2620,7 @@
             days -= absRound(yearsToDays(years));
 
             // 30 days to a month
-            // TODO (iskren): Use anchor date (like 1st Jan) to compute this.
+            // TO DO (iskren): Use anchor date (like 1st Jan) to compute this.
             months += absRound(days / 30);
             days %= 30;
 

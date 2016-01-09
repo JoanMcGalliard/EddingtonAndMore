@@ -10,8 +10,6 @@ class EndomondoApi implements trackerApiInterface
     protected $auth = null;
     protected $connected = false;
     protected $deviceId = "";
-    protected $PATH = "";//TODO Delete this
-    protected $PARAMS = "";//TODO Delete this
 
     /**
      * EndomondoApi constructor.
@@ -49,14 +47,11 @@ class EndomondoApi implements trackerApiInterface
         $params["authToken"] = $this->auth;
 
         $path = self::BASE_URL . $url . "?" . http_build_query($params);
-        $this->PATH=$path;
-        $this->PARAMS=$params;
         $process = curl_init($path);
 
         curl_setopt($process, CURLOPT_HEADER, 0);
         curl_setopt($process, CURLOPT_TIMEOUT, 30);
         curl_setopt($process, CURLOPT_RETURNTRANSFER, TRUE);
-        $time_before=time();
 
         $page = curl_exec($process);
         curl_close($process);
@@ -120,7 +115,6 @@ class EndomondoApi implements trackerApiInterface
         $before = date("Y-m-d h:m:s e", $end_date);
         $done = false;
         $count = 0;
-        $time=time();
         while (!$done) {
 
             $params['before'] = $before;
@@ -138,7 +132,7 @@ class EndomondoApi implements trackerApiInterface
                 }
                 $id = $ride->id;
                 if (!in_array(intval($ride->sport), [1, 2, 3]) || !$ride->is_valid ) {
-                    continue; // not a bike ride
+                    continue; // not a bike ride or not include in stats
                 }
                 $record = [];
                 $date = date("Y-m-d", $timestamp);

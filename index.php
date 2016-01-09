@@ -5,6 +5,8 @@ require_once 'local.php';
 require_once 'src/JoanMcGalliard/StravaApi.php';
 require_once 'src/JoanMcGalliard/MyCyclingLogApi.php';
 require_once 'src/JoanMcGalliard/EndomondoApi.php';
+date_default_timezone_set("$timezone");
+
 
 date_default_timezone_set("$timezone");
 $here = "http://$_SERVER[HTTP_HOST]$_SERVER[PHP_SELF]";
@@ -45,7 +47,7 @@ if (array_key_exists("clear_cookies", $_POST)) {
 if (array_key_exists("login_mcl", $_POST)) {
     $mcl_username = $_POST['username'];
     $mcl_password = $_POST['password'];
-    if (array_key_exists("elevation_units",$_POST) || $_POST['elevation_units']=="feet") {
+    if (array_key_exists("elevation_units", $_POST) || $_POST['elevation_units'] == "feet") {
         $mcl_api->setUseFeetForElevation(true);
         setcookie(MCL_COOKIE_FEET, $mcl_api->isUseFeetForElevation(), time() + 60 * 60 * 24 * 365); //expires in 1 year
     } else {
@@ -159,16 +161,14 @@ if ($state == "calculate_from_strava" || $state == "calculate_from_mcl" || $stat
     uasort($days, function ($a, $b) {
         if ($a == $b) return 0; else return ($a > $b) ? -1 : 1;
     });
-    $eddington_imperial = 0;
+
+    $eddington_imperial = calculateEddington($days, $result, METRE_TO_MILE);
+
     $table_imperial = '<table id="imperial" class="w3-table-all w3-right-align"  style="width:60%"><tr><th>Count</th><th>Date </th><th class="w3-right-align">Distance</th></tr>';
-    foreach ($days as $day => $distance) {
-        $miles = round($distance * METRE_TO_MILE);
-        if ($miles > $eddington_imperial) {
-            $eddington_imperial++;
-            $table_imperial .= "<tr><td> $eddington_imperial </td><td>$day</td><td class=\"w3-right-align\">$miles miles</td></tr>";
-        } else {
-            break;
-        }
+    for ($i = 1; $i <= $eddington_imperial; $i++) {
+        $day = array_keys($result)[$i - 1];
+        $actual_distance = $result[$day];
+        $table_imperial .= "<tr><td> $i </td><td> $day</td><td class=\"w3-right-align\">$actual_distance miles</td></tr>";
     }
     $table_imperial .= "</table>";
     echo "<br><a href=\"#imperial\">Your imperial Eddington Number</a> is <strong>$eddington_imperial</strong>.<br>";
@@ -179,17 +179,15 @@ if ($state == "calculate_from_strava" || $state == "calculate_from_mcl" || $stat
             echo "You need to do $num rides of at least $goal to increase it to $goal.<br>";
         }
     }
-    $eddington_metric = 0;
+    $eddington_metric = calculateEddington($days, $result, METRE_TO_KM);
     $table_metric = '<table id="metric" class="w3-table-all w3-right-align"  style="width:60%"><tr><th>Count</th><th>Date </th><th class="w3-right-align">Distance</th></tr>';
-    foreach ($days as $day => $distance) {
-        $kms = round($distance * METRE_TO_KM);
-        if ($kms > $eddington_metric) {
-            $eddington_metric++;
-            $table_metric .= "<tr><td> $eddington_metric </td><td>$day</td><td class=\"w3-right-align\">$kms km</td></tr>";
-        } else {
-            break;
-        }
+    for ($i = 1; $i <= $eddington_metric; $i++) {
+        $date = array_keys($result)[$i - 1];
+        $distance = $result[$date];
+        $table_metric .= "<tr><td> $i </td><td>$date</td><td class=\"w3-right-align\">$distance km</td></tr>";
+
     }
+
     $table_metric .= "</table>";
     echo "<br><a href=\"#metric\">Your metric Eddington Number</a> is <strong>$eddington_metric</strong><br>";
     if ($end_text == "today") {
@@ -200,10 +198,19 @@ if ($state == "calculate_from_strava" || $state == "calculate_from_mcl" || $stat
         }
     }
 
+    echo '<br><a href="#eddington_chart">See a chart of how your Eddington number has grown over the years.<br>';
     echo "<p><i>Run time " . (time() - $timestamp) . " seconds.</i></p>";
 
     echo $table_imperial;
     echo $table_metric;
+    $imperial_history = eddingtonHistory($days, METRE_TO_MILE);
+    $metric_history = eddingtonHistory($days, METRE_TO_KM);
+
+    echo buildChart($imperial_history, $metric_history);
+
+
+
+
 } else if ($state == "copy_strava_to_mcl") {
     $rides_to_add = $strava_api->getRides($start_date, $end_date);
     $count = 0;
@@ -327,8 +334,8 @@ if (!$strava_connected || !$mcl_connected || !$endo_connected) {
                             </tr>
                             <tr>
                                 <td>Save elevation as feet:</td>
-                                <td>  <input type="checkbox" name="elevation_units" value="feet"
-                                    <?php echo ($mcl_api->isUseFeetForElevation() ?  "checked" : "") ?>
+                                <td><input type="checkbox" name="elevation_units" value="feet"
+                                        <?php echo($mcl_api->isUseFeetForElevation() ? "checked" : "") ?>
                                     ><br>
                                 </td>
                             </tr>
@@ -459,6 +466,89 @@ function isDuplicateRide($date, $distance, $strava_id, $mcl_rides)
     }
     return false;
 }
+
+
+function calculateEddington($days, &$eddington_days, $factor)
+{
+    uasort($days, function ($a, $b) {
+        if ($a == $b) return 0; else return ($a > $b) ? -1 : 1;
+    });
+    $eddington = 0;
+    $eddington_days = [];
+
+    foreach ($days as $day => $distance) {
+        $units = round($distance * $factor);
+        if ($units > $eddington) {
+            $eddington_days[$day] = $units;
+            $eddington++;
+        } else {
+            break;
+        }
+    }
+    return $eddington;
+}
+
+function eddingtonHistory($days, $factor)
+{
+    $eddingtonHistory = [];
+    $history = [];
+    $eddingtonNumber = 0;
+    $day_list = array_keys($days);
+    sort($day_list);
+    foreach ($day_list as $day) {
+        $distance = $days[$day];
+        if ($distance >= $eddingtonNumber) {
+            $history[$day] = $distance;
+            $new_ed = calculateEddington($history, $scratch, $factor);
+            if ($new_ed > $eddingtonNumber) {
+                $eddingtonHistory[$day] = $new_ed;
+                $eddingtonNumber = $new_ed;
+            }
+        }
+    }
+    return $eddingtonHistory;
+}
+
+function buildChart($imperial_history, $metric_history)
+{
+    $dates = array_unique(array_merge(array_keys($imperial_history), array_keys($metric_history)));
+    asort($dates);
+    $chart = "";
+    $metric_e = 0;
+    $imperial_e = 0;
+
+    foreach ($dates as $date) {
+        $time = strtotime($date);
+        $y = date("Y", $time);
+        $m = date("m", $time);
+        $d = date("d", $time);
+        $imperial_e = max(intval($imperial_history[$date]), $imperial_e);
+        $metric_e = max(intval($metric_history[$date]), $metric_e);
+        $chart .= "        [new Date($y, $m, $d),  $imperial_e, $metric_e],\n";
+    }
+
+
+    $text = '<script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>';
+    $text .= '<script type="text/javascript">';
+    $text .= "    google.charts.load('current', {'packages':['corechart']});";
+    $text .= "    google.charts.setOnLoadCallback(drawChart);";
+    $text .= "    function drawChart() {";
+    $text .= "        var data = google.visualization.arrayToDataTable([";
+    $text .= "            ['Date', 'Imperial', 'Metric'],";
+    $text .= "             $chart   ";
+    $text .= "        ]);";
+    $text .= "        var options = {";
+    $text .= "            title: 'Change in Eddington Number over time',";
+    $text .= "            legend: { position: 'bottom' }";
+    $text .= "        };";
+    $text .= "        var chart = new google.visualization.LineChart(document.getElementById('eddington_chart'));";
+    $text .= "        chart.draw(data, options);";
+    $text .= "    }";
+    $text .= "</script>";
+    $text .= '<div id="eddington_chart" style="width: 900px; height: 500px"></div>';
+    return $text;
+}
+
 
 ?>
 </body>

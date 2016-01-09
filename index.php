@@ -7,7 +7,7 @@ require_once 'src/JoanMcGalliard/MyCyclingLogApi.php';
 require_once 'src/JoanMcGalliard/EndomondoApi.php';
 
 date_default_timezone_set("$timezone");
-$here = "$_SERVER[REQUEST_SCHEME]://$_SERVER[HTTP_HOST]$_SERVER[PHP_SELF]";
+$here = "http://$_SERVER[HTTP_HOST]$_SERVER[PHP_SELF]";
 $scope = null;
 $state = null;
 const METRE_TO_MILE = 0.00062137119224;

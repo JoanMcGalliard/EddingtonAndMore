@@ -1,5 +1,5 @@
 <?php
-set_include_path(get_include_path().dirname(__FILE__).DIRECTORY_SEPARATOR."src".PATH_SEPARATOR);
+set_include_path(get_include_path().PATH_SEPARATOR.dirname(__FILE__).DIRECTORY_SEPARATOR."src".PATH_SEPARATOR);
 
 require_once 'local.php';
 require_once 'src/JoanMcGalliard/StravaApi.php';
@@ -43,6 +43,8 @@ if (array_key_exists("login_mcl", $_POST)) {
     $mcl_api->setAuth("$auth");
     if ($mcl_api->isConnected()) {
         setcookie(MCL_COOKIE, $auth, time() + 60 * 60 * 24 * 365); //expires in 1 year
+    } else {
+        $error_message="There was a problem connecting to MyCyclingLog, please try again";
     }
 } else if (array_key_exists(MCL_COOKIE, $_COOKIE)) {
     $mcl_api->setAuth($_COOKIE[MCL_COOKIE]);
@@ -53,6 +55,8 @@ if (array_key_exists("login_endo", $_POST)) {
     $auth = $endo_api->connect($endo_username,$endo_password);
     if ($endo_api->isConnected()) {
         setcookie(ENDO_COOKIE, $auth, time() + 60 * 60 * 24 * 365); //expires in 1 year
+    } else {
+        $error_message="There was a problem connecting to Endomondo, please try again.<br>(".$endo_api->getErrorMessage().")";
     }
 } else if (array_key_exists(ENDO_COOKIE, $_COOKIE)) {
     $endo_api->setAuth($_COOKIE[ENDO_COOKIE]);

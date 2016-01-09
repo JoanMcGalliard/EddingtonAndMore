@@ -10,6 +10,26 @@ class EndomondoApi implements trackerApiInterface
     protected $auth = null;
     protected $connected = false;
     protected $deviceId = "";
+    private $lastPage = null;
+    private $errorMessage=null;
+
+    /**
+     * @return null
+     */
+    public function getErrorMessage()
+    {
+        return $this->errorMessage;
+    }
+
+    /**
+     * @return null
+     */
+    public function getLastPage()
+    {
+        vd( $this->lastPage);
+        vd( $this->lastPath);
+        return $this->lastPage;
+    }
 
     /**
      * EndomondoApi constructor.
@@ -55,6 +75,8 @@ class EndomondoApi implements trackerApiInterface
 
         $page = curl_exec($process);
         curl_close($process);
+        $this->lastPage=$page;
+        $this->lastPath=$path;
         return $page;
     }
 
@@ -81,10 +103,12 @@ class EndomondoApi implements trackerApiInterface
             foreach (explode("\n", $page) as $line) {
                 if (preg_match($pattern, $line, $matches) > 0) {
                     $this->auth = $matches[1];
+                    $this->connected=true;
                     return $this->auth;
                 }
 
             }
+            $this->errorMessage=$page;
 
             return null;
         }

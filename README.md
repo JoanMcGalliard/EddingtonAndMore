@@ -2,16 +2,18 @@
 
 ## Synopsis
 
-A standalone PHP web page for cyclists that allows them to calculate their Eddington number, and to copy ride data.  It's deployed at [mcgalliard.org/eddington](http://mcgalliard.org/eddington/).
+A standalone PHP web page for cyclists that allows them to calculate their Eddington number, and to copy ride data.  It's live at [mcgalliard.org/eddington](http://mcgalliard.org/eddington/).
 
 ## Eddington Number.
-It's the largest number, E, such that you have ridden at least E miles on at least E days.  So this page if for rides who like to ride long distances.
+It's the largest number, E, such that you have ridden at least E miles on at least E days.  So this  is for rides who like to ride long distances.
 
 ## More Detail
 
-The rides are gathered from a users Strava, Endomondo or MyCyclingLog account. It uses the published APIs of [Strava](http://strava.github.io/api/) via [Stuart Wilson](https://github.com/iamstuartwilson/strava), and [MyCyclingLog](https://www.mycyclinglog.com/api/docs.php), and the secret API of endomondo, with help from [sports-tracker-liberator](https://github.com/isoteemu/sports-tracker-liberator).
+The rides are gathered from a user's Strava, Endomondo and/or MyCyclingLog account. It uses the published APIs of [Strava](http://strava.github.io/api/) via [Stuart Wilson](https://github.com/iamstuartwilson/strava), and [MyCyclingLog](https://www.mycyclinglog.com/api/docs.php), and the secret API of endomondo, with help from [sports-tracker-liberator](https://github.com/isoteemu/sports-tracker-liberator).
 
- It also has some facilities for updating one site with rides recorded on another.  As of 9 January 2016, the only copy is from Strava  to MyCyclingLog.
+There's also a TZ pull down from a variant of [moment.js](http://momentjs.com/) *I found on the internet*. &#9786;
+
+ It has some facilities for updating one site with rides recorded on another.  As of 9 January 2016, the only copy is from Strava  to MyCyclingLog.
 
 
 ## Environments

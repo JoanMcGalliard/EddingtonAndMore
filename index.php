@@ -1,5 +1,5 @@
 <?php
-set_include_path(get_include_path().PATH_SEPARATOR.dirname(__FILE__).DIRECTORY_SEPARATOR."src".PATH_SEPARATOR);
+set_include_path(get_include_path() . PATH_SEPARATOR . dirname(__FILE__) . DIRECTORY_SEPARATOR . "src" . PATH_SEPARATOR);
 
 require_once 'local.php';
 require_once 'src/JoanMcGalliard/StravaApi.php';
@@ -7,7 +7,7 @@ require_once 'src/JoanMcGalliard/MyCyclingLogApi.php';
 require_once 'src/JoanMcGalliard/EndomondoApi.php';
 
 date_default_timezone_set("$timezone");
-$here="$_SERVER[REQUEST_SCHEME]://$_SERVER[HTTP_HOST]$_SERVER[PHP_SELF]";
+$here = "$_SERVER[REQUEST_SCHEME]://$_SERVER[HTTP_HOST]$_SERVER[PHP_SELF]";
 $scope = null;
 $state = null;
 const METRE_TO_MILE = 0.00062137119224;
@@ -23,7 +23,6 @@ $endo_api = new JoanMcGalliard\EndomondoApi($deviceId);
 $start_date = strtotime($_POST["start_date"]);
 $end_date = strtotime($_POST["end_date"]);
 $tz = strtotime($_POST["tz"]);
-
 
 
 if (array_key_exists("clear_cookies", $_POST)) {
@@ -44,7 +43,7 @@ if (array_key_exists("login_mcl", $_POST)) {
     if ($mcl_api->isConnected()) {
         setcookie(MCL_COOKIE, $auth, time() + 60 * 60 * 24 * 365); //expires in 1 year
     } else {
-        $error_message="There was a problem connecting to MyCyclingLog, please try again";
+        $error_message = "There was a problem connecting to MyCyclingLog, please try again";
     }
 } else if (array_key_exists(MCL_COOKIE, $_COOKIE)) {
     $mcl_api->setAuth($_COOKIE[MCL_COOKIE]);
@@ -52,11 +51,11 @@ if (array_key_exists("login_mcl", $_POST)) {
 if (array_key_exists("login_endo", $_POST)) {
     $endo_username = $_POST['username'];
     $endo_password = $_POST['password'];
-    $auth = $endo_api->connect($endo_username,$endo_password);
+    $auth = $endo_api->connect($endo_username, $endo_password);
     if ($endo_api->isConnected()) {
         setcookie(ENDO_COOKIE, $auth, time() + 60 * 60 * 24 * 365); //expires in 1 year
     } else {
-        $error_message="There was a problem connecting to Endomondo, please try again.<br>(".$endo_api->getErrorMessage().")";
+        $error_message = "There was a problem connecting to Endomondo, please try again.<br>(" . $endo_api->getErrorMessage() . ")";
     }
 } else if (array_key_exists(ENDO_COOKIE, $_COOKIE)) {
     $endo_api->setAuth($_COOKIE[ENDO_COOKIE]);
@@ -116,8 +115,8 @@ if ($state == "calculate_from_strava" || $state == "calculate_from_mcl" || $stat
     date_default_timezone_set($tz);
     $start_text = "the beginning";
     $end_text = "today";
-    $activities=[];
-    $timestamp=time();
+    $activities = [];
+    $timestamp = time();
     if ($start_date) $start_text = $_POST["start_date"];
     if ($end_date) $end_text = $_POST["end_date"];
     if ($state == "calculate_from_strava") {
@@ -184,7 +183,7 @@ if ($state == "calculate_from_strava" || $state == "calculate_from_mcl" || $stat
         }
     }
 
-    echo "<p><i>Run time " . (time() -$timestamp) . " seconds.</i></p>";
+    echo "<p><i>Run time " . (time() - $timestamp) . " seconds.</i></p>";
 
     echo $table_imperial;
     echo $table_metric;
@@ -348,9 +347,11 @@ if (!$strava_connected || !$mcl_connected || !$endo_connected) {
 
     <?php
 }
-function eb($x){
-    echo $x."<br>";
+function eb($x)
+{
+    echo $x . "<br>";
 }
+
 function vd($x)
 {
     echo "<pre>";

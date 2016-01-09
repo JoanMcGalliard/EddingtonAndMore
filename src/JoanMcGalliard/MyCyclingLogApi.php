@@ -15,6 +15,23 @@ class MyCyclingLogApi implements trackerApiInterface
     protected $connected = false;
     protected $bikes = null;
     protected $strava_bike_match = [];
+    protected $use_feet_for_elevation=false;
+
+    /**
+     * @return boolean
+     */
+    public function isUseFeetForElevation()
+    {
+        return $this->use_feet_for_elevation;
+    }
+
+    /**
+     * @param boolean $use_feet_for_elevation
+     */
+    public function setUseFeetForElevation($use_feet_for_elevation)
+    {
+        $this->use_feet_for_elevation = $use_feet_for_elevation;
+    }
 
 
 
@@ -179,7 +196,7 @@ class MyCyclingLogApi implements trackerApiInterface
         $parameters['notes'] = self::STRAVA_NOTE_PREFIX . $ride['strava_id'];
         $parameters['heart_rate'] = $ride[''];
         $parameters['max_speed'] = $ride['max_speed'] * 60 * 60 * self::METRE_TO_MILE;
-        $parameters['elevation'] = $ride['total_elevation_gain'];
+        $parameters['elevation'] = $ride['total_elevation_gain'] * ($this->use_feet_for_elevation ? self::METRE_TO_FOOT : 1);
         $parameters['tags'] = $ride[''];
         $parameters['bid'] = $ride['mcl_bid']; // bid. Optional. Bike ID as returned by New Bike API.
         return $this->postPage("?method=ride.new", $parameters);
@@ -189,7 +206,7 @@ class MyCyclingLogApi implements trackerApiInterface
     {
         if ($this->auth != null) {
             $rides = $this->getPageDom("?method=ride.list&limit=0&offset=0");
-            if (preg_match('/^[0-9][0-9]*$/',
+            if ($rides != null && preg_match('/^[0-9][0-9]*$/',
                 $rides->childNodes->item(0)->childNodes->item(0)->getAttribute('total_size'))) {
                 return true;
             }

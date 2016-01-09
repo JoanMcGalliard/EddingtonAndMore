@@ -17,6 +17,9 @@ $last = null;
 const STRAVA_COOKIE = "STRAVA_ACCESS_TOKEN";
 const MCL_COOKIE = "MYCYCLINGLOG_AUTH";
 const ENDO_COOKIE = "ENDOMONDO_AUTH";
+
+const MCL_COOKIE_FEET = "MYCYCLINGLOG_USE_FEET";
+
 $strava_api = new JoanMcGalliard\StravaApi($stravaClientId, $stravaClientSecret);
 $mcl_api = new JoanMcGalliard\MyCyclingLogApi();
 $endo_api = new JoanMcGalliard\EndomondoApi($deviceId);
@@ -25,19 +28,30 @@ $end_date = strtotime($_POST["end_date"]);
 $tz = strtotime($_POST["tz"]);
 
 
+function clearCookie($cookie)
+{
+    setcookie($cookie, null, time() - 3600);
+    unset($_COOKIE[$cookie]);
+}
+
 if (array_key_exists("clear_cookies", $_POST)) {
-    setcookie(MCL_COOKIE, null, time() - 3600);
-    unset($_COOKIE[MCL_COOKIE]);
-    setcookie(ENDO_COOKIE, null, time() - 3600);
-    unset($_COOKIE[ENDO_COOKIE]);
-    setcookie(STRAVA_COOKIE, null, time() - 3600);
-    unset($_COOKIE[STRAVA_COOKIE]);
+    clearCookie(MCL_COOKIE);
+    clearCookie(MCL_COOKIE_FEET);
+    clearCookie(ENDO_COOKIE);
+    clearCookie(STRAVA_COOKIE);
     unset($_GET["code"]);
     unset($_GET["state"]);
 }
 if (array_key_exists("login_mcl", $_POST)) {
     $mcl_username = $_POST['username'];
     $mcl_password = $_POST['password'];
+    if (array_key_exists("elevation_units",$_POST) || $_POST['elevation_units']=="feet") {
+        $mcl_api->setUseFeetForElevation(true);
+        setcookie(MCL_COOKIE_FEET, $mcl_api->isUseFeetForElevation(), time() + 60 * 60 * 24 * 365); //expires in 1 year
+    } else {
+        $mcl_api->setUseFeetForElevation(false);
+        clearCookie(MCL_COOKIE_FEET);
+    }
     $auth = base64_encode("$mcl_username:$mcl_password");
     $mcl_api->setAuth("$auth");
     if ($mcl_api->isConnected()) {
@@ -47,6 +61,9 @@ if (array_key_exists("login_mcl", $_POST)) {
     }
 } else if (array_key_exists(MCL_COOKIE, $_COOKIE)) {
     $mcl_api->setAuth($_COOKIE[MCL_COOKIE]);
+    if (array_key_exists(MCL_COOKIE_FEET, $_COOKIE)) {
+        $mcl_api->setUseFeetForElevation($_COOKIE[MCL_COOKIE_FEET]);
+    }
 }
 if (array_key_exists("login_endo", $_POST)) {
     $endo_username = $_POST['username'];
@@ -307,6 +324,13 @@ if (!$strava_connected || !$mcl_connected || !$endo_connected) {
                                 <td>MyCyclingLog Password:</td>
                                 <td><input type="password" name="password">
                                 <td>
+                            </tr>
+                            <tr>
+                                <td>Save elevation as feet:</td>
+                                <td>  <input type="checkbox" name="elevation_units" value="feet"
+                                    <?php echo ($mcl_api->isUseFeetForElevation() ?  "checked" : "") ?>
+                                    ><br>
+                                </td>
                             </tr>
                             <tr class="w3-centered">
                                 <td colspan="2" class="w3-centered"><input type="image" src="images/mcl_logo.png"

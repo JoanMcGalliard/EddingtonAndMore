@@ -104,6 +104,16 @@ if ($strava_connected && array_key_exists("calculate_from_strava", $_POST)) {
 } else if ($mcl_connected && $strava_connected && array_key_exists("MCL", $_POST)) {
     $state = "copy_strava_to_mcl";
 }
+if (isset($_POST['commentSend'])) {
+    mail("$owner", "eddington enquiry",
+        $_POST['commentComments'], "From: " . $_POST['commentRealname'] . "<"
+        . $_POST['commentEmail'] . ">\r\n");
+    $info_message = "Thanks.  Email sent.  " .
+        " Name: " . $_POST['commentRealname'] .
+        " Email: " . $_POST['commentEmail'] .
+        " Comment: " . $_POST['commentComments'] . "";
+}
+
 ?>
 <html>
 <head>
@@ -123,6 +133,9 @@ if ($strava_connected && array_key_exists("calculate_from_strava", $_POST)) {
 <body>
 <h2>Strava &amp; MyCyclingLog Tools</h2>
 <p style="color:red;"><b><?php echo $error_message ?></b></p>
+<p style="color:blueviolet;"><em><?php echo $info_message ?></em></p>
+
+
 <p>On this page you can calculate your Eddington Number from your Strava or MyCyclingLog, or transfer rides from Strava
     to MyCyclingLog.
 <p>
@@ -199,7 +212,7 @@ if ($state == "calculate_from_strava" || $state == "calculate_from_mcl" || $stat
     }
 
     echo '<br><a href="#eddington_chart">See a chart of how your Eddington number has grown over the years.<br>';
-    echo "<p><i>Run time " . (time() - $timestamp) . " seconds.</i></p>";
+    echo "<p><em>Run time " . (time() - $timestamp) . " seconds.</em></p>";
 
     echo $table_imperial;
     echo $table_metric;
@@ -256,10 +269,10 @@ if ($strava_connected || $mcl_connected || $endo_connected) {
     ?>
     <hr>
 
-    <p><i>Note: date format it dd-mm-yyyy, and the timezone is used to determine midnight for the date range. Each
+    <p><em>Note: date format it dd-mm-yyyy, and the timezone is used to determine midnight for the date range. Each
             ride's date is the local time as recorded by strava. You can set either or both dates, or leave them both
             blank for your lifetime E-number. You can set either or both dates, or leave them both blank your lifetime
-            E-number. It might take a minute or two to come back with an answer.</i><p>
+            E-number. It might take a minute or two to come back with an answer.</em><p>
     <form action="" method="post">
         <table>
             <tr>
@@ -306,9 +319,9 @@ if (!$strava_connected || !$mcl_connected || !$endo_connected) {
     <hr>
     <h3>Connect to services</h3>
     <p>Click the buttons below to authorise access to your strava account and/or mycyclinglog accounts.</p>
-    <p><i>This website uses cookies. If you have a problem with that, there are millions of other sites out there
+    <p><em>This website uses cookies. If you have a problem with that, there are millions of other sites out there
             &#9786; Oh,
-            and there is a button to delete the cookies when you are done. </i></p>
+            and there is a button to delete the cookies when you are done. </em></p>
     <table>
         <tr>
             <?php if (!$strava_connected) {
@@ -378,6 +391,30 @@ if (!$strava_connected || !$mcl_connected || !$endo_connected) {
 
     <?php
 }
+?>
+
+<hr>
+<p>Bug reports, feature requests, thanks?  Please use this form.  <em>Note this will only stay here until the spam bots find it.</em></p>
+<FORM METHOD="POST">
+    <INPUT TYPE=HIDDEN NAME="subject" VALUE="eSquad">
+    <input type=hidden name="env_report" value="REMOTE_ADDR, HTTP_USER_AGENT">
+
+    <p><strong>Your Name:</strong> <INPUT TYPE=TEXT NAME="commentRealname"
+                                              >
+    <strong>Email Address:</strong> <INPUT TYPE=TEXT NAME="commentEmail"
+                                                  >
+    <p><strong>Comments:</strong>
+        <TEXTAREA  NAME="commentComments"></textarea></p>
+
+    <p><INPUT TYPE="SUBMIT" name="commentSend" VALUE="Send">
+        <INPUT TYPE="RESET" VALUE="Clear">
+</FORM>
+
+<?php
+
+
+
+
 function eb($x)
 {
     echo $x . "<br>";

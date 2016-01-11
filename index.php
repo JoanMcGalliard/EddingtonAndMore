@@ -104,7 +104,7 @@ if (isset($_POST['commentSend'])) {
 
 ?>
 <html>
-<head>
+<>
     <title>Eddington &amp; More</title>
     <link rel="stylesheet" href="css/w3.css">
     <link
@@ -112,6 +112,24 @@ if (isset($_POST['commentSend'])) {
         rel="icon" type="image/x-icon"/>
 
     <link rel="stylesheet" href="http://code.jquery.com/ui/1.10.3/themes/smoothness/jquery-ui.css"/>
+
+    <style>
+            .roundbutton {
+                width: 67px;
+                height: 40px;
+                background-color: #FFFFFF;
+                moz-border-radius: 15px;
+                -webkit-border-radius: 15px;
+                border: 2px solid #000000;
+                padding: 2px;
+            }
+
+        </style>
+
+
+
+
+    </html>
 
     <script src="http://code.jquery.com/jquery-1.9.1.js"></script>
     <script src="http://code.jquery.com/jquery-1.11.1.min.js"></script>
@@ -263,10 +281,35 @@ if ($strava_connected || $mcl_connected || $endo_connected) {
             blank for your lifetime E-number. You can set either or both dates, or leave them both blank your lifetime
             E-number. It might take a minute or two to come back with an answer.</em><p>
     <form action="" method="post">
+        <script> function populateDates(start,end) {
+
+                document.getElementById("datepicker_start").value=start;
+                document.getElementById("datepicker_end").value=end;
+            }
+        </script>
+        <?php
+        date_default_timezone_set($preferences->getTimezone());
+        $today=date("d-m-Y", time());
+        $yesterday=date("d-m-Y", time() - (60*60*24));
+        $seven_days_ago=date("d-m-Y", time() - (60*60*24*7));
+        $start_of_month=date("01-m-Y", time() );
+        $start_of_year=date("01-01-Y", time() );
+        $start_of_last_year="01-01-".(intval(date("Y", time())) -1);
+        ?>
+
+        Prepopulate:
+
+
+        <span class="roundbutton" onclick="populateDates('<?php echo $today ?>','')">today</span>
+        <span class="roundbutton"   onclick="populateDates('<?php echo $yesterday ?>','')">since yesterday</span>
+        <span class="roundbutton"   onclick="populateDates('<?php echo $seven_days_ago ?>','')">last 7 days</span>
+        <span class="roundbutton"  onclick="populateDates('<?php echo $start_of_month ?>','')">this month</span>
+        <span class="roundbutton"   onclick="populateDates('<?php echo $start_of_year ?>','')">this year</span>
+        <span class="roundbutton"   onclick="populateDates('<?php echo $start_of_last_year ?>','<?php echo $start_of_year ?>')">last year</span>
         <table>
             <tr>
-                <td>Start Date <input type="text" name="start_date" id="datepicker1"/></td>
-                <td> End Date <input type="text" name="end_date" id="datepicker2"/></td>
+                <td>Start Date <input type="text" name="start_date" id="datepicker_start"/></td>
+                <td> End Date <input type="text" name="end_date" id="datepicker_end"/></td>
                 <td><select name="tz" value="<?php echo $preferences->getTimezone();?>" id="tz"> </select></td>
             </tr>
             <tr> </td></tr>
@@ -296,8 +339,8 @@ if ($strava_connected || $mcl_connected || $endo_connected) {
         if you like the result. It should not make duplicates if the ride has already been copied using this page, or if
         there is another ride on the same day with 2% of the distance.</p>
     <script>
-        $("#datepicker1").datepicker({changeMonth: true, changeYear: true, dateFormat: 'dd-mm-yy'});
-        $("#datepicker2").datepicker({changeMonth: true, changeYear: true, dateFormat: 'dd-mm-yy'});
+        $("#datepicker_start").datepicker({changeMonth: true, changeYear: true, dateFormat: 'dd-mm-yy'});
+        $("#datepicker_end").datepicker({changeMonth: true, changeYear: true, dateFormat: 'dd-mm-yy'});
         $("#tz").timezones();
         $("#tz").val('<?php echo $preferences->getTimezone();?>');
     </script>

@@ -32,10 +32,20 @@ class Preferences
 
     }
 
-    public function save()
+    private function reset()
     {
-        setcookie(self::COOKIE_NAME, json_encode($this->preferences),time() + 60 * 60 * 24 * 365); //expires in 1 year);
+        $this->preferences = $this->newPrefs();
 
+    }
+
+    private function newPrefs()
+    {
+        $preferences = new stdClass();
+        $preferences->version = self::VERSION;
+        $preferences->mcl = new stdClass();
+        $preferences->endo = new stdClass();
+        $preferences->strava = new stdClass();
+        return $preferences;
     }
 
     private function loadFromOldCookies()
@@ -53,26 +63,14 @@ class Preferences
             $this->preferences->endo->auth = $_COOKIE[self::OLD_ENDO_COOKIE];
 
         }
-        /*
-         * array (
-  'version' => 1,
-  'mcl' =>
-  array (
-    'auth' => 'amVmbWNnOk0yajQ2Mjk5RGo=',
-  ),
-  'strava' =>
-  array (
-    'access_token' => '93c020201fb0ec14d25396e494827109b9dc257d',
-  ),
-  'endo' =>
-  array (
-    'auth' => 'J7CU9Z8mQKCEC2R74MFb8g',
-  ),
-)
-         */
-
     }
 
+    public function save()
+    {
+        if ($this->preferences != $this->newPrefs()) {
+            setcookie(self::COOKIE_NAME, json_encode($this->preferences), time() + 60 * 60 * 24 * 365); //expires in 1 year);
+        }
+    }
 
     private
     function clearOldCookies()
@@ -90,14 +88,6 @@ class Preferences
         unset($_COOKIE[$cookie]);
     }
 
-    private function reset() {
-        $this->preferences=new stdClass();
-        $this->preferences->version=self::VERSION;
-        $this->preferences->mcl=new stdClass();
-        $this->preferences->endo=new stdClass();
-        $this->preferences->strava=new stdClass();
-
-    }
     public function clear()
     {
         $this->clearOldCookies();
@@ -107,7 +97,7 @@ class Preferences
 
     public function setMclUseFeet($bool)
     {
-        $this->preferences->mcl->use_feet=$bool;
+        $this->preferences->mcl->use_feet = $bool;
         $this->save();
     }
 
@@ -115,9 +105,10 @@ class Preferences
     {
         return $this->preferences->endo->auth;
     }
+
     public function setEndoAuth($auth)
     {
-        $this->preferences->endo->auth=$auth;
+        $this->preferences->endo->auth = $auth;
         $this->save();
     }
 
@@ -135,12 +126,18 @@ class Preferences
 
     public function setMclAuth($auth)
     {
-        $this->preferences->mcl->auth=$auth;
+        $this->preferences->mcl->auth = $auth;
         $this->save();
     }
+
     public function getMclAuth()
     {
         return $this->preferences->mcl->auth;
+    }
+
+    public function setTimezone($tz)
+    {
+        $this->preferences->timezone = $tz;
     }
 }
 

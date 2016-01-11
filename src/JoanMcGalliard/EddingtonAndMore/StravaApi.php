@@ -9,6 +9,17 @@ class StravaApi extends Iamstuartwilson\StravaApi implements trackerApiInterface
 {
     protected $connected = false;
     protected $bikes = [];
+    private function dot() {
+        echo ".";
+        flush();
+    }
+
+
+    private function getWithDot($request, $parameters = array()) {
+        $return=$this->get($request,$parameters);
+        self::dot();
+        return $return;
+    }
 
     public function setAccessTokenFromCode($code)
     {
@@ -37,7 +48,7 @@ class StravaApi extends Iamstuartwilson\StravaApi implements trackerApiInterface
         $activities_list = [];
         if (!$start_date && !$end_date) {
             for ($i = 1; ; $i++) {
-                $activities = $this->get('activities', ["per_page" => $activities_per_page, "page" => $i]);
+                $activities = $this->getWithDot('activities', ["per_page" => $activities_per_page, "page" => $i]);
                 $this->newActivities($activities_list, $activities);
                 if (sizeof($activities) < $activities_per_page) {
                     break;
@@ -46,7 +57,7 @@ class StravaApi extends Iamstuartwilson\StravaApi implements trackerApiInterface
         } else if (!$end_date) {
             $after = $start_date;
             for ($i = 1; ; $i++) {
-                $activities = $this->get('activities', ["per_page" => $activities_per_page, "after" => $after]);
+                $activities = $this->getWithDot('activities', ["per_page" => $activities_per_page, "after" => $after]);
                 $this->newActivities($activities_list, $activities);
                 if (sizeof($activities) < $activities_per_page) {
                     break;
@@ -56,7 +67,7 @@ class StravaApi extends Iamstuartwilson\StravaApi implements trackerApiInterface
         } else if (!$start_date) {
             $before = $end_date;
             for ($i = 1; ; $i++) {
-                $activities = $this->get('activities', ["per_page" => $activities_per_page, "before" => $before]);
+                $activities = $this->getWithDot('activities', ["per_page" => $activities_per_page, "before" => $before]);
                 $this->newActivities($activities_list, $activities);
                 if (sizeof($activities) < $activities_per_page) {
                     break;
@@ -68,7 +79,7 @@ class StravaApi extends Iamstuartwilson\StravaApi implements trackerApiInterface
             // before and after date set.
             $after = $start_date;
             for ($i = 1; ; $i++) {
-                $activities = $this->get('activities', ["per_page" => $activities_per_page, "after" => $after]);
+                $activities = $this->getWithDot('activities', ["per_page" => $activities_per_page, "after" => $after]);
                 $after = strtotime($activities[sizeof($activities) - 1]->start_date) + 1;
                 if ($after > $end_date) {
                     for ($i = sizeof($activities) - 1; i >= 0; $i--) {
@@ -107,7 +118,7 @@ class StravaApi extends Iamstuartwilson\StravaApi implements trackerApiInterface
     public function getBike($id)
     {
         if (!array_key_exists($id, $this->bikes)) {
-            $gear = $this->get("gear/$id");
+            $gear = $this->getWithDot("gear/$id");
             $this->bikes[$id]["brand"] = $gear->brand_name;
             $this->bikes[$id]["model"] = $gear->model_name;
         }

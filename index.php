@@ -2,10 +2,11 @@
 set_include_path(get_include_path() . PATH_SEPARATOR . dirname(__FILE__) . DIRECTORY_SEPARATOR . "src" . PATH_SEPARATOR);
 
 require_once 'local.php';
-require_once 'src/JoanMcGalliard/StravaApi.php';
-require_once 'src/JoanMcGalliard/MyCyclingLogApi.php';
-require_once 'src/JoanMcGalliard/EndomondoApi.php';
+require_once 'src/JoanMcGalliard/EddingtonAndMore/StravaApi.php';
+require_once 'src/JoanMcGalliard/EddingtonAndMore/MyCyclingLogApi.php';
+require_once 'src/JoanMcGalliard/EddingtonAndMore/EndomondoApi.php';
 require_once 'src/functions.php';
+require_once 'src/Preferences.php';
 date_default_timezone_set("$timezone");
 
 
@@ -17,15 +18,14 @@ const METRE_TO_MILE = 0.00062137119224;
 const METRE_TO_KM = 0.001;
 $error_message = "";
 $last = null;
-const STRAVA_COOKIE = "STRAVA_ACCESS_TOKEN";
-const MCL_COOKIE = "MYCYCLINGLOG_AUTH";
-const ENDO_COOKIE = "ENDOMONDO_AUTH";
-
-const MCL_COOKIE_FEET = "MYCYCLINGLOG_USE_FEET";
 
 $strava_api = new JoanMcGalliard\StravaApi($stravaClientId, $stravaClientSecret);
 $mcl_api = new JoanMcGalliard\MyCyclingLogApi();
 $endo_api = new JoanMcGalliard\EndomondoApi($deviceId);
+$preferences = new Preferences();
+
+//echo($endo_api->getPoints("blah")->gpx());
+//exit();
 $start_date = strtotime($_POST["start_date"]);
 $end_date = strtotime($_POST["end_date"]);
 $tz = strtotime($_POST["tz"]);
@@ -33,10 +33,7 @@ $tz = strtotime($_POST["tz"]);
 
 
 if (array_key_exists("clear_cookies", $_POST)) {
-    clearCookie(MCL_COOKIE);
-    clearCookie(MCL_COOKIE_FEET);
-    clearCookie(ENDO_COOKIE);
-    clearCookie(STRAVA_COOKIE);
+    $preferences->clear();
     unset($_GET["code"]);
     unset($_GET["state"]);
 }
@@ -44,49 +41,46 @@ if (array_key_exists("login_mcl", $_POST)) {
     $mcl_username = $_POST['username'];
     $mcl_password = $_POST['password'];
     if (array_key_exists("elevation_units", $_POST) || $_POST['elevation_units'] == "feet") {
+        $preferences->setMclUseFeet(true);
         $mcl_api->setUseFeetForElevation(true);
-        setcookie(MCL_COOKIE_FEET, $mcl_api->isUseFeetForElevation(), time() + 60 * 60 * 24 * 365); //expires in 1 year
     } else {
+        $preferences->setMclUseFeet(false);
         $mcl_api->setUseFeetForElevation(false);
-        clearCookie(MCL_COOKIE_FEET);
     }
     $auth = base64_encode("$mcl_username:$mcl_password");
     $mcl_api->setAuth("$auth");
     if ($mcl_api->isConnected()) {
-        setcookie(MCL_COOKIE, $auth, time() + 60 * 60 * 24 * 365); //expires in 1 year
+        $preferences->setMclAuth($auth);
     } else {
         $error_message = "There was a problem connecting to MyCyclingLog, please try again";
     }
-} else if (array_key_exists(MCL_COOKIE, $_COOKIE)) {
-    $mcl_api->setAuth($_COOKIE[MCL_COOKIE]);
-    if (array_key_exists(MCL_COOKIE_FEET, $_COOKIE)) {
-        $mcl_api->setUseFeetForElevation($_COOKIE[MCL_COOKIE_FEET]);
-    }
+} else if ($preferences->getMclAuth()) {
+    $mcl_api->setAuth($preferences->getMclAuth());
 }
 if (array_key_exists("login_endo", $_POST)) {
     $endo_username = $_POST['username'];
     $endo_password = $_POST['password'];
     $auth = $endo_api->connect($endo_username, $endo_password);
     if ($endo_api->isConnected()) {
-        setcookie(ENDO_COOKIE, $auth, time() + 60 * 60 * 24 * 365); //expires in 1 year
+        $preferences->setEndoAuth($auth);
     } else {
         $error_message = "There was a problem connecting to Endomondo, please try again.<br>(" . $endo_api->getErrorMessage() . ")";
     }
-} else if (array_key_exists(ENDO_COOKIE, $_COOKIE)) {
-    $endo_api->setAuth($_COOKIE[ENDO_COOKIE]);
+} else if ($preferences->getEndoAuth() != null) {
+    $endo_api->setAuth($preferences->getEndoAuth());
 }
 if (array_key_exists("state", $_GET) && ($_GET["state"] == "connecting")) {
     if (!array_key_exists("error", $_GET) && array_key_exists("code", $_GET)) {
         $code = $_GET["code"];
         $token = $strava_api->setAccessTokenFromCode($code);
         if ($strava_api->isConnected()) {
-            setcookie(STRAVA_COOKIE, $token, time() + 60 * 60 * 24 * 365); //expires in 1 year
+            $preferences->setStravaAccessToken($token);
         }
     } else {
-        $error_message .= 'There was a problem connecting to strava, please try again.';
+        $error_message .= 'There was a problem connecting to strava, please try again.' . $_GET["error"] . " ";
     }
-} else if (array_key_exists(STRAVA_COOKIE, $_COOKIE)) {
-    $strava_api->setAccessToken($_COOKIE[STRAVA_COOKIE]);
+} else if ($preferences->getStravaAccessToken() != null) {
+    $endo_api->setAuth($preferences->getStravaAccessToken());
 }
 $strava_connected = $strava_api->isConnected();
 $mcl_connected = $mcl_api->isConnected();
@@ -127,7 +121,7 @@ if (isset($_POST['commentSend'])) {
     <script src="src/js/tz/timezones.full.js"></script>
 </head>
 <body>
-<h2>Strava &amp; MyCyclingLog Tools</h2>
+<h2>Eddington &amp; More</h2>
 <p style="color:red;"><b><?php echo $error_message ?></b></p>
 <p style="color:blueviolet;"><em><?php echo $info_message ?></em></p>
 
@@ -164,9 +158,9 @@ if ($state == "calculate_from_strava" || $state == "calculate_from_mcl" || $stat
         $end_date = time();
     }
     $days = sumActivities($activities);
-    echo "According to $source, for the period from $start_text to $end_text, "
+    echo "<p>According to $source, for the period from $start_text to $end_text, "
         . round(($end_date - $start_date) / (60 * 60 * 24))
-        . " elapsed days, ";
+        . " elapsed days</p>";
     uasort($days, function ($a, $b) {
         if ($a == $b) return 0; else return ($a > $b) ? -1 : 1;
     });
@@ -207,7 +201,7 @@ if ($state == "calculate_from_strava" || $state == "calculate_from_mcl" || $stat
         }
     }
 
-    echo '<br><a href="#eddington_chart">See a chart of how your Eddington number has grown over the years.<br>';
+    echo '<br><a href="#eddington_chart">See a chart of how your Eddington number has grown over the years.</a><br>';
     echo "<p><em>Run time " . (time() - $timestamp) . " seconds.</em></p>";
 
     echo $table_imperial;
@@ -247,6 +241,7 @@ if ($state == "calculate_from_strava" || $state == "calculate_from_mcl" || $stat
                     }
                 }
                 echo "$message <br>";
+                flush();
             }
         }
         if (sizeof($rides_to_retry) == 0) {

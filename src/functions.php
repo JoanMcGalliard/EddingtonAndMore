@@ -1,9 +1,4 @@
 <?php
-function clearCookie($cookie)
-{
-    setcookie($cookie, null, time() - 3600);
-    unset($_COOKIE[$cookie]);
-}
 function sumActivities($activities)
 {
     $days = [];
@@ -42,6 +37,10 @@ function number_of_days_to_goal($goal, $days, $factor)
             return $num;
         }
     }
+}
+function dot() {
+    echo ".";
+    flush();
 }
 function isDuplicateRide($date, $distance, $strava_id, $mcl_rides)
 {

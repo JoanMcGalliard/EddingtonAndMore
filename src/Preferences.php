@@ -19,10 +19,9 @@ class Preferences
      */
     public function __construct()
     {
-        $this->reset();
+        $this->preferences = $this->newPrefs();
 
         if (array_key_exists(self::COOKIE_NAME, $_COOKIE)) {
-
             $this->preferences = json_decode($_COOKIE[self::COOKIE_NAME]);
         } else {
             $this->loadFromOldCookies();
@@ -32,11 +31,6 @@ class Preferences
 
     }
 
-    private function reset()
-    {
-        $this->preferences = $this->newPrefs();
-
-    }
 
     private function newPrefs()
     {
@@ -91,7 +85,7 @@ class Preferences
     public function clear()
     {
         $this->clearOldCookies();
-        $this->reset();
+        $this->preferences = $this->newPrefs();
         $this->clearCookie(self::COOKIE_NAME);
     }
 
@@ -138,6 +132,16 @@ class Preferences
     public function setTimezone($tz)
     {
         $this->preferences->timezone = $tz;
+        $this->save();
+    }
+    public function getTimezone()
+    {
+        if(isset($this->preferences->timezone)) {
+            return $this->preferences->timezone;
+        }
+        else {
+            return "Europe/London";
+        }
     }
 }
 

@@ -10,7 +10,6 @@ require_once 'src/Preferences.php';
 date_default_timezone_set("$timezone");
 
 
-date_default_timezone_set("$timezone");
 $here = "http://$_SERVER[HTTP_HOST]$_SERVER[PHP_SELF]";
 $scope = null;
 $state = null;
@@ -24,12 +23,11 @@ $mcl_api = new JoanMcGalliard\MyCyclingLogApi();
 $endo_api = new JoanMcGalliard\EndomondoApi($deviceId);
 $preferences = new Preferences();
 
-//echo($endo_api->getPoints("blah")->gpx());
-//exit();
 $start_date = strtotime($_POST["start_date"]);
 $end_date = strtotime($_POST["end_date"]);
-$tz = strtotime($_POST["tz"]);
-
+if (array_key_exists("tz",$_POST)) {
+    $preferences->setTimezone($_POST["tz"]);
+}
 
 
 if (array_key_exists("clear_cookies", $_POST)) {
@@ -80,7 +78,7 @@ if (array_key_exists("state", $_GET) && ($_GET["state"] == "connecting")) {
         $error_message .= 'There was a problem connecting to strava, please try again.' . $_GET["error"] . " ";
     }
 } else if ($preferences->getStravaAccessToken() != null) {
-    $endo_api->setAuth($preferences->getStravaAccessToken());
+    $strava_api->setAccessToken($preferences->getStravaAccessToken());
 }
 $strava_connected = $strava_api->isConnected();
 $mcl_connected = $mcl_api->isConnected();
@@ -134,7 +132,7 @@ if (isset($_POST['commentSend'])) {
     cycled 35 miles or more on 35 days, that's your E-number.</p>
 <?php
 if ($state == "calculate_from_strava" || $state == "calculate_from_mcl" || $state == "calculate_from_endo") {
-    date_default_timezone_set($tz);
+    date_default_timezone_set($preferences->getTimezone());
     $start_text = "the beginning";
     $end_text = "today";
     $activities = [];
@@ -269,7 +267,7 @@ if ($strava_connected || $mcl_connected || $endo_connected) {
             <tr>
                 <td>Start Date <input type="text" name="start_date" id="datepicker1"/></td>
                 <td> End Date <input type="text" name="end_date" id="datepicker2"/></td>
-                <td><select name="tz" value="Europe/London" id="tz"> </select></td>
+                <td><select name="tz" value="<?php echo $preferences->getTimezone();?>" id="tz"> </select></td>
             </tr>
             <tr> </td></tr>
             <tr>
@@ -301,7 +299,7 @@ if ($strava_connected || $mcl_connected || $endo_connected) {
         $("#datepicker1").datepicker({changeMonth: true, changeYear: true, dateFormat: 'dd-mm-yy'});
         $("#datepicker2").datepicker({changeMonth: true, changeYear: true, dateFormat: 'dd-mm-yy'});
         $("#tz").timezones();
-        $("#tz").val('Europe/London');
+        $("#tz").val('<?php echo $preferences->getTimezone();?>');
     </script>
     <?php
 }

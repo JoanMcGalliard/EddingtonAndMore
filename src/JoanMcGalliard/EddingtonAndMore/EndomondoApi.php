@@ -225,6 +225,15 @@ class EndomondoApi implements trackerApiInterface
         }
         return false;
     }
+
+    /**
+     * @param boolean $splitOvernightRides
+     */
+    public function setSplitOvernightRides($splitOvernightRides)
+    {
+        $this->splitOvernightRides = $splitOvernightRides;
+    }
+
     private function getTZ($lat, $long, $timestamp)
     {
 

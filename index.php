@@ -30,6 +30,9 @@ $end_date = strtotime($_POST["end_date"]);
 if (array_key_exists("tz",$_POST)) {
     $preferences->setTimezone($_POST["tz"]);
 }
+if (array_key_exists("calculate_from_endo", $_POST)) {
+        $preferences->setSplitRides((array_key_exists("split_rides",$_POST)));
+}
 
 
 if (array_key_exists("clear_cookies", $_POST)) {
@@ -41,6 +44,9 @@ if (array_key_exists("clear_cookies", $_POST)) {
 $strava_api = new JoanMcGalliard\StravaApi($stravaClientId, $stravaClientSecret);
 $mcl_api = new JoanMcGalliard\MyCyclingLogApi();
 $endo_api = new JoanMcGalliard\EndomondoApi($deviceId,$googleApiKey,$preferences->getTimezone());
+
+$mcl_api->setUseFeetForElevation($preferences->getMclUseFeet());
+$endo_api->setSplitOvernightRides($preferences->getSplitRides());
 
 if (array_key_exists("login_mcl", $_POST)) {
     $mcl_username = $_POST['username'];
@@ -315,6 +321,7 @@ if ($strava_connected || $mcl_connected || $endo_connected) {
         $start_of_month=date("01-m-Y", time() );
         $start_of_year=date("01-01-Y", time() );
         $start_of_last_year="01-01-".(intval(date("Y", time())) -1);
+
         ?>
 
         Prepopulate:
@@ -344,7 +351,10 @@ if ($strava_connected || $mcl_connected || $endo_connected) {
                     echo '<td><input type="submit" name="calculate_from_mcl" value="Eddington Number from MyCyclingLog"></td>';
                 }
                 if ($endo_connected) {
-                    echo '<td><input type="submit" name="calculate_from_endo" value="Eddington Number from Endomondo"></td>';
+                    echo '<td>Split multiday rides?:
+            <input type="checkbox" value="split" '.($preferences->getSplitRides() ? "checked" : "").
+                        ' name="split_rides"/>';
+                    echo '<input type="submit" name="calculate_from_endo" value="Eddington Number from Endomondo"></td>';
                 }
                 echo "</tr><tr>";
                 if ($strava_connected && $mcl_connected) {

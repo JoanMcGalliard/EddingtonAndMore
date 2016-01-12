@@ -39,6 +39,7 @@ class Preferences
         $preferences->mcl = new stdClass();
         $preferences->endo = new stdClass();
         $preferences->strava = new stdClass();
+        $preferences->general = new stdClass();
         return $preferences;
     }
 
@@ -94,7 +95,19 @@ class Preferences
         $this->preferences->mcl->use_feet = $bool;
         $this->save();
     }
-
+    public function getMclUseFeet()
+    {
+        return $this->preferences->mcl->use_feet;
+    }
+    public function setSplitRides($bool)
+    {
+        $this->preferences->general->splitRides = $bool;
+        $this->save();
+    }
+    public function getSplitRides()
+    {
+        return $this->preferences->general->splitRides;
+    }
     public function getEndoAuth()
     {
         return $this->preferences->endo->auth;

@@ -1,4 +1,6 @@
 <?php
+
+define( "TWENTY_FOUR_HOURS", 60 * 60 * 24);
 set_include_path(get_include_path() . PATH_SEPARATOR . dirname(__FILE__) . DIRECTORY_SEPARATOR . "src" . PATH_SEPARATOR);
 
 require_once 'local.php';
@@ -181,7 +183,7 @@ if ($state == "calculate_from_strava" || $state == "calculate_from_mcl" || $stat
     }
     $days = sumActivities($activities);
     echo "<p>According to $source, for the period from $start_text to $end_text, "
-        . round(($end_date - $start_date) / (60 * 60 * 24))
+        . round(($end_date - $start_date) / TWENTY_FOUR_HOURS)
         . " elapsed days</p>";
     uasort($days, function ($a, $b) {
         if ($a == $b) return 0; else return ($a > $b) ? -1 : 1;
@@ -294,8 +296,7 @@ if ($strava_connected || $mcl_connected || $endo_connected) {
             <li><em>It might take a minute or two to come back with an answer</em></li>
         </ol>
 
-    <p>Note: , and . .  .
-    </p>
+
 
     <p>  You can set either or both dates, or leave them both blank your lifetime
             E-number. .<p>
@@ -309,8 +310,8 @@ if ($strava_connected || $mcl_connected || $endo_connected) {
         <?php
         date_default_timezone_set($preferences->getTimezone());
         $today=date("d-m-Y", time());
-        $yesterday=date("d-m-Y", time() - (60*60*24));
-        $seven_days_ago=date("d-m-Y", time() - (60*60*24*7));
+        $yesterday=date("d-m-Y", time() - (TWENTY_FOUR_HOURS));
+        $seven_days_ago=date("d-m-Y", time() - (TWENTY_FOUR_HOURS *7));
         $start_of_month=date("01-m-Y", time() );
         $start_of_year=date("01-01-Y", time() );
         $start_of_last_year="01-01-".(intval(date("Y", time())) -1);

@@ -51,13 +51,6 @@ $endo_api->setSplitOvernightRides($preferences->getSplitRides());
 if (array_key_exists("login_mcl", $_POST)) {
     $mcl_username = $_POST['username'];
     $mcl_password = $_POST['password'];
-    if (array_key_exists("elevation_units", $_POST) || $_POST['elevation_units'] == "feet") {
-        $preferences->setMclUseFeet(true);
-        $mcl_api->setUseFeetForElevation(true);
-    } else {
-        $preferences->setMclUseFeet(false);
-        $mcl_api->setUseFeetForElevation(false);
-    }
     $auth = base64_encode("$mcl_username:$mcl_password");
     $mcl_api->setAuth("$auth");
     if ($mcl_api->isConnected()) {
@@ -102,8 +95,16 @@ if ($strava_connected && array_key_exists("calculate_from_strava", $_POST)) {
     $state = "calculate_from_mcl";
 } else if ($endo_connected && array_key_exists("calculate_from_endo", $_POST)) {
     $state = "calculate_from_endo";
-} else if ($mcl_connected && $strava_connected && array_key_exists("MCL", $_POST)) {
+} else if ($mcl_connected && $strava_connected && array_key_exists("copy_strava_to_mcl", $_POST)) {
     $state = "copy_strava_to_mcl";
+    if (array_key_exists("elevation_units", $_POST) ) {
+        $preferences->setMclUseFeet(true);
+        $mcl_api->setUseFeetForElevation(true);
+    } else {
+        $preferences->setMclUseFeet(false);
+        $mcl_api->setUseFeetForElevation(false);
+    }
+
 }
 if (isset($_POST['commentSend'])) {
     mail("$owner", "eddington enquiry",
@@ -143,7 +144,6 @@ if (isset($_POST['commentSend'])) {
 
 
 
-    </html>
 
     <script src="http://code.jquery.com/jquery-1.9.1.js"></script>
     <script src="http://code.jquery.com/jquery-1.11.1.min.js"></script>
@@ -156,7 +156,7 @@ if (isset($_POST['commentSend'])) {
 <p style="color:blueviolet;"><em><?php echo $info_message ?></em></p>
 
 
-<p>On this page you can calculate your Eddington Number from your Strava or MyCyclingLog, or transfer rides from Strava
+<p>On this page you can calculate your Eddington Number from your Strava, Endomondo or MyCyclingLog accounts, or transfer rides from Strava
     to MyCyclingLog.
 <p>
 <hr>
@@ -299,7 +299,22 @@ if ($strava_connected || $mcl_connected || $endo_connected) {
             <li><em>Timezone set here will be used with Endomondo to determine the start of the new day</em></li>
             <li><em>You can set either or both dates, or leave them both
                 blank for your lifetime E-number.</em></li>
+            <li><em>By default, all the miles during a ride (even if it takes several days) count towards the total of the
+                first day.</em></li>
+
+            <li><em>If you are using Endomondo, you can choose to split it into multiple days, to get the
+                mileage for each day midnight-midnight.</em></li>
+            <li><em>Rides from Strava can't be split, as I can't get the GPS points from Strava. </em></li>
             <li><em>It might take a minute or two to come back with an answer</em></li>
+            <li><em>It's much slower if you split the rides.</em></li>
+            <li><em>MyCyclingLog doesn't stores elevation as a number without units.  By default, copy will leave the elevation
+                in metres, but if you check the box, it will multiply elevation by 3.2, converting it to feet.</em></li>
+            <li><em>It's a real pain to delete multiple rides from MyCyclingLog, so use copy with caution. If you want your
+                    bike information to be included you must make sure you have bikes with <strong>exactly</strong> matching
+                    make/model in both accounts. To test, select start and end dates close together, then check MyCyclingLog to see
+                    if you like the result. It should not make duplicates if the ride has already been copied using this page, or if
+                    there is another ride on the same day with 2% of the distance.</em></li>
+
         </ol>
 
 
@@ -324,7 +339,7 @@ if ($strava_connected || $mcl_connected || $endo_connected) {
 
         ?>
 
-        Prepopulate:
+        Fill in dates:
 
 
         <span class="roundbutton" onclick="populateDates('<?php echo $today ?>','')">today</span>
@@ -335,7 +350,7 @@ if ($strava_connected || $mcl_connected || $endo_connected) {
         <span class="roundbutton"   onclick="populateDates('<?php echo $start_of_last_year ?>','<?php echo $start_of_year ?>')">last year</span>
         <br>
         <br>
-        <table>
+        <table class="w3-table-all">
             <tr>
                 <td>Start Date <input type="text" name="start_date" id="datepicker_start"/></td>
                 <td> End Date <input type="text" name="end_date" id="datepicker_end"/></td>
@@ -345,31 +360,28 @@ if ($strava_connected || $mcl_connected || $endo_connected) {
             <tr>
                 <?php
                 if ($strava_connected) {
-                    echo '<td><input type="submit" name="calculate_from_strava" value="Eddington Number from Strava"></td>';
+                    echo '<tr><td colspan="3"><input type="submit" name="calculate_from_strava" value="Eddington Number from Strava"></td></tr>';
                 }
                 if ($mcl_connected) {
-                    echo '<td><input type="submit" name="calculate_from_mcl" value="Eddington Number from MyCyclingLog"></td>';
+
+                    echo '<tr><td colspan="3"><input type="submit" name="calculate_from_mcl" value="Eddington Number from MyCyclingLog"></td></tr>';
                 }
                 if ($endo_connected) {
-                    echo '<td>Split multiday rides?:
+                    echo '<tr><td colspan="3"><input type="submit" name="calculate_from_endo" value="Eddington Number from Endomondo"><br>';
+                    echo 'Split multiday rides?:
             <input type="checkbox" value="split" '.($preferences->getSplitRides() ? "checked" : "").
-                        ' name="split_rides"/>';
-                    echo '<input type="submit" name="calculate_from_endo" value="Eddington Number from Endomondo"></td>';
+                        ' name="split_rides"/></td></tr>';
                 }
-                echo "</tr><tr>";
                 if ($strava_connected && $mcl_connected) {
-                    echo '<td><input type="submit" name="MCL" value="Copy Rides from Strava to MyCyclingLog (see note below)"></td>';
+                    echo '<tr><td colspan="3"><input type="submit" name="copy_strava_to_mcl" value="Copy Rides from Strava to MyCyclingLog">  <br>';
+                    echo 'Save elevation as feet: <input type="checkbox" name="elevation_units" value="feet" ' .
+                        ($preferences->getMclUseFeet() ? "checked" : "") . "></td></tr>";
                 }
                 ?>
-                <td><input type="submit" name="clear_cookies" value="Delete Cookies"></td>
+            <tr><td colspan="3"><input type="submit" name="clear_cookies" value="Delete Cookies"></td></tr>
             </tr>
         </table>
     </form>
-    <p>Note on copy: It's a real pain to delete multiple rides from MyCyclingLog, so use with caution. If you want your
-        bike information to be included you must make sure you have bikes with <strong>exactly</strong> matching
-        make/model in both accounts. To test, select start and end dates close together, then check MyCyclingLog to see
-        if you like the result. It should not make duplicates if the ride has already been copied using this page, or if
-        there is another ride on the same day with 2% of the distance.</p>
     <script>
         $("#datepicker_start").datepicker({changeMonth: true, changeYear: true, dateFormat: 'dd-mm-yy'});
         $("#datepicker_end").datepicker({changeMonth: true, changeYear: true, dateFormat: 'dd-mm-yy'});
@@ -409,13 +421,7 @@ if (!$strava_connected || !$mcl_connected || !$endo_connected) {
                                 <td><input type="password" name="password">
                                 <td>
                             </tr>
-                            <tr>
-                                <td>Save elevation as feet:</td>
-                                <td><input type="checkbox" name="elevation_units" value="feet"
-                                        <?php echo($mcl_api->isUseFeetForElevation() ? "checked" : "") ?>
-                                    ><br>
-                                </td>
-                            </tr>
+
                             <tr class="w3-centered">
                                 <td colspan="2" class="w3-centered"><input type="image" src="images/mcl_logo.png"
                                                                            alt="Submit Form"/>

@@ -10,6 +10,8 @@ require_once 'src/Preferences.php';
 date_default_timezone_set("$timezone");
 
 
+
+
 $here = "http://$_SERVER[HTTP_HOST]$_SERVER[PHP_SELF]";
 $scope = null;
 $state = null;
@@ -18,10 +20,8 @@ const METRE_TO_KM = 0.001;
 $error_message = "";
 $last = null;
 
-$strava_api = new JoanMcGalliard\StravaApi($stravaClientId, $stravaClientSecret);
-$mcl_api = new JoanMcGalliard\MyCyclingLogApi();
-$endo_api = new JoanMcGalliard\EndomondoApi($deviceId);
 $preferences = new Preferences();
+
 
 $start_date = strtotime($_POST["start_date"]);
 $end_date = strtotime($_POST["end_date"]);
@@ -35,6 +35,11 @@ if (array_key_exists("clear_cookies", $_POST)) {
     unset($_GET["code"]);
     unset($_GET["state"]);
 }
+
+$strava_api = new JoanMcGalliard\StravaApi($stravaClientId, $stravaClientSecret);
+$mcl_api = new JoanMcGalliard\MyCyclingLogApi();
+$endo_api = new JoanMcGalliard\EndomondoApi($deviceId,$googleApiKey,$preferences->getTimezone());
+
 if (array_key_exists("login_mcl", $_POST)) {
     $mcl_username = $_POST['username'];
     $mcl_password = $_POST['password'];
@@ -104,7 +109,7 @@ if (isset($_POST['commentSend'])) {
 
 ?>
 <html>
-<>
+<head>
     <title>Eddington &amp; More</title>
     <link rel="stylesheet" href="css/w3.css">
     <link
@@ -122,6 +127,7 @@ if (isset($_POST['commentSend'])) {
                 -webkit-border-radius: 15px;
                 border: 2px solid #000000;
                 padding: 2px;
+                cursor: pointer;
             }
 
         </style>
@@ -275,11 +281,24 @@ if ($state == "calculate_from_strava" || $state == "calculate_from_mcl" || $stat
 if ($strava_connected || $mcl_connected || $endo_connected) {
     ?>
     <hr>
+        <p>Notes:</p>
+        <ol>
+            <li><em>date format is dd-mm-yyyy</em></li>
+            <li><em>the timezone is used to determine midnight for the date range</em></li>
+            <li><em>when using Strava,
+                each
+                ride's date is the local time saved by Strava</em></li>
+            <li><em>Timezone set here will be used with Endomondo to determine the start of the new day</em></li>
+            <li><em>You can set either or both dates, or leave them both
+                blank for your lifetime E-number.</em></li>
+            <li><em>It might take a minute or two to come back with an answer</em></li>
+        </ol>
 
-    <p><em>Note: date format it dd-mm-yyyy, and the timezone is used to determine midnight for the date range. Each
-            ride's date is the local time as recorded by strava. You can set either or both dates, or leave them both
-            blank for your lifetime E-number. You can set either or both dates, or leave them both blank your lifetime
-            E-number. It might take a minute or two to come back with an answer.</em><p>
+    <p>Note: , and . .  .
+    </p>
+
+    <p>  You can set either or both dates, or leave them both blank your lifetime
+            E-number. .<p>
     <form action="" method="post">
         <script> function populateDates(start,end) {
 
@@ -306,6 +325,8 @@ if ($strava_connected || $mcl_connected || $endo_connected) {
         <span class="roundbutton"  onclick="populateDates('<?php echo $start_of_month ?>','')">this month</span>
         <span class="roundbutton"   onclick="populateDates('<?php echo $start_of_year ?>','')">this year</span>
         <span class="roundbutton"   onclick="populateDates('<?php echo $start_of_last_year ?>','<?php echo $start_of_year ?>')">last year</span>
+        <br>
+        <br>
         <table>
             <tr>
                 <td>Start Date <input type="text" name="start_date" id="datepicker_start"/></td>

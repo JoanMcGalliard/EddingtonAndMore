@@ -15,7 +15,7 @@ class Points
 
     private $points;
     private $timezone;
-    private $distances;
+    private $splits;
     private $googleApiKey;
     private $previous=null;
 
@@ -57,7 +57,7 @@ class Points
             $this->day($time); //sets current day
         } else {
             $distance=$this->distance($this->previous->lat, $this->previous->long, $point->lat,$point->long);
-            $this->distances[$this->day($time)]+=$distance;
+            $this->splits[$this->day($time)]+=$distance;
             $this->previous=$point;
         }
     }
@@ -104,7 +104,7 @@ public function  gpx() {
     public function calculateDistance($first = 0, $last = -1)
     {
         $distance = 0;
-        foreach ($this->distances as $day => $day_distance) {
+        foreach ($this->splits as $day => $day_distance) {
             $distance+=$day_distance;
 
         }
@@ -118,6 +118,10 @@ public function  gpx() {
     public function distance($lat1, $long1, $lat2, $long2)
     {
 
+
+        if (!$lat1 || !$long1 || !$lat2 || !$long2) {
+            return 0;
+        }
         $DtoR = 0.017453293;
         $R = 6371000;      // Earth radius in metres
 
@@ -157,5 +161,10 @@ public function  gpx() {
         return $this->current_day;
 
 
+    }
+
+    public function getSplits()
+    {
+        return $this->splits;
     }
 }

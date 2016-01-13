@@ -18,6 +18,7 @@ class EndomondoApi implements trackerApiInterface
     private $lastTZRequestedFromGoogle=null;
     private $tz;
     private $splitOvernightRides=false;
+    private $userId;
 
     /**
      * @return null
@@ -57,10 +58,15 @@ class EndomondoApi implements trackerApiInterface
         if (!$this->auth) {
             $this->connected = false;
         } else if (!$this->connected) {
-            $page = $this->getPage('api/workouts', ['maxResults' => 0]);
-            $this->connected = is_array(json_decode($page)->data);
+            $page = $this->getPage('api/profile/account/get');
+            $this->connected = isset(json_decode($page)->data->id);
+            $this->userId=json_decode($page)->data->id;
         }
         return $this->connected;
+    }
+
+    public function activityUrl($workoutId) {
+        return "https://www.endomondo.com/users/$this->userId/workouts/$workoutId";
     }
 
     protected function getPageWithDot($url, $params) {
@@ -68,7 +74,7 @@ class EndomondoApi implements trackerApiInterface
         self::dot();
         return $return;
     }
-    protected function getPage($url, $params)
+    protected function getPage($url, $params=[])
     {
         if (!$this->auth) {
             return null;
@@ -150,7 +156,7 @@ class EndomondoApi implements trackerApiInterface
         $params = [];
         date_default_timezone_set("UTC");
 
-        $before = date("Y-m-d h:m:s e", $end_date);
+        $before = date("Y-m-d H:i:s e", $end_date);
         $done = false;
         $count = 0;
         while (!$done) {
@@ -164,7 +170,7 @@ class EndomondoApi implements trackerApiInterface
                 $count++;
                 $timestamp = strtotime($ride->start_time);
                 date_default_timezone_set("UTC");
-                $before = date("Y-m-d h:m:s e", $timestamp);
+                $before = date("Y-m-d H:i:s e", $timestamp);
                 if ($start_date > $timestamp) {
                     $done = true;
                     break;
@@ -177,10 +183,12 @@ class EndomondoApi implements trackerApiInterface
                 date_default_timezone_set($this->tz);
                 $date = date("Y-m-d", $timestamp);
                 $record['distance'] = $ride->distance / self::METRE_TO_KM;
-                $record['moving_time'] = $ride->duration;
+                $record['elapsed_time'] = $ride->duration;
                 $record['max_speed'] = $ride->speed_max / (60 * 60 * self::METRE_TO_KM);
                 $record['endo_id'] = $id;
                 $record['ascent'] = $ride->ascent;
+                $record['start_time'] = $ride->start_time;
+                $record['name'] = $ride->name;
                 if ($this->splitOvernightRides &&  $this->isOverNightRide($ride)) {
                     $points=$this->getPoints($record['endo_id']);
                     foreach ($points->getSplits() as $split_date => $split){
@@ -205,11 +213,12 @@ class EndomondoApi implements trackerApiInterface
     }
     public function getPoints($workoutId) {
         $url="api/workout/get";
-        $params=['fields' => 'points', 'workoutId' => $workoutId];
+        $params=['fields' => 'points,simple', 'workoutId' => $workoutId];
         $page = $this->getPageWithDot($url, $params);
-        $points=new Points($this->googleApiKey);
+        $json_decode = json_decode($page);
+        $points=new Points($json_decode->start_time,$this->googleApiKey);
         $ts=time();
-        foreach (json_decode($page)->points as $point) {
+        foreach ($json_decode->points as $point) {
             $points->add($point->lat,$point->lng,$point->time);
         }
         return $points;
@@ -237,7 +246,7 @@ class EndomondoApi implements trackerApiInterface
     private function getTZ($lat, $long, $timestamp)
     {
 
-        $points = (new Points($this->googleApiKey));
+        $points = (new Points(date("Y-m-d", $timestamp),$this->googleApiKey));
         if (!$this->lastTZRequestedFromGoogle ||
             $points->distance($this->lastTZRequestedFromGoogle->lat, $this->lastTZRequestedFromGoogle->long, $lat, $long) > 100000
         ) {

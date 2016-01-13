@@ -42,7 +42,43 @@ function dot() {
     echo ".";
     flush();
 }
-function isDuplicateRide($date, $distance, $strava_id, $mcl_rides)
+
+//returns true if endo id matches or a ride overlaps this ride.
+function isDuplicateStravaRide($endo_ride, $strava_rides)
+{
+
+    if (!$strava_rides) {
+        return false;
+    }
+    foreach ($strava_rides as $date => $ride_list) {
+
+        foreach ($ride_list as $strava_ride) {
+
+            if ($strava_ride['endo_id'] == $endo_ride['endo_id']) {
+                return $strava_ride['strava_id'];
+            }
+            $endo_start=strtotime($endo_ride['start_time']);
+            $endo_end=$endo_start+$endo_ride['elapsed_time'];
+            $strava_start=strtotime($strava_ride['start_time']);
+            $strava_end=$strava_start+$strava_ride['elapsed_time'];
+            if ($endo_start >= $strava_start && $endo_start <= $strava_end) {
+                return true;
+            }
+            if ($endo_end >= $strava_start && $endo_end <= $strava_end) {
+                return true;
+            }
+            if ($strava_start >= $endo_start && $strava_start <= $endo_end) {
+                return true;
+            }
+            if ($strava_end >= $endo_start && $strava_end <= $endo_end) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+function isDuplicateMCLRide($date, $distance, $strava_id, $mcl_rides)
 {
     if ($mcl_rides == null || !array_key_exists($date, $mcl_rides)) {
         return false;

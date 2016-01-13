@@ -7,19 +7,11 @@ use Iamstuartwilson;
 
 class StravaApi extends Iamstuartwilson\StravaApi implements trackerApiInterface
 {
+    const GPX_SUFFIX = "\.gpx";
     protected $connected = false;
     protected $bikes = [];
-    private function dot() {
-        echo ".";
-        flush();
-    }
-
-
-    private function getWithDot($request, $parameters = array()) {
-        $return=$this->get($request,$parameters);
-        self::dot();
-        return $return;
-    }
+    private $pending_uploads = [];
+    private $timeout = 30;
 
     public function setAccessTokenFromCode($code)
     {
@@ -33,6 +25,11 @@ class StravaApi extends Iamstuartwilson\StravaApi implements trackerApiInterface
     {
         $this->connected = true;
         parent::setAccessToken($token);
+    }
+
+    public function uploadUrl()
+    {
+        return "https://www.strava.com/upload/select";
     }
 
     public function isConnected()
@@ -98,6 +95,19 @@ class StravaApi extends Iamstuartwilson\StravaApi implements trackerApiInterface
         return $activities_list;
     }
 
+    private function getWithDot($request, $parameters = array())
+    {
+        $return = $this->get($request, $parameters);
+        self::dot();
+        return $return;
+    }
+
+    private function dot()
+    {
+        echo ".";
+        flush();
+    }
+
     private function newActivities(&$activities_list, $to_add)
     {
         foreach ($to_add as $activity) {
@@ -106,11 +116,21 @@ class StravaApi extends Iamstuartwilson\StravaApi implements trackerApiInterface
             $next['distance'] = floatval($activity->distance);
             $next['name'] = $activity->name;
             $next['strava_id'] = $activity->id;
+            $next['name'] = $activity->name;
+            $next['start_time'] = $activity->start_date;
             $next['bike'] = $activity->gear_id;
             $next['moving_time'] = $activity->moving_time;
+            $next['elapsed_time'] = $activity->elapsed_time;
             $next['total_elevation_gain'] = $activity->total_elevation_gain;
-            $date = date("Y-m-d", strtotime($activity->start_date_local));
             $next['max_speed'] = $activity->max_speed;
+
+            $pattern = "/^([0-9][0-9]*)" . self::GPX_SUFFIX . "/";
+            if (preg_match($pattern, $activity->external_id, $matches) > 0) {
+                $next['endo_id'] = intval($matches[1]);
+            } else {
+                $next['endo_id'] = null;
+            }
+            $date = date("Y-m-d", strtotime($activity->start_date_local));
             $activities_list[$date][] = $next;
         }
     }
@@ -125,6 +145,66 @@ class StravaApi extends Iamstuartwilson\StravaApi implements trackerApiInterface
         return $this->bikes[$id];
 
     }
+
+    public function uploadGpx($file_path, $external_id, $external_msg, $name, $description)
+    {
+        $params = ["activity_type" => "ride", "file" => "@" . $file_path,
+            "data_type" => "gpx", "external_id" => $external_id,
+            "name"=>$name, "description" => $description];
+        $result = $this->post("uploads", $params);
+        if ($result->error) {
+            return $result->error;
+        }
+        $queued = new \stdClass();
+        $queued->message = $external_msg;
+        $queued->external_id = $external_id;
+        $queued->file = $file_path;
+        $this->pending_uploads[$result->id] = $queued;
+
+    }
+
+    public function activityUrl($activityId) {
+        return "http://www.strava.com/activities/$activityId";
+    }
+
+
+    public function waitForPendingUploads()
+    {
+        $timestamp = time();
+        $results = [];
+
+        while ((time() - $timestamp < $this->timeout) && $this->pending_uploads) {
+            foreach ($this->pending_uploads as $pending_id => $queued) {
+                $response = $this->getWithDot("uploads/" . $pending_id);
+                if ($response->activity_id) {
+                    $queued->status = $response->status;
+                    $queued->strava_id = $response->activity_id;
+                    $results[$queued->external_id] = $queued;
+                    unset($this->pending_uploads[$pending_id]);
+                } else if ($response->error) {
+                    $queued->error = $response->error;
+                    $queued->status = $response->status;
+                    $results[$queued->external_id] = $queued;
+                    unset($this->pending_uploads[$pending_id]);
+                }
+            }
+            dot();
+            sleep(1);
+        }
+        foreach ($this->pending_uploads as $pending_id => $queued) {
+            $queued->error = "Timed out after $this->timeout seconds";
+            $queued->status = "Unknown status";
+            $results[$queued->external_id] = $queued;
+            unset($this->pending_uploads[$pending_id]);
+        }
+        return $results;
+    }
+//curl -X POST https://www.strava.com/api/v3/uploads    \
+//-H "Authorization: Bearer 93c020201fb0ec14d25396e494827109b9dc257d"     \
+//-F activity_type=ride     -F file=@test.gpx     -F data_type=gpx
+//
+//curl -G https://www.strava.com/api/v3/uploads/519081907
+//-H "Authorization: Bearer 93c020201fb0ec14d25396e494827109b9dc257d"
 
 
 }

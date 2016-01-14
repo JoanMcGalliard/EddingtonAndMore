@@ -45,6 +45,14 @@ class StravaApi extends Iamstuartwilson\StravaApi implements trackerApiInterface
         return $this->connected;
     }
 
+    /**
+     * @return null
+     */
+    public function getError()
+    {
+        return $this->error;
+    }
+
     public function getRides($start_date, $end_date)
     {
         $activities_per_page = 200;

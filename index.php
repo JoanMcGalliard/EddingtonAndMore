@@ -262,7 +262,7 @@ if ($state == "calculate_from_strava" || $state == "calculate_from_mcl" || $stat
             foreach ($ride_list as $ride) {
                 $distance = $ride['distance'];
                 $message = "Ride with id " . $ride['strava_id'] . " on $date, distance " . round($distance * METRE_TO_MILE, 1) . " miles/" . round($distance * METRE_TO_KM, 1) . " kms. ";
-                if (isDuplicateRide($date, $distance, $ride['strava_id'], $mcl_rides)) {
+                if (isDuplicateMCLRide($date, $distance, $ride['strava_id'], $mcl_rides)) {
                     $message = $message . "Duplicate, skipping. ";
                 } else {
                     $bike = $strava_api->getBike($ride["bike"]);

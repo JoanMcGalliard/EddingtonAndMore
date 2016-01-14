@@ -241,8 +241,7 @@ class EndomondoApi implements trackerApiInterface
         $page = $this->getPageWithDot($url, $params);
         $json_decode = json_decode($page);
         $points = new Points($json_decode->start_time, $this->googleApiKey);
-
-        if ($points) {
+        if (is_array($json_decode->points)) {
             foreach ($json_decode->points as $point) {
                 $points->add($point->lat, $point->lng, $point->time);
             }

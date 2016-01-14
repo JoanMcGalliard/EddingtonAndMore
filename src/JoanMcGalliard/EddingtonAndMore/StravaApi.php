@@ -150,7 +150,7 @@ class StravaApi extends Iamstuartwilson\StravaApi implements trackerApiInterface
     {
         $params = ["activity_type" => "ride", "file" => "@" . $file_path,
             "data_type" => "gpx", "external_id" => $external_id,
-            "name"=>$name, "description" => $description];
+            "name" => $name, "description" => $description];
         $result = $this->post("uploads", $params);
         if ($result->error) {
             return $result->error;
@@ -163,7 +163,8 @@ class StravaApi extends Iamstuartwilson\StravaApi implements trackerApiInterface
 
     }
 
-    public function activityUrl($activityId) {
+    public function activityUrl($activityId)
+    {
         return "http://www.strava.com/activities/$activityId";
     }
 
@@ -192,21 +193,18 @@ class StravaApi extends Iamstuartwilson\StravaApi implements trackerApiInterface
             sleep(1);
         }
         foreach ($this->pending_uploads as $pending_id => $queued) {
-            $queued->error = "Timed out after $this->fileUploadTimeout seconds";
+            $queued->error = "Timed out waiting for confirmation of upload after $this->fileUploadTimeout seconds";
             $queued->status = "Unknown status";
             $results[$queued->external_id] = $queued;
             unset($this->pending_uploads[$pending_id]);
         }
         return $results;
     }
-//curl -X POST https://www.strava.com/api/v3/uploads    \
-//-H "Authorization: Bearer 93c020201fb0ec14d25396e494827109b9dc257d"     \
-//-F activity_type=ride     -F file=@test.gpx     -F data_type=gpx
-//
-//curl -G https://www.strava.com/api/v3/uploads/519081907
-//-H "Authorization: Bearer 93c020201fb0ec14d25396e494827109b9dc257d"
-
 
 }
 
+
+/*todo handle this ...
+{"message":"Rate Limit Exceeded","errors":[{"resource":"Application","field":"rate limit","code":"exceeded"}]}
+*/
 ?>

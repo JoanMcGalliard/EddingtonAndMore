@@ -11,6 +11,7 @@ function sumActivities($activities)
     }
     return $days;
 }
+
 function next_goals($x)
 {
     $next = [];
@@ -26,6 +27,7 @@ function next_goals($x)
     $next[$x - $mod + 100] = 1;
     return array_keys($next);
 }
+
 function number_of_days_to_goal($goal, $days, $factor)
 {
     $num = $goal;
@@ -38,7 +40,9 @@ function number_of_days_to_goal($goal, $days, $factor)
         }
     }
 }
-function dot() {
+
+function dot()
+{
     echo ".";
     flush();
 }
@@ -57,10 +61,10 @@ function isDuplicateStravaRide($endo_ride, $strava_rides)
             if ($strava_ride['endo_id'] == $endo_ride['endo_id']) {
                 return $strava_ride['strava_id'];
             }
-            $endo_start=strtotime($endo_ride['start_time']);
-            $endo_end=$endo_start+$endo_ride['elapsed_time'];
-            $strava_start=strtotime($strava_ride['start_time']);
-            $strava_end=$strava_start+$strava_ride['elapsed_time'];
+            $endo_start = strtotime($endo_ride['start_time']);
+            $endo_end = $endo_start + $endo_ride['elapsed_time'];
+            $strava_start = strtotime($strava_ride['start_time']);
+            $strava_end = $strava_start + $strava_ride['elapsed_time'];
             if ($endo_start >= $strava_start && $endo_start <= $strava_end) {
                 return true;
             }
@@ -105,6 +109,7 @@ function isDuplicateMCLRide($date, $distance, $strava_id, $mcl_rides)
     }
     return false;
 }
+
 function calculateEddington($days, &$eddington_days, $factor)
 {
     uasort($days, function ($a, $b) {
@@ -124,6 +129,7 @@ function calculateEddington($days, &$eddington_days, $factor)
     }
     return $eddington;
 }
+
 function eddingtonHistory($days, $factor)
 {
     $eddingtonHistory = [];
@@ -144,6 +150,7 @@ function eddingtonHistory($days, $factor)
     }
     return $eddingtonHistory;
 }
+
 function buildChart($imperial_history, $metric_history)
 {
     $dates = array_unique(array_merge(array_keys($imperial_history), array_keys($metric_history)));

@@ -293,9 +293,8 @@ if ($state == "calculate_from_strava" || $state == "calculate_from_mcl" || $stat
     set_time_limit(300);
 
     $rides_to_add = $endo_api->getRides($start_date, $end_date);
-    $files_to_delete = [];
-
     $strava_rides = $strava_api->getRides($start_date, $end_date);
+
     foreach ($rides_to_add as $date => $ride_list) {
         foreach ($ride_list as $ride) {
             $distance = $ride['distance'];
@@ -324,19 +323,19 @@ if ($state == "calculate_from_strava" || $state == "calculate_from_mcl" || $stat
 
                     } else {
                         file_put_contents($path, $points->gpx());
-                        $files_to_delete[] = $path;
                         $error = $strava_api->uploadGpx($path, $ride['endo_id'], $message,
                             $ride['name'], $endo_api->activityUrl($ride['endo_id']));
                         if ($error) {
                             $message = $message . '<span style="color:red;">Failed: </span>' . $error;
                         } else {
                             $message = $message . 'Queued for upload.';
-
                         }
+                        unlink($path);
                     }
                 }
 
-            }            echo "<br>$message ";
+            }
+            echo "<br>$message ";
             flush();
 
         }
@@ -361,10 +360,6 @@ if ($state == "calculate_from_strava" || $state == "calculate_from_mcl" || $stat
 
     }
     echo "<br>$count rides added.<br>";
-    foreach ($files_to_delete as $file) {
-
-        unlink($file);
-    }
 }
 
 if ($strava_connected || $mcl_connected || $endo_connected) {
@@ -472,10 +467,14 @@ if ($strava_connected || $mcl_connected || $endo_connected) {
             <li><em>Rides from Strava can't be split, as I can't get the GPS points from Strava. </em></li>
             <li><em>It might take a minute or two to come back with an answer</em></li>
             <li><em>It's much slower if you split the rides.</em></li>
+            <li><em>Rides copied from endomondo are considered duplicates if there is already a ride on strava that overlaps it.
+                </em>
+            </li>
             <li><em>MyCyclingLog doesn't stores elevation as a number without units. By default, copy will leave the
                     elevation
                     in metres, but if you check the box, it will multiply elevation by 3.2, converting it to feet.</em>
             </li>
+
             <li><em>It's a real pain to delete multiple rides from MyCyclingLog, so use copy with caution. If you want
                     your
                     bike information to be included you must make sure you have bikes with <strong>exactly</strong>
@@ -606,6 +605,7 @@ function br()
 {
     echo "<br>";
 }
+
 ?>
 </body>
 </html>

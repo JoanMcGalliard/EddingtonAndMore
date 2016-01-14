@@ -15,7 +15,7 @@ class MyCyclingLogApi implements trackerApiInterface
     protected $connected = false;
     protected $bikes = null;
     protected $strava_bike_match = [];
-    protected $use_feet_for_elevation=false;
+    protected $use_feet_for_elevation = false;
 
     /**
      * @return boolean
@@ -34,84 +34,9 @@ class MyCyclingLogApi implements trackerApiInterface
     }
 
 
-
-
     public function setAuth($auth)
     {
         $this->auth = $auth;
-    }
-
-
-    protected function getPage($url)
-    {
-        $process = curl_init(self::BASE_URL . $url);
-        $headers = array('Authorization: Basic ' . $this->auth);
-        curl_setopt($process, CURLOPT_HTTPHEADER, $headers);
-        curl_setopt($process, CURLOPT_HEADER, 0);
-        curl_setopt($process, CURLOPT_TIMEOUT, 30);
-        curl_setopt($process, CURLOPT_RETURNTRANSFER, TRUE);
-        $page = curl_exec($process);
-        curl_close($process);
-        return $page;
-    }
-
-    protected function getPageDom($url)
-    {
-        $retries = 3;
-        for ($i = 0; $i < $retries; $i++) {
-            $xml = $this->getPage($url);
-            if ($xml) break;
-        }
-        if (!$xml) {
-            echo "There is a problem with MyCyclingLog.  Please try again";
-            exit();
-        }
-        if ($xml == "You are not authorized.") {
-            $this->auth = null;
-            return null;
-        }
-        $doc = new DOMDocument();
-        $doc->loadXML($xml);
-        $doc->formatOutput = true;
-        return $doc;
-    }
-
-    protected function postPage($url, $parameters)
-    {
-        $process = curl_init(self::BASE_URL . $url);
-        $headers = array('Authorization: Basic ' . $this->auth);
-        curl_setopt($process, CURLOPT_HTTPHEADER, $headers);
-        curl_setopt($process, CURLOPT_HEADER, 0);
-        curl_setopt($process, CURLOPT_TIMEOUT, 30);
-        curl_setopt($process, CURLOPT_POST, 1);
-        curl_setopt($process, CURLOPT_POSTFIELDS, http_build_query($parameters));
-        curl_setopt($process, CURLOPT_RETURNTRANSFER, TRUE);
-        $response = curl_exec($process);
-        curl_close($process);
-        return $response;
-    }
-
-    protected function getBikes()
-    {
-        $records = [];
-        $bikeCount = $this->getBikeCount();
-        $offset = 0;
-        $limit = 20;
-
-        while ($offset < $bikeCount) {
-            $doc = $this->getPageDom("?method=bike.list&limit=$limit&offset=$offset");
-            $bikes = $doc->childNodes->item(0)->childNodes->item(0)->childNodes;
-            foreach ($bikes as $bike) {
-                $record = [];
-                $id = $bike->getAttribute("id");
-                $record['brand'] = $bike->getElementsByTagName("make")->item(0)->nodeValue;
-                $record['model'] = $bike->getElementsByTagName("model")->item(0)->nodeValue;
-                $record['year'] = $bike->getElementsByTagName("year")->item(0)->nodeValue;
-                $records[$id] = $record;
-            }
-            $offset = $offset + $limit;
-        }
-        return $records;
     }
 
     public function getRides($start_date, $end_date)
@@ -165,17 +90,44 @@ class MyCyclingLogApi implements trackerApiInterface
         return $records;
     }
 
-
-    protected function getBikeCount()
-    {
-        $doc = $this->getPageDom("?method=bike.list&limit=0&offset=0");
-        return intval($doc->childNodes->item(0)->childNodes->item(0)->getAttribute("total_size"));
-    }
-
     protected function getEventCount()
     {
         $doc = $this->getPageDom("?method=ride.list&limit=0&offset=0");
         return intval($doc->childNodes->item(0)->childNodes->item(0)->getAttribute("total_size"));
+    }
+
+    protected function getPageDom($url)
+    {
+        $retries = 3;
+        for ($i = 0; $i < $retries; $i++) {
+            $xml = $this->getPage($url);
+            if ($xml) break;
+        }
+        if (!$xml) {
+            echo "There is a problem with MyCyclingLog.  Please try again";
+            exit();
+        }
+        if ($xml == "You are not authorized.") {
+            $this->auth = null;
+            return null;
+        }
+        $doc = new DOMDocument();
+        $doc->loadXML($xml);
+        $doc->formatOutput = true;
+        return $doc;
+    }
+
+    protected function getPage($url)
+    {
+        $process = curl_init(self::BASE_URL . $url);
+        $headers = array('Authorization: Basic ' . $this->auth);
+        curl_setopt($process, CURLOPT_HTTPHEADER, $headers);
+        curl_setopt($process, CURLOPT_HEADER, 0);
+        curl_setopt($process, CURLOPT_TIMEOUT, 30);
+        curl_setopt($process, CURLOPT_RETURNTRANSFER, TRUE);
+        $page = curl_exec($process);
+        curl_close($process);
+        return $page;
     }
 
     public function addRide($date, $ride)
@@ -200,14 +152,30 @@ class MyCyclingLogApi implements trackerApiInterface
         $parameters['tags'] = $ride[''];
         $parameters['bid'] = $ride['mcl_bid']; // bid. Optional. Bike ID as returned by New Bike API.
         return $this->postPage("?method=ride.new", $parameters);
-   }
+    }
+
+    protected function postPage($url, $parameters)
+    {
+        $process = curl_init(self::BASE_URL . $url);
+        $headers = array('Authorization: Basic ' . $this->auth);
+        curl_setopt($process, CURLOPT_HTTPHEADER, $headers);
+        curl_setopt($process, CURLOPT_HEADER, 0);
+        curl_setopt($process, CURLOPT_TIMEOUT, 30);
+        curl_setopt($process, CURLOPT_POST, 1);
+        curl_setopt($process, CURLOPT_POSTFIELDS, http_build_query($parameters));
+        curl_setopt($process, CURLOPT_RETURNTRANSFER, TRUE);
+        $response = curl_exec($process);
+        curl_close($process);
+        return $response;
+    }
 
     public function isConnected()
     {
         if ($this->auth != null) {
             $rides = $this->getPageDom("?method=ride.list&limit=0&offset=0");
             if ($rides != null && preg_match('/^[0-9][0-9]*$/',
-                $rides->childNodes->item(0)->childNodes->item(0)->getAttribute('total_size'))) {
+                    $rides->childNodes->item(0)->childNodes->item(0)->getAttribute('total_size'))
+            ) {
                 return true;
             }
         }
@@ -233,6 +201,34 @@ class MyCyclingLogApi implements trackerApiInterface
         return $this->strava_bike_match[$stravaId];
     }
 
+    protected function getBikes()
+    {
+        $records = [];
+        $bikeCount = $this->getBikeCount();
+        $offset = 0;
+        $limit = 20;
+
+        while ($offset < $bikeCount) {
+            $doc = $this->getPageDom("?method=bike.list&limit=$limit&offset=$offset");
+            $bikes = $doc->childNodes->item(0)->childNodes->item(0)->childNodes;
+            foreach ($bikes as $bike) {
+                $record = [];
+                $id = $bike->getAttribute("id");
+                $record['brand'] = $bike->getElementsByTagName("make")->item(0)->nodeValue;
+                $record['model'] = $bike->getElementsByTagName("model")->item(0)->nodeValue;
+                $record['year'] = $bike->getElementsByTagName("year")->item(0)->nodeValue;
+                $records[$id] = $record;
+            }
+            $offset = $offset + $limit;
+        }
+        return $records;
+    }
+
+    protected function getBikeCount()
+    {
+        $doc = $this->getPageDom("?method=bike.list&limit=0&offset=0");
+        return intval($doc->childNodes->item(0)->childNodes->item(0)->getAttribute("total_size"));
+    }
 
     protected function sd($x)
     {

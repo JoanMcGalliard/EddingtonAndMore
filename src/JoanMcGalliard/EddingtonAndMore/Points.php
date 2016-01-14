@@ -8,7 +8,7 @@
 
 namespace JoanMcGalliard;
 
-use stdClass, DateTime;
+use stdClass;
 
 class Points
 {
@@ -24,13 +24,13 @@ class Points
 
     private $current_day;
     private $gpx;
-    private $bad_points=0;
-    private $good_points=0;
+    private $bad_points = 0;
+    private $good_points = 0;
 
     /**
      * Points constructor.
      */
-    public function __construct($start_day,$googleApiKey)
+    public function __construct($start_day, $googleApiKey)
     {
         $this->points = [];
         $this->day($start_day);
@@ -38,6 +38,17 @@ class Points
         $this->gpx = '<?xml version="1.0" encoding="UTF-8"?> <gpx creator="Eddington &amp; More" >';
         $this->gpx .= "<trk><trkseg>";
         $this->gpx .= "\n";
+    }
+
+    private function day($timestring)
+    {
+        if ($timestring) {
+            $default_timezone = date_default_timezone_get();
+            date_default_timezone_set($this->timezone);
+            $this->current_day = date("Y-m-d", strtotime($timestring));
+            date_default_timezone_set($default_timezone);
+        }
+        return $this->current_day;
     }
 
     public function add($lat, $long, $time)
@@ -64,6 +75,24 @@ class Points
         }
     }
 
+    public function addPointToGPX($lat, $long, $timestr)
+    {
+        $default_tz = date_default_timezone_get();
+        date_default_timezone_set("UTC");
+        if (!$timestr) {
+            $this->bad_points++;
+        } else {
+            $this->good_points++;
+            $time = date("Y-m-d\TH:i:s", strtotime($timestr)) . "Z";
+
+
+            $this->gpx .= "<trkpt lat=\"$lat\" lon=\"$long\"><time>$time</time></trkpt>";
+            $this->gpx .= "\n";
+            date_default_timezone_set($default_tz);
+        }
+
+    }
+
     public function timezoneFromCoords($lat, $long, $time)
     {
         $params = ['location' => "$lat,$long",
@@ -86,34 +115,6 @@ class Points
         return $tz;
     }
 
-    public function addPointToGPX($lat, $long, $timestr)
-    {
-        $default_tz = date_default_timezone_get();
-        date_default_timezone_set("UTC");
-        if (!$timestr) {
-            $this->bad_points++;
-        } else {
-            $this->good_points++;
-            $time = date("Y-m-d\TH:i:s", strtotime($timestr)) . "Z";
-
-
-            $this->gpx .= "<trkpt lat=\"$lat\" lon=\"$long\"><time>$time</time></trkpt>";
-            $this->gpx .= "\n";
-            date_default_timezone_set($default_tz);
-        }
-
-    }
-
-    private function day($timestring)
-    {
-        if ($timestring) {
-            $default_timezone = date_default_timezone_get();
-            date_default_timezone_set($this->timezone);
-            $this->current_day = date("Y-m-d", strtotime($timestring));
-            date_default_timezone_set($default_timezone);
-        }
-        return $this->current_day;
-    }
     public function distance($lat1, $long1, $lat2, $long2)
     {
 
@@ -147,14 +148,16 @@ class Points
      * http://stackoverflow.com/questions/569980/how-to-calculate-distance-from-a-gpx-file
      */
 
-    public function gpxBad() {
+    public function gpxBad()
+    {
         if (!$this->good_points) {
             return "There are no valid points to map.";
         }
-        if ($this->bad_points && ($this->good_points < ($this->bad_points/2 )) ) {
-            return "More than a third ($this->bad_points of ".($this->bad_points+$this->good_points).") of the points provided are missing time details.";
+        if ($this->bad_points && ($this->good_points < ($this->bad_points / 2))) {
+            return "More than a third ($this->bad_points of " . ($this->bad_points + $this->good_points) . ") of the points provided are missing time details.";
         }
     }
+
     public function gpx()
     {
         return $this->gpx . "</trkseg> </trk> </gpx>";

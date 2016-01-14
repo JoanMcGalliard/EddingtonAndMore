@@ -14,7 +14,6 @@ date_default_timezone_set("$timezone");
 
 
 $here = "http://$_SERVER[HTTP_HOST]$_SERVER[PHP_SELF]";
-$scope = "write,view_private"; //TODO
 $state = null;
 const METRE_TO_MILE = 0.00062137119224;
 const METRE_TO_KM = 0.001;
@@ -71,11 +70,12 @@ if (array_key_exists("login_endo", $_POST)) {
 } else if ($preferences->getEndoAuth() != null) {
     $endo_api->setAuth($preferences->getEndoAuth());
 }
-if (array_key_exists("state", $_GET) && ($_GET["state"] == "connecting")) {
+if (array_key_exists("state", $_GET)) {
     if (!array_key_exists("error", $_GET) && array_key_exists("code", $_GET)) {
         $code = $_GET["code"];
         $token = $strava_api->setAccessTokenFromCode($code);
         if ($strava_api->isConnected()) {
+            $strava_api->setWriteScope(($_GET["state"] == "write"));
             $preferences->setStravaAccessToken($token);
         }
     } else {
@@ -429,8 +429,8 @@ if ($strava_connected || $mcl_connected || $endo_connected) {
                     echo 'Save elevation as feet: <input type="checkbox" name="elevation_units" value="feet" ' .
                         ($preferences->getMclUseFeet() ? "checked" : "") . "></td></tr>";
                 }
-                if ($strava_connected && $endo_connected) {
-                    echo '<tr><td colspan="3"><input type="submit" name="copy_endo_to_strava" value="Copy Rides and routes from Endomondo to Strava">  <br>';
+                if ($strava_connected && $endo_connected && $strava_api->writeScope()) {
+                    echo '<tr><td colspan="3"><input type="submit" name="copy_endo_to_strava" value="Copy rides and routes from Endomondo to Strava">  <br>';
                     echo "</td></tr>";
                 }
                 ?>
@@ -471,7 +471,8 @@ if ($strava_connected || $mcl_connected || $endo_connected) {
             <li><em>Rides from Strava can't be split, as I can't get the GPS points from Strava. </em></li>
             <li><em>It might take a minute or two to come back with an answer</em></li>
             <li><em>It's much slower if you split the rides.</em></li>
-            <li><em>Rides copied from endomondo are considered duplicates if there is already a ride on strava that overlaps it.
+            <li><em>Rides copied from endomondo are considered duplicates if there is already a ride on strava that
+                    overlaps it.
                 </em>
             </li>
             <li><em>MyCyclingLog doesn't stores elevation as a number without units. By default, copy will leave the
@@ -500,7 +501,7 @@ if ($strava_connected || $mcl_connected || $endo_connected) {
     </div>
     <?php
 }
-if (!$strava_connected || !$mcl_connected || !$endo_connected) {
+if (!$strava_connected || !$mcl_connected || !$endo_connected || !$strava_api->writeScope() ) {
     ?>
     <hr>
     <h3>Connect to services</h3>
@@ -510,10 +511,17 @@ if (!$strava_connected || !$mcl_connected || !$endo_connected) {
             and there is a button to delete the cookies when you are done. </em></p>
     <table>
         <tr>
-            <?php if (!$strava_connected) {
+            <?php if (!$strava_connected || !$strava_api->writeScope()  ) {
                 echo "<td>";
+                if (!$strava_connected) {
+                    echo "Read acccess:<br>";
+                    echo '<a href="' .
+                        $strava_api->authenticationUrl($here, $approvalPrompt = 'auto', null, "read_only") .
+                        '"> <img src="images/ConnectWithStrava@2x.png"></a><br><br>';
+                }
+                echo "Read/write acccess (only click this if you want to upload rides to Strava): <br>";
                 echo '<a href="' .
-                    $strava_api->authenticationUrl($here, $approvalPrompt = 'auto', $scope, "connecting") .
+                    $strava_api->authenticationUrl($here, $approvalPrompt = 'auto', "write", "write") .
                     '"> <img src="images/ConnectWithStrava@2x.png"></a>';
                 echo "</td>";
             }

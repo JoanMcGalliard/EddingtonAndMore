@@ -13,6 +13,23 @@ class StravaApi extends Iamstuartwilson\StravaApi implements trackerApiInterface
     private $pending_uploads = [];
     private $fileUploadTimeout = 300;
     private $error=null;
+    private $writeScope=false;
+
+    /**
+     * @return string
+     */
+    public function writeScope()
+    {
+        return $this->writeScope;
+    }
+
+    /**
+     * @param string $scope
+     */
+    public function setWriteScope($scope)
+    {
+        $this->writeScope = $scope;
+    }
 
     public function setAccessTokenFromCode($code)
     {

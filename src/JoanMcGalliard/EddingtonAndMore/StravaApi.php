@@ -11,7 +11,7 @@ class StravaApi extends Iamstuartwilson\StravaApi implements trackerApiInterface
     protected $connected = false;
     protected $bikes = [];
     private $pending_uploads = [];
-    private $timeout = 30;
+    private $fileUploadTimeout = 300;
 
     public function setAccessTokenFromCode($code)
     {
@@ -173,7 +173,7 @@ class StravaApi extends Iamstuartwilson\StravaApi implements trackerApiInterface
         $timestamp = time();
         $results = [];
 
-        while ((time() - $timestamp < $this->timeout) && $this->pending_uploads) {
+        while ((time() - $timestamp < $this->fileUploadTimeout) && $this->pending_uploads) {
             foreach ($this->pending_uploads as $pending_id => $queued) {
                 $response = $this->getWithDot("uploads/" . $pending_id);
                 if ($response->activity_id) {
@@ -192,7 +192,7 @@ class StravaApi extends Iamstuartwilson\StravaApi implements trackerApiInterface
             sleep(1);
         }
         foreach ($this->pending_uploads as $pending_id => $queued) {
-            $queued->error = "Timed out after $this->timeout seconds";
+            $queued->error = "Timed out after $this->fileUploadTimeout seconds";
             $queued->status = "Unknown status";
             $results[$queued->external_id] = $queued;
             unset($this->pending_uploads[$pending_id]);

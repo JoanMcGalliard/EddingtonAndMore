@@ -1,6 +1,6 @@
 <?php
 
-define( "TWENTY_FOUR_HOURS", 60 * 60 * 24);
+define("TWENTY_FOUR_HOURS", 60 * 60 * 24);
 set_include_path(get_include_path() . PATH_SEPARATOR . dirname(__FILE__) . DIRECTORY_SEPARATOR . "src" . PATH_SEPARATOR);
 
 require_once 'local.php';
@@ -13,10 +13,8 @@ require_once 'src/Preferences.php';
 date_default_timezone_set("$timezone");
 
 
-
-
 $here = "http://$_SERVER[HTTP_HOST]$_SERVER[PHP_SELF]";
-$scope = "write"; //TODO
+$scope = "write,view_private"; //TODO
 $state = null;
 const METRE_TO_MILE = 0.00062137119224;
 const METRE_TO_KM = 0.001;
@@ -27,11 +25,11 @@ $preferences = new Preferences();
 
 $start_date = strtotime($_POST["start_date"]);
 $end_date = strtotime($_POST["end_date"]);
-if (array_key_exists("tz",$_POST)) {
+if (array_key_exists("tz", $_POST)) {
     $preferences->setTimezone($_POST["tz"]);
 }
 if (array_key_exists("calculate_from_endo", $_POST)) {
-        $preferences->setSplitRides((array_key_exists("split_rides",$_POST)));
+    $preferences->setSplitRides((array_key_exists("split_rides", $_POST)));
 }
 
 
@@ -43,7 +41,7 @@ if (array_key_exists("clear_cookies", $_POST)) {
 
 $strava_api = new JoanMcGalliard\StravaApi($stravaClientId, $stravaClientSecret);
 $mcl_api = new JoanMcGalliard\MyCyclingLogApi();
-$endo_api = new JoanMcGalliard\EndomondoApi($deviceId,$googleApiKey,$preferences->getTimezone());
+$endo_api = new JoanMcGalliard\EndomondoApi($deviceId, $googleApiKey, $preferences->getTimezone());
 
 $mcl_api->setUseFeetForElevation($preferences->getMclUseFeet());
 $endo_api->setSplitOvernightRides($preferences->getSplitRides());
@@ -100,7 +98,7 @@ if ($strava_connected && array_key_exists("calculate_from_strava", $_POST)) {
     $state = "calculate_from_endo";
 } else if ($mcl_connected && $strava_connected && array_key_exists("copy_strava_to_mcl", $_POST)) {
     $state = "copy_strava_to_mcl";
-    if (array_key_exists("elevation_units", $_POST) ) {
+    if (array_key_exists("elevation_units", $_POST)) {
         $preferences->setMclUseFeet(true);
         $mcl_api->setUseFeetForElevation(true);
     } else {
@@ -108,8 +106,7 @@ if ($strava_connected && array_key_exists("calculate_from_strava", $_POST)) {
         $mcl_api->setUseFeetForElevation(false);
     }
 
-}
-else if ($endo_connected && $strava_connected && array_key_exists("copy_endo_to_strava", $_POST)) {
+} else if ($endo_connected && $strava_connected && array_key_exists("copy_endo_to_strava", $_POST)) {
     $state = "copy_endo_to_strava";
 }
 if (isset($_POST['commentSend'])) {
@@ -134,21 +131,18 @@ if (isset($_POST['commentSend'])) {
     <link rel="stylesheet" href="http://code.jquery.com/ui/1.10.3/themes/smoothness/jquery-ui.css"/>
 
     <style>
-            .roundbutton {
-                width: 67px;
-                height: 40px;
-                background-color: #FFFFFF;
-                moz-border-radius: 15px;
-                -webkit-border-radius: 15px;
-                border: 2px solid #000000;
-                padding: 2px;
-                cursor: pointer;
-            }
+        .roundbutton {
+            width: 67px;
+            height: 40px;
+            background-color: #FFFFFF;
+            moz-border-radius: 15px;
+            -webkit-border-radius: 15px;
+            border: 2px solid #000000;
+            padding: 2px;
+            cursor: pointer;
+        }
 
-        </style>
-
-
-
+    </style>
 
 
     <script src="http://code.jquery.com/jquery-1.9.1.js"></script>
@@ -162,7 +156,8 @@ if (isset($_POST['commentSend'])) {
 <p style="color:blueviolet;"><em><?php echo $info_message ?></em></p>
 
 
-<p>On this page you can calculate your Eddington Number from your Strava, Endomondo or MyCyclingLog accounts, or transfer rides from Strava
+<p>On this page you can calculate your Eddington Number from your Strava, Endomondo or MyCyclingLog accounts, or
+    transfer rides from Strava
     to MyCyclingLog.
 <p>
 <hr>
@@ -170,6 +165,7 @@ if (isset($_POST['commentSend'])) {
     cycled 35 miles or more on 35 days, that's your E-number.</p>
 <?php
 if ($state == "calculate_from_strava" || $state == "calculate_from_mcl" || $state == "calculate_from_endo") {
+    set_time_limit(300);
     echo "<H3>Calculating....</H3>";
     date_default_timezone_set($preferences->getTimezone());
     $start_text = "the beginning";
@@ -249,10 +245,9 @@ if ($state == "calculate_from_strava" || $state == "calculate_from_mcl" || $stat
     echo buildChart($imperial_history, $metric_history);
 
 
-
-
 } else if ($state == "copy_strava_to_mcl") {
     echo "<H3>Copying data from Strava to MyCyclingLog...</H3>";
+    set_time_limit(300);
 
     $rides_to_add = $strava_api->getRides($start_date, $end_date);
     $count = 0;
@@ -295,63 +290,69 @@ if ($state == "calculate_from_strava" || $state == "calculate_from_mcl" || $stat
     }
 } else if ($state == "copy_endo_to_strava") {
     echo "<H3>Copying rides from Endomondo to Strava...</H3>";
+    set_time_limit(300);
+
     $rides_to_add = $endo_api->getRides($start_date, $end_date);
-    $files_to_delete=[];
+    $files_to_delete = [];
 
     $strava_rides = $strava_api->getRides($start_date, $end_date);
     foreach ($rides_to_add as $date => $ride_list) {
         foreach ($ride_list as $ride) {
             $distance = $ride['distance'];
             $start_time = $ride['start_time'];
-            $message = 'Ride with id <a target="_blank" href="'. $endo_api->activityUrl($ride['endo_id']).'">' . $ride['endo_id'].'</a>' . " on $start_time, distance " . round($distance * METRE_TO_MILE, 1) . " miles/" . round($distance * METRE_TO_KM, 1) . " kms. ";
-            $duplicateStravaRide = isDuplicateStravaRide($ride, $strava_rides);
-            if ($duplicateStravaRide) {
-                if (is_int($duplicateStravaRide)) {
-                    $message .= 'Duplicate with  <a target="_blank" href="'.$strava_api->activityUrl($duplicateStravaRide).
-                        '">'.$duplicateStravaRide.'</a>, skipping. ';
-                } else {
-                    $message .= "Duplicate, skipping. ";
-                }
+            $message = 'Ride with id <a target="_blank" href="' . $endo_api->activityUrl($ride['endo_id']) . '">' . $ride['endo_id'] . '</a>' . " on $start_time, distance " . round($distance * METRE_TO_MILE, 1) . " miles/" . round($distance * METRE_TO_KM, 1) . " kms. ";
+            if (!$distance || $distance < 500) {
+                $message .= "Skipping, too short: $distance metres";
             } else {
-                $path = $scratch_directory . DIRECTORY_SEPARATOR . "endomondo+" . $ride['endo_id'] . ".gpx";
-                $points = $endo_api->getPoints($ride['endo_id']);
-                if ($points->gpxBad()) {
-                    $message .= '<span style="color:red;">'.$points->gpxBad().'</span>';
-                    $message .= 'To add manually, try going downloading GPX from  <a href="'
-                        .$endo_api->activityUrl($ride['endo_id']).'" target="_blank">Endomondo</a>'
-                        .' then uploading it to <a href="'.$strava_api->uploadUrl().'" target="_blank">Strava</a>.';
+                $duplicateStravaRide = isDuplicateStravaRide($ride, $strava_rides);
 
-                } else {
-                    file_put_contents($path, $points->gpx());
-                    $files_to_delete[] = $path;
-                    $error = $strava_api->uploadGpx($path, $ride['endo_id'], $message,
-                        $ride['name'], $endo_api->activityUrl($ride['endo_id']));
-                    if ($error) {
-                        $message = $message . '<span style="color:red;">Failed: </span>' . $error;
+                if ($duplicateStravaRide) {
+                    if (is_int($duplicateStravaRide)) {
+                        $message .= 'Duplicate with  <a target="_blank" href="' . $strava_api->activityUrl($duplicateStravaRide) .
+                            '">' . $duplicateStravaRide . '</a>, skipping. ';
                     } else {
-                        $message = $message . 'Queued for upload.';
+                        $message .= "Duplicate, skipping. ";
+                    }
+                } else {
+                    $path = $scratch_directory . DIRECTORY_SEPARATOR . "endomondo+" . $ride['endo_id'] . ".gpx";
+                    $points = $endo_api->getPoints($ride['endo_id']);
+                    if ($points->gpxBad()) {
+                        $message .= '<span style="color:red;">' . $points->gpxBad() . '</span>';
+                        $message .= 'To add manually, try going downloading GPX from  <a href="'
+                            . $endo_api->activityUrl($ride['endo_id']) . '" target="_blank">Endomondo</a>'
+                            . ' then uploading it to <a href="' . $strava_api->uploadUrl() . '" target="_blank">Strava</a>.';
 
+                    } else {
+                        file_put_contents($path, $points->gpx());
+                        $files_to_delete[] = $path;
+                        $error = $strava_api->uploadGpx($path, $ride['endo_id'], $message,
+                            $ride['name'], $endo_api->activityUrl($ride['endo_id']));
+                        if ($error) {
+                            $message = $message . '<span style="color:red;">Failed: </span>' . $error;
+                        } else {
+                            $message = $message . 'Queued for upload.';
+
+                        }
                     }
                 }
-            }
-            echo "<br>$message ";
+
+            }            echo "<br>$message ";
             flush();
 
         }
 
 
-
     }
-    $results=$strava_api->waitForPendingUploads();
+    $results = $strava_api->waitForPendingUploads();
     $count = 0;
 
     foreach ($results as $endo_id => $result) {
         if (isset($result->strava_id)) {
-            $message=$result->message. ' Uploaded successfully, id: <a target="_blank" href="'.$strava_api->activityUrl($result->strava_id).
-                '">'.$result->strava_id.'</a>.';
+            $message = $result->message . ' Uploaded successfully, id: <a target="_blank" href="' . $strava_api->activityUrl($result->strava_id) .
+                '">' . $result->strava_id . '</a>.';
             $count++;
         } else {
-            $message=$result->message.'<span style="color:red;"> There was a problem. </span>' . $result->error;
+            $message = $result->message . '<span style="color:red;"> There was a problem. </span>' . $result->error;
 
         }
         echo "<br>$message";
@@ -372,20 +373,20 @@ if ($strava_connected || $mcl_connected || $endo_connected) {
     <form action="" method="post">
         <hr>
 
-        <script> function populateDates(start,end) {
+        <script> function populateDates(start, end) {
 
-                document.getElementById("datepicker_start").value=start;
-                document.getElementById("datepicker_end").value=end;
+                document.getElementById("datepicker_start").value = start;
+                document.getElementById("datepicker_end").value = end;
             }
         </script>
         <?php
         date_default_timezone_set($preferences->getTimezone());
-        $today=date("d-m-Y", time());
-        $yesterday=date("d-m-Y", time() - (TWENTY_FOUR_HOURS));
-        $seven_days_ago=date("d-m-Y", time() - (TWENTY_FOUR_HOURS *7));
-        $start_of_month=date("01-m-Y", time() );
-        $start_of_year=date("01-01-Y", time() );
-        $start_of_last_year="01-01-".(intval(date("Y", time())) -1);
+        $today = date("d-m-Y", time());
+        $yesterday = date("d-m-Y", time() - (TWENTY_FOUR_HOURS));
+        $seven_days_ago = date("d-m-Y", time() - (TWENTY_FOUR_HOURS * 7));
+        $start_of_month = date("01-m-Y", time());
+        $start_of_year = date("01-01-Y", time());
+        $start_of_last_year = "01-01-" . (intval(date("Y", time())) - 1);
 
         ?>
 
@@ -393,19 +394,20 @@ if ($strava_connected || $mcl_connected || $endo_connected) {
 
 
         <span class="roundbutton" onclick="populateDates('<?php echo $today ?>','')">today</span>
-        <span class="roundbutton"   onclick="populateDates('<?php echo $yesterday ?>','')">since yesterday</span>
-        <span class="roundbutton"   onclick="populateDates('<?php echo $seven_days_ago ?>','')">last 7 days</span>
-        <span class="roundbutton"  onclick="populateDates('<?php echo $start_of_month ?>','')">this month</span>
-        <span class="roundbutton"   onclick="populateDates('<?php echo $start_of_year ?>','')">this year</span>
-        <span class="roundbutton"   onclick="populateDates('<?php echo $start_of_last_year ?>','<?php echo $start_of_year ?>')">last year</span>
-        <span class="roundbutton"   onclick="populateDates('','')">reset</span>
+        <span class="roundbutton" onclick="populateDates('<?php echo $yesterday ?>','')">since yesterday</span>
+        <span class="roundbutton" onclick="populateDates('<?php echo $seven_days_ago ?>','')">last 7 days</span>
+        <span class="roundbutton" onclick="populateDates('<?php echo $start_of_month ?>','')">this month</span>
+        <span class="roundbutton" onclick="populateDates('<?php echo $start_of_year ?>','')">this year</span>
+        <span class="roundbutton"
+              onclick="populateDates('<?php echo $start_of_last_year ?>','<?php echo $start_of_year ?>')">last year</span>
+        <span class="roundbutton" onclick="populateDates('','')">reset</span>
         <br>
         <br>
         <table class="w3-table-all">
             <tr>
                 <td>Start Date <input type="text" name="start_date" id="datepicker_start"/></td>
                 <td> End Date <input type="text" name="end_date" id="datepicker_end"/></td>
-                <td><select name="tz" value="<?php echo $preferences->getTimezone();?>" id="tz"> </select></td>
+                <td><select name="tz" value="<?php echo $preferences->getTimezone(); ?>" id="tz"> </select></td>
             </tr>
             <tr> </td></tr>
             <tr>
@@ -420,7 +422,7 @@ if ($strava_connected || $mcl_connected || $endo_connected) {
                 if ($endo_connected) {
                     echo '<tr><td colspan="3"><input type="submit" name="calculate_from_endo" value="Eddington Number from Endomondo"><br>';
                     echo 'Split multiday rides?:
-            <input type="checkbox" value="split" '.($preferences->getSplitRides() ? "checked" : "").
+            <input type="checkbox" value="split" ' . ($preferences->getSplitRides() ? "checked" : "") .
                         ' name="split_rides"/></td></tr>';
                 }
                 if ($strava_connected && $mcl_connected) {
@@ -433,7 +435,9 @@ if ($strava_connected || $mcl_connected || $endo_connected) {
                     echo "</td></tr>";
                 }
                 ?>
-            <tr><td colspan="3"><input type="submit" name="clear_cookies" value="Delete Cookies"></td></tr>
+            <tr>
+                <td colspan="3"><input type="submit" name="clear_cookies" value="Delete Cookies"></td>
+            </tr>
             </tr>
         </table>
         <script>
@@ -459,7 +463,8 @@ if ($strava_connected || $mcl_connected || $endo_connected) {
             <li><em>Timezone set here will be used with Endomondo to determine the start of the new day</em></li>
             <li><em>You can set either or both dates, or leave them both
                     blank for your lifetime E-number.</em></li>
-            <li><em>By default, all the miles during a ride (even if it takes several days) count towards the total of the
+            <li><em>By default, all the miles during a ride (even if it takes several days) count towards the total of
+                    the
                     first day.</em></li>
 
             <li><em>If you are using Endomondo, you can choose to split it into multiple days, to get the
@@ -467,15 +472,23 @@ if ($strava_connected || $mcl_connected || $endo_connected) {
             <li><em>Rides from Strava can't be split, as I can't get the GPS points from Strava. </em></li>
             <li><em>It might take a minute or two to come back with an answer</em></li>
             <li><em>It's much slower if you split the rides.</em></li>
-            <li><em>MyCyclingLog doesn't stores elevation as a number without units.  By default, copy will leave the elevation
-                    in metres, but if you check the box, it will multiply elevation by 3.2, converting it to feet.</em></li>
-            <li><em>It's a real pain to delete multiple rides from MyCyclingLog, so use copy with caution. If you want your
-                    bike information to be included you must make sure you have bikes with <strong>exactly</strong> matching
-                    make/model in both accounts. To test, select start and end dates close together, then check MyCyclingLog to see
-                    if you like the result. It should not make duplicates if the ride has already been copied using this page, or if
+            <li><em>MyCyclingLog doesn't stores elevation as a number without units. By default, copy will leave the
+                    elevation
+                    in metres, but if you check the box, it will multiply elevation by 3.2, converting it to feet.</em>
+            </li>
+            <li><em>It's a real pain to delete multiple rides from MyCyclingLog, so use copy with caution. If you want
+                    your
+                    bike information to be included you must make sure you have bikes with <strong>exactly</strong>
+                    matching
+                    make/model in both accounts. To test, select start and end dates close together, then check
+                    MyCyclingLog to see
+                    if you like the result. It should not make duplicates if the ride has already been copied using this
+                    page, or if
                     there is another ride on the same day with 2% of the distance.</em></li>
-            <li><em>This is open source, you can download the source from <a href="http://github.com/JoanMcGalliard/EddingtonAndMore">
-                        http://github.com/JoanMcGalliard/EddingtonAndMore</a>.  This is revision <?php echo $eddingtonAndMoreVersion ?>.
+            <li><em>This is open source, you can download the source from <a
+                        href="http://github.com/JoanMcGalliard/EddingtonAndMore">
+                        http://github.com/JoanMcGalliard/EddingtonAndMore</a>. This is
+                    revision <?php echo $eddingtonAndMoreVersion ?>.
                     </a></em></li>
 
         </ol>
@@ -558,30 +571,27 @@ if (!$strava_connected || !$mcl_connected || !$endo_connected) {
 ?>
 
 <hr>
-<p>Bug reports, feature requests, thanks?  Please use this form.  <em>Note this will only stay here until the spam bots find it.</em></p>
+<p>Bug reports, feature requests, thanks? Please use this form. <em>Note this will only stay here until the spam bots
+        find it.</em></p>
 <FORM METHOD="POST">
     <INPUT TYPE=HIDDEN NAME="subject" VALUE="eSquad">
     <input type=hidden name="env_report" value="REMOTE_ADDR, HTTP_USER_AGENT">
 
     <p><strong>Your Name:</strong> <INPUT TYPE=TEXT NAME="commentRealname"
-                                              >
-    <strong>Email Address:</strong> <INPUT TYPE=TEXT NAME="commentEmail"
-                                                  >
+        >
+        <strong>Email Address:</strong> <INPUT TYPE=TEXT NAME="commentEmail"
+        >
     <p><strong>Comments:</strong>
-        <TEXTAREA  NAME="commentComments"></textarea></p>
+        <TEXTAREA NAME="commentComments"></textarea></p>
 
     <p><INPUT TYPE="SUBMIT" name="commentSend" VALUE="Send">
         <INPUT TYPE="RESET" VALUE="Clear">
 </FORM>
 
 <?php
-
-
-
-
 function eb($x)
 {
-    echo "<br>".$x . "<br>";
+    echo "<br>" . $x . "<br>";
 }
 
 function vd($x)
@@ -596,17 +606,6 @@ function br()
 {
     echo "<br>";
 }
-
-
-
-
-
-
-
-
-
-
-
 ?>
 </body>
 </html>

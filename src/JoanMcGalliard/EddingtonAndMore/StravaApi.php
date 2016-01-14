@@ -12,6 +12,7 @@ class StravaApi extends Iamstuartwilson\StravaApi implements trackerApiInterface
     protected $bikes = [];
     private $pending_uploads = [];
     private $fileUploadTimeout = 300;
+    private $error=null;
 
     public function setAccessTokenFromCode($code)
     {
@@ -35,7 +36,12 @@ class StravaApi extends Iamstuartwilson\StravaApi implements trackerApiInterface
     public function isConnected()
     {
         if (!$this->connected) return false;
-        $this->connected = isset($this->get('athlete')->username);
+        $this->error
+        $athlete = $this->get('athlete');
+        $this->connected = isset($athlete->username);
+        if (isset($athlete->errors)) {
+            $this->error=$athlete->message;
+        }
         return $this->connected;
     }
 
@@ -202,9 +208,4 @@ class StravaApi extends Iamstuartwilson\StravaApi implements trackerApiInterface
     }
 
 }
-
-
-/*todo handle this ...
-{"message":"Rate Limit Exceeded","errors":[{"resource":"Application","field":"rate limit","code":"exceeded"}]}
-*/
 ?>

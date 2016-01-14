@@ -79,7 +79,11 @@ if (array_key_exists("state", $_GET) && ($_GET["state"] == "connecting")) {
             $preferences->setStravaAccessToken($token);
         }
     } else {
-        $error_message .= 'There was a problem connecting to strava, please try again.' . $_GET["error"] . " ";
+        $error_message .= 'There was a problem connecting to strava, please try again: ' . $_GET["error"] . " ";
+    }
+    if ($strava_api->getError()) {
+        $error_message .= 'There was a problem connecting to strava, please try again: ' . $strava_api->getError() . " ";
+
     }
     unset($_GET["state"]);
     unset($_GET["code"]);

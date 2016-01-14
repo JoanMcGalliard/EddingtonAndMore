@@ -36,7 +36,7 @@ class StravaApi extends Iamstuartwilson\StravaApi implements trackerApiInterface
     public function isConnected()
     {
         if (!$this->connected) return false;
-        $this->error=null
+        $this->error=null;
         $athlete = $this->get('athlete');
         $this->connected = isset($athlete->username);
         if (isset($athlete->errors)) {

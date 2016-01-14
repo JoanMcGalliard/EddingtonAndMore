@@ -36,7 +36,7 @@ class StravaApi extends Iamstuartwilson\StravaApi implements trackerApiInterface
     public function isConnected()
     {
         if (!$this->connected) return false;
-        $this->error
+        $this->error=null
         $athlete = $this->get('athlete');
         $this->connected = isset($athlete->username);
         if (isset($athlete->errors)) {
@@ -77,7 +77,7 @@ class StravaApi extends Iamstuartwilson\StravaApi implements trackerApiInterface
                 }
                 $before = strtotime($activities[sizeof($activities) - 1]->start_date) - 1;
             }
-            $start_date = strtotime($last);
+            $start_date = strtotime($before);
         } else {
             // before and after date set.
             $after = $start_date;

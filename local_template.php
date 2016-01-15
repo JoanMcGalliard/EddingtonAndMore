@@ -1,8 +1,9 @@
 <?php
 $timezone = "UTC";
-$owner="eddington@example.com";
-$scratch_directory="/tmp";
+$workingEmailAddress="email@example.com";
+$scratchDirectory="/tmp";
 $eddingtonAndMoreVersion=exec("git rev-parse HEAD");
+$spamProofAddress="email @ example.com";
 
 // device id sent to Endomondo.
 $deviceId=$_SERVER['HTTP_HOST'];

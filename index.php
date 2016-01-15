@@ -114,7 +114,7 @@ if ($strava_connected && array_key_exists("calculate_from_strava", $_POST)) {
     $state = "copy_endo_to_strava";
 }
 if (isset($_POST['commentSend'])) {
-    mail("$owner", "eddington enquiry",
+    mail("$workingEmailAddress", "eddington enquiry",
         $_POST['commentComments'], "From: " . $_POST['commentRealname'] . "<"
         . $_POST['commentEmail'] . ">\r\n");
     $info_message = "Thanks.  Email sent.  " .
@@ -317,7 +317,7 @@ if ($state == "calculate_from_strava" || $state == "calculate_from_mcl" || $stat
                         $message .= "Duplicate, skipping. ";
                     }
                 } else {
-                    $path = $scratch_directory . DIRECTORY_SEPARATOR . "endomondo+" . $ride['endo_id'] . ".gpx";
+                    $path = $scratchDirectory . DIRECTORY_SEPARATOR . "endomondo+" . $ride['endo_id'] . ".gpx";
                     $points = $endo_api->getPoints($ride['endo_id']);
                     if ($points->gpxBad()) {
                         $message .= '<span style="color:red;">' . $points->gpxBad() . '</span>';

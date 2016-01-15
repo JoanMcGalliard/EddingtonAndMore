@@ -7,10 +7,19 @@
             rel="icon" type="image/x-icon"/>
 </head>
 <body>
+<p>
 Site upgrading, please return shortly. Upgrade started at <?php
 
             date_default_timezone_set("UTC");
             echo date("Y-m-d H:i:s e", filemtime( __FILE__));
-?>.
+
+
+?>.</p>
+
+<p>Contact <strong><?php include "local.php"; echo $spamProofAddress ?></strong>, if this page has been unchanged for a while.
+
+    It may have been forgotten after upgrading.</p>
+
+
 </body>
 </html>

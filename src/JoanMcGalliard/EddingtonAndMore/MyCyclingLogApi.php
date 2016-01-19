@@ -44,7 +44,7 @@ class MyCyclingLogApi implements trackerApiInterface
         $records = [];
         $eventCount = $this->getEventCount();
         $offset = 0;
-        $limit = 100;
+        $limit = 500;
         $done = false;
 
         while ($offset < $eventCount && !$done) {
@@ -111,6 +111,7 @@ class MyCyclingLogApi implements trackerApiInterface
             $this->auth = null;
             return null;
         }
+        $xml=$this->escapeCharactersInElement("notes", $xml);  //todo find out if the same problem can occur in route or bike id.
         $doc = new DOMDocument();
         $doc->loadXML($xml);
         $doc->formatOutput = true;
@@ -239,6 +240,19 @@ class MyCyclingLogApi implements trackerApiInterface
             echo htmlspecialchars($x->ownerDocument->saveXML($x));
         }
         echo "</pre>";
+    }
+    // MyCyclingLog does not escape "<" or ">", so you can't parse the xml.  This will replace every instance of those
+    // with &lt; or &gt; as appropriate, with an xml element that starts with "<$element>"
+    protected function escapeCharactersInElement($element,$xml) {
+        $old="";
+        $new=$xml;
+        while ($old <> $new ){
+            $old=$new;
+            $new= preg_replace("/(<$element>[^<>]*)>([^\/])/", "$1&gt;$2" ,$new);
+            $new= preg_replace("/(<$element>[^<>]*)<([^\/])/", "$1&lt;$2" ,$new);
+            $new= preg_replace("/(<$element>[^<>]*)[^-a-zA-Z0-9 +<>.!,()_?\/=\"':;]([^\/])/", "$1$2" ,$new);
+        }
+        return $new;
     }
 
 

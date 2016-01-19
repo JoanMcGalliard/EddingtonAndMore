@@ -248,8 +248,6 @@ class MyCyclingLogApi implements trackerApiInterface
         $new=$xml;
         while ($old <> $new ){
             $old=$new;
-            $new= preg_replace("/(<$element>[^<>]*)>([^\/])/", "$1&gt;$2" ,$new);
-            $new= preg_replace("/(<$element>[^<>]*)<([^\/])/", "$1&lt;$2" ,$new);
             $new= preg_replace("/(<$element>[^<>]*)[^-a-zA-Z0-9 +<>.!,()_?\/=\"':;]([^\/])/", "$1$2" ,$new);
         }
         return $new;

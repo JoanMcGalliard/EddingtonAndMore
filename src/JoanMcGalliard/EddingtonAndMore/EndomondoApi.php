@@ -22,6 +22,14 @@ class EndomondoApi implements trackerApiInterface
     private $userId;
 
     /**
+     * @return mixed
+     */
+    public function getUserId()
+    {
+        return $this->userId;
+    }
+
+    /**
      * EndomondoApi constructor.
      * @param string $deviceId
      */

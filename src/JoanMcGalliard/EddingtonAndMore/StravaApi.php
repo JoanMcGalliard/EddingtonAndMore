@@ -14,6 +14,7 @@ class StravaApi extends Iamstuartwilson\StravaApi implements trackerApiInterface
     private $fileUploadTimeout = 300;
     private $error=null;
     private $writeScope=false;
+    private $userId;
 
     /**
      * @return string
@@ -56,6 +57,7 @@ class StravaApi extends Iamstuartwilson\StravaApi implements trackerApiInterface
         $this->error=null;
         $athlete = $this->get('athlete');
         $this->connected = isset($athlete->username);
+        $this->userId=$athlete->id;
         if (isset($athlete->errors)) {
             $this->error=$athlete->message;
         }
@@ -232,5 +234,13 @@ class StravaApi extends Iamstuartwilson\StravaApi implements trackerApiInterface
         return $results;
     }
 
+    public function getUserId()
+    {
+        return $this->userId;
+    }
+
+    public function setSplitOvernightRides($getStravaSplitRides)
+    {
+    }
 }
 ?>

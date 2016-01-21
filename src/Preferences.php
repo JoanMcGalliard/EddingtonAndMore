@@ -99,14 +99,14 @@ class Preferences
     {
         return $this->preferences->mcl->use_feet;
     }
-    public function setSplitRides($bool)
+    public function setEndoSplitRides($bool)
     {
-        $this->preferences->general->splitRides = $bool;
+        $this->preferences->endo->splitRides = $bool;
         $this->save();
     }
-    public function getSplitRides()
+    public function getEndoSplitRides()
     {
-        return $this->preferences->general->splitRides;
+        return $this->preferences->endo->splitRides;
     }
     public function getEndoAuth()
     {
@@ -130,6 +130,17 @@ class Preferences
     {
         return $this->preferences->strava->access_token;
     }
+
+    public function setStravaSplitRides($bool)
+    {
+        $this->preferences->strava->splitRides = $bool;
+        $this->save();
+    }
+    public function getStravaSplitRides()
+    {
+        return $this->preferences->strava->splitRides;
+    }
+
 
     public function setMclAuth($auth)
     {
@@ -155,6 +166,15 @@ class Preferences
         else {
             return "Europe/London";
         }
+    }
+
+    public function setMclUsername($username)
+    {
+        $this->preferences->mcl->username=$username;
+    }
+    public function getMclUsername()
+    {
+        return $this->preferences->mcl->username;
     }
 }
 

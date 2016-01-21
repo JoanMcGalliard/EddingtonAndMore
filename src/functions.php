@@ -3,13 +3,18 @@ function sumActivities($activities)
 {
     $days = [];
     foreach ($activities as $date => $rides) {
-        $distance = 0;
-        foreach ($rides as $ride) {
-            $distance += floatval($ride['distance']);
-        }
-        $days[$date] = $distance;
+        $days[$date] = sumDay($rides);
     }
     return $days;
+}
+
+function sumDay($rides)
+{
+    $distance = 0;
+    foreach ($rides as $ride) {
+        $distance += floatval($ride['distance']);
+    }
+    return $distance;
 }
 
 function next_goals($x)
@@ -102,12 +107,24 @@ function isDuplicateMCLRide($date, $distance, $strava_id, $mcl_rides)
                     continue;
                 }
             }
-            if (abs(($ride['distance'] - $distance) / $distance) < 0.02) {
+            if (compareDistance($distance, $ride['distance'])==0) {
                 return true;
             }
         }
     }
     return false;
+}
+
+/**
+ * @param $distance1
+ * @param $distance2
+ * @return int. 0 if distances are with 2% of each other, -1 if $distance1 is less, +1 is it is greater.
+ */
+function compareDistance($distance1, $distance2)
+{
+    if ( abs(($distance2 - $distance1) / $distance1) < 0.02)
+    {return 0;}
+    return $distance1 < $distance2 ? -1 : 1;
 }
 
 function calculateEddington($days, &$eddington_days, $factor)

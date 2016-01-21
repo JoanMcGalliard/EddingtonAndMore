@@ -28,7 +28,10 @@ if (array_key_exists("tz", $_POST)) {
     $preferences->setTimezone($_POST["tz"]);
 }
 if (array_key_exists("calculate_from_endo", $_POST)) {
-    $preferences->setSplitRides((array_key_exists("split_rides", $_POST)));
+    $preferences->setEndoSplitRides((array_key_exists("endo_split_rides", $_POST)));
+}
+if (array_key_exists("calculate_from_strava", $_POST)) {
+    $preferences->setStravaSplitRides((array_key_exists("strava_split_rides", $_POST)));
 }
 
 
@@ -43,7 +46,8 @@ $mcl_api = new JoanMcGalliard\MyCyclingLogApi();
 $endo_api = new JoanMcGalliard\EndomondoApi($deviceId, $googleApiKey, $preferences->getTimezone());
 
 $mcl_api->setUseFeetForElevation($preferences->getMclUseFeet());
-$endo_api->setSplitOvernightRides($preferences->getSplitRides());
+$endo_api->setSplitOvernightRides($preferences->getEndoSplitRides());
+$strava_api->setSplitOvernightRides($preferences->getStravaSplitRides());
 
 if (array_key_exists("login_mcl", $_POST)) {
     $mcl_username = $_POST['username'];
@@ -52,6 +56,7 @@ if (array_key_exists("login_mcl", $_POST)) {
     $mcl_api->setAuth("$auth");
     if ($mcl_api->isConnected()) {
         $preferences->setMclAuth($auth);
+        $preferences->setMclUsername($_POST['username']);
     } else {
         $error_message = "There was a problem connecting to MyCyclingLog, please try again";
     }
@@ -253,18 +258,32 @@ if ($state == "calculate_from_strava" || $state == "calculate_from_mcl" || $stat
     echo "<H3>Copying data from Strava to MyCyclingLog...</H3>";
     set_time_limit(300);
 
-    $rides_to_add = $strava_api->getRides($start_date, $end_date);
+    $strava_rides_to_add = $strava_api->getRides($start_date, $end_date);
     $count = 0;
     for ($i = 0; $i < 5; $i++) {
         $rides_to_retry = [];
         $mcl_rides = $mcl_api->getRides($start_date, $end_date);
-        foreach ($rides_to_add as $date => $ride_list) {
+        foreach ($strava_rides_to_add as $date => $ride_list) {
+            $strava_day_total=sumDay($ride_list);
+            $mcl_day_total=sumDay($mcl_rides[$date]);
+            if (compareDistance($mcl_day_total,$strava_day_total)>=0) {
+                continue; //there is at least this many miles for this day already in strava
+            }
             foreach ($ride_list as $ride) {
-                $distance = $ride['distance'];
+                if (compareDistance($mcl_day_total,$strava_day_total)>=0) {
+                    break;
+                }
+
+                    $distance = $ride['distance'];
                 $message = "Ride with id " . $ride['strava_id'] . " on $date, distance " . round($distance * METRE_TO_MILE, 1) . " miles/" . round($distance * METRE_TO_KM, 1) . " kms. ";
                 if (isDuplicateMCLRide($date, $distance, $ride['strava_id'], $mcl_rides)) {
                     $message = $message . "Duplicate, skipping. ";
                 } else {
+                    if (compareDistance($mcl_day_total+$distance,$strava_day_total)>=0) {
+                        //this ride will make our day total on MCL bigger than strava
+                        $distance=$strava_day_total-$mcl_day_total;
+                    }
+
                     $bike = $strava_api->getBike($ride["bike"]);
                     $mcl_bike_id = $mcl_api->bikeMatch($bike['brand'], $bike['model'], $ride['bike']);
                     $ride['mcl_bid'] = $mcl_bike_id;
@@ -285,7 +304,7 @@ if ($state == "calculate_from_strava" || $state == "calculate_from_mcl" || $stat
         if (sizeof($rides_to_retry) == 0) {
             break;
         }
-        $rides_to_add = $rides_to_retry;
+        $strava_rides_to_add = $rides_to_retry;
         $rides_to_retry = [];
     }
     echo "$count rides added.<br>";
@@ -296,10 +315,10 @@ if ($state == "calculate_from_strava" || $state == "calculate_from_mcl" || $stat
     echo "<H3>Copying rides from Endomondo to Strava...</H3>";
     set_time_limit(300);
 
-    $rides_to_add = $endo_api->getRides($start_date, $end_date);
+    $endo_rides_to_add = $endo_api->getRides($start_date, $end_date);
     $strava_rides = $strava_api->getRides($start_date, $end_date);
 
-    foreach ($rides_to_add as $date => $ride_list) {
+    foreach ($endo_rides_to_add as $date => $ride_list) {
         foreach ($ride_list as $ride) {
             $distance = $ride['distance'];
             $start_time = $ride['start_time'];
@@ -412,7 +431,10 @@ if ($strava_connected || $mcl_connected || $endo_connected) {
             <tr>
                 <?php
                 if ($strava_connected) {
-                    echo '<tr><td colspan="3"><input type="submit" name="calculate_from_strava" value="Eddington Number from Strava"></td></tr>';
+                    echo '<tr><td colspan="3"><input type="submit" name="calculate_from_strava" value="Eddington Number from Strava"><br>';
+                echo 'Split multiday rides?:
+            <input type="checkbox" value="split" ' . ($preferences->getStravaSplitRides() ? "checked" : "") .
+                    ' name="strava_split_rides"/></td></tr>';
                 }
                 if ($mcl_connected) {
 
@@ -421,8 +443,8 @@ if ($strava_connected || $mcl_connected || $endo_connected) {
                 if ($endo_connected) {
                     echo '<tr><td colspan="3"><input type="submit" name="calculate_from_endo" value="Eddington Number from Endomondo"><br>';
                     echo 'Split multiday rides?:
-            <input type="checkbox" value="split" ' . ($preferences->getSplitRides() ? "checked" : "") .
-                        ' name="split_rides"/></td></tr>';
+            <input type="checkbox" value="split" ' . ($preferences->getEndoSplitRides() ? "checked" : "") .
+                        ' name="endo_split_rides"/></td></tr>';
                 }
                 if ($strava_connected && $mcl_connected) {
                     echo '<tr><td colspan="3"><input type="submit" name="copy_strava_to_mcl" value="Copy ride data from Strava to MyCyclingLog">  <br>';
@@ -605,6 +627,9 @@ function eb($x)
     echo "<br>" . $x . "<br>";
 }
 
+function vdx($xml) {
+    vd(str_replace("<", "&lt;", str_replace(">", "&gt;", $xml)));
+}
 function vd($x)
 {
     echo "<pre>";

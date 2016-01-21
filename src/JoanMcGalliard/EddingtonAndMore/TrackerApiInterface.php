@@ -9,6 +9,7 @@ interface trackerApiInterface
     const METRE_TO_FOOT = 3.280;
 
     public function isConnected();
+    public function getUserId();
 
     /*
      * Returns an array

@@ -16,6 +16,15 @@ class MyCyclingLogApi implements trackerApiInterface
     protected $bikes = null;
     protected $strava_bike_match = [];
     protected $use_feet_for_elevation = false;
+    private $user_id;
+
+    /**
+     * @return mixed
+     */
+    public function getUserId()
+    {
+        return $this->user_id;
+    }
 
     /**
      * @return boolean
@@ -111,7 +120,7 @@ class MyCyclingLogApi implements trackerApiInterface
             $this->auth = null;
             return null;
         }
-        $xml=$this->escapeCharactersInElement("notes", $xml);  //todo find out if the same problem can occur in route or bike id.
+        $xml=$this->removeCharactersInElement("notes", $xml);  //todo find out if the same problem can occur in route or bike id.
         $doc = new DOMDocument();
         $doc->loadXML($xml);
         $doc->formatOutput = true;
@@ -241,9 +250,10 @@ class MyCyclingLogApi implements trackerApiInterface
         }
         echo "</pre>";
     }
-    // MyCyclingLog does not escape "<" or ">", so you can't parse the xml.  This will replace every instance of those
-    // with &lt; or &gt; as appropriate, with an xml element that starts with "<$element>"
-    protected function escapeCharactersInElement($element,$xml) {
+    // MyCyclingLog can create non-valid xml.  This removes any character except for a select list from the field
+    // "<$element>"
+
+    protected function removeCharactersInElement($element, $xml) {
         $old="";
         $new=$xml;
         while ($old <> $new ){

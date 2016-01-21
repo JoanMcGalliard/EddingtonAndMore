@@ -1,1 +1,8 @@
 AddType application/x-httpd-php .htm .html
+
+php_value upload_max_filesize 300M
+php_value post_max_size 300M
+
+php_value max_file_uploads 100
+php_value log_errors on
+

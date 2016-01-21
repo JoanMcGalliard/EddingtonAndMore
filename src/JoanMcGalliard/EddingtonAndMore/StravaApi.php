@@ -5,7 +5,7 @@ require_once "Iamstuartwilson/StravaApi.php";
 require_once 'TrackerApiInterface.php';
 use Iamstuartwilson;
 
-class StravaApi extends Iamstuartwilson\StravaApi implements trackerApiInterface
+class StravaApi implements trackerApiInterface
 {
     const GPX_SUFFIX = "\.gpx";
     protected $connected = false;
@@ -15,6 +15,16 @@ class StravaApi extends Iamstuartwilson\StravaApi implements trackerApiInterface
     private $error=null;
     private $writeScope=false;
     private $userId;
+    private $stravaApi;
+
+    public function __construct($clientId, $clientSecret, $stravaApi = null)
+    {
+        if ($stravaApi) {
+            $this->stravaApi = $stravaApi;
+        } else {
+            $this->stravaApi = new Iamstuartwilson\StravaApi($clientId, $clientSecret);
+        }
+    }
 
     /**
      * @return string
@@ -34,7 +44,7 @@ class StravaApi extends Iamstuartwilson\StravaApi implements trackerApiInterface
 
     public function setAccessTokenFromCode($code)
     {
-        $token = $this->tokenExchange($code)->access_token;
+        $token = $this->stravaApi->tokenExchange($code)->access_token;
         $this->setAccessToken($token);
         $this->connected = true;
         return $token;
@@ -43,7 +53,7 @@ class StravaApi extends Iamstuartwilson\StravaApi implements trackerApiInterface
     public function setAccessToken($token)
     {
         $this->connected = true;
-        parent::setAccessToken($token);
+        $this->stravaApi->setAccessToken($token);
     }
 
     public function uploadUrl()
@@ -54,12 +64,14 @@ class StravaApi extends Iamstuartwilson\StravaApi implements trackerApiInterface
     public function isConnected()
     {
         if (!$this->connected) return false;
-        $this->error=null;
-        $athlete = $this->get('athlete');
+        $this->error = null;
+        $athlete = $this->stravaApi->get('athlete');
+//        vd("athlete");
+//        vd($athlete);
         $this->connected = isset($athlete->username);
-        $this->userId=$athlete->id;
+        $this->userId = $athlete->id;
         if (isset($athlete->errors)) {
-            $this->error=$athlete->message;
+            $this->error = $athlete->message;
         }
         return $this->connected;
     }
@@ -112,7 +124,7 @@ class StravaApi extends Iamstuartwilson\StravaApi implements trackerApiInterface
                 $activities = $this->getWithDot('activities', ["per_page" => $activities_per_page, "after" => $after]);
                 $after = strtotime($activities[sizeof($activities) - 1]->start_date) + 1;
                 if ($after > $end_date) {
-                    for ($i = sizeof($activities) - 1; i >= 0; $i--) {
+                    for ($i = sizeof($activities) - 1; $i >= 0; $i--) {
                         if (strtotime($activities[$i]->start_date) > $end_date) {
                             unset($activities[$i]);
                         } else {
@@ -130,8 +142,10 @@ class StravaApi extends Iamstuartwilson\StravaApi implements trackerApiInterface
 
     private function getWithDot($request, $parameters = array())
     {
-        $return = $this->get($request, $parameters);
-        self::dot();
+        $return = $this->stravaApi->get($request, $parameters);
+//        vd("get");
+//        vd($return);
+        $this->dot();
         return $return;
     }
 
@@ -184,7 +198,7 @@ class StravaApi extends Iamstuartwilson\StravaApi implements trackerApiInterface
         $params = ["activity_type" => "ride", "file" => "@" . $file_path,
             "data_type" => "gpx", "external_id" => $external_id,
             "name" => $name, "description" => $description];
-        $result = $this->post("uploads", $params);
+        $result = $this->stravaApi->post("uploads", $params);
         if ($result->error) {
             return $result->error;
         }
@@ -241,6 +255,11 @@ class StravaApi extends Iamstuartwilson\StravaApi implements trackerApiInterface
 
     public function setSplitOvernightRides($getStravaSplitRides)
     {
+    }
+
+    public function authenticationUrl($redirect, $approvalPrompt, $scope, $state)
+    {
+        return $this->stravaApi->authenticationUrl($redirect, $approvalPrompt, $scope, $state);
     }
 }
 ?>

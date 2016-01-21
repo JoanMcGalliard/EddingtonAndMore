@@ -538,12 +538,12 @@ if (!$strava_connected || !$mcl_connected || !$endo_connected || !$strava_api->w
                 if (!$strava_connected) {
                     echo "Read acccess (You need this to calculate E-number from Strava):<br>";
                     echo '<a href="' .
-                        $strava_api->authenticationUrl($here, $approvalPrompt = 'auto', null, "read_only") .
+                        $strava_api->authenticationUrl($here, 'auto', null, "read_only") .
                         '"> <img src="images/ConnectWithStrava@2x.png"></a><br><br>';
                 }
                 echo "Read/write acccess (only click this if you want to upload rides from Endomondo to Strava): <br>";
                 echo '<a href="' .
-                    $strava_api->authenticationUrl($here, $approvalPrompt = 'auto', "write", "write") .
+                    $strava_api->authenticationUrl($here, 'auto', "write", "write") .
                     '"> <img src="images/ConnectWithStrava@2x.png"></a>';
                 echo "</td>";
             }

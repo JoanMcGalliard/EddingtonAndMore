@@ -41,9 +41,9 @@ if (array_key_exists("clear_cookies", $_POST)) {
     unset($_GET["state"]);
 }
 
-$strava_api = new JoanMcGalliard\StravaApi($stravaClientId, $stravaClientSecret);
-$mcl_api = new JoanMcGalliard\MyCyclingLogApi();
-$endo_api = new JoanMcGalliard\EndomondoApi($deviceId, $googleApiKey, $preferences->getTimezone());
+$strava_api = new JoanMcGalliard\EddingtonAndMore\StravaApi($stravaClientId, $stravaClientSecret);
+$mcl_api = new JoanMcGalliard\EddingtonAndMore\MyCyclingLogApi();
+$endo_api = new JoanMcGalliard\EddingtonAndMore\EndomondoApi($deviceId, $googleApiKey, $preferences->getTimezone());
 
 $mcl_api->setUseFeetForElevation($preferences->getMclUseFeet());
 $endo_api->setSplitOvernightRides($preferences->getEndoSplitRides());

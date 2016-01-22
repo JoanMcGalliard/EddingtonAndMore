@@ -1,6 +1,6 @@
 <?php
 
-namespace JoanMcGalliard;
+namespace JoanMcGalliard\EddingtonAndMore;
 require_once "Iamstuartwilson/StravaApi.php";
 require_once 'TrackerApiInterface.php';
 use Iamstuartwilson;
@@ -66,8 +66,6 @@ class StravaApi implements trackerApiInterface
         if (!$this->connected) return false;
         $this->error = null;
         $athlete = $this->stravaApi->get('athlete');
-//        vd("athlete");
-//        vd($athlete);
         $this->connected = isset($athlete->username);
         $this->userId = $athlete->id;
         if (isset($athlete->errors)) {
@@ -143,8 +141,6 @@ class StravaApi implements trackerApiInterface
     private function getWithDot($request, $parameters = array())
     {
         $return = $this->stravaApi->get($request, $parameters);
-//        vd("get");
-//        vd($return);
         $this->dot();
         return $return;
     }

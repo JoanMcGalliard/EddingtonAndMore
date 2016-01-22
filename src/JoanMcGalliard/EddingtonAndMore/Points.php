@@ -1,12 +1,6 @@
 <?php
-/**
- * Created by PhpStorm.
- * User: jem
- * Date: 10/01/2016
- * Time: 22:53
- */
 
-namespace JoanMcGalliard;
+namespace JoanMcGalliard\EddingtonAndMore;
 
 use stdClass;
 

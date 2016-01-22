@@ -1,5 +1,5 @@
 <?php
-namespace JoanMcGalliard;
+namespace JoanMcGalliard\EddingtonAndMore;
 
 require_once 'TrackerApiInterface.php';
 use DOMDocument;

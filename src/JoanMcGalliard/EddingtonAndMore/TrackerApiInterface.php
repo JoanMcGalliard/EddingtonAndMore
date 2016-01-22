@@ -1,5 +1,5 @@
 <?php
-namespace JoanMcGalliard;
+namespace JoanMcGalliard\EddingtonAndMore;
 
 // For classes that connected to tracking websites (eg strava, endomondo_
 interface trackerApiInterface

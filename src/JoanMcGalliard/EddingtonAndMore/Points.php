@@ -2,6 +2,7 @@
 
 namespace JoanMcGalliard\EddingtonAndMore;
 
+use DateTime;
 use stdClass;
 
 class Points
@@ -27,6 +28,10 @@ class Points
     public function __construct($start_day, $googleApiKey)
     {
         $this->points = [];
+        if ($start_day) {
+            $this->timezone=(new DateTime($start_day))->getTimezone()->getName();
+
+        }
         $this->day($start_day);
         $this->googleApiKey = $googleApiKey;
         $this->gpx = '<?xml version="1.0" encoding="UTF-8"?> <gpx creator="Eddington &amp; More" >';

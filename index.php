@@ -19,8 +19,6 @@ $here = "http://$_SERVER[HTTP_HOST]$_SERVER[PHP_SELF]";
 $state = null;
 const METRE_TO_MILE = 0.00062137119224;
 const METRE_TO_KM = 0.001;
-
-$error_message = "";
 $last = null;
 
 $preferences = new Preferences();

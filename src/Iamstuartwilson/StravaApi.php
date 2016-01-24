@@ -104,13 +104,6 @@
             $response = curl_exec($curl);
             $error = curl_error($curl);
 
-            log_msg("URL " .$url);
-            log_msg("parameters");
-            log_msg($parameters);
-            log_msg("response");
-            log_msg($response);
-            log_msg("error");
-            log_msg($error);
             $this->lastRequestInfo = curl_getinfo($curl);
 
             curl_close($curl);

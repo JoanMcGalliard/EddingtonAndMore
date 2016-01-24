@@ -249,7 +249,7 @@ class MyCyclingLogApi implements trackerApiInterface
     public function deleteRides($start_date, $end_date, $username, $password)
     {
 
-        $loginUrl = 'https://www.mycyclinglog.com';
+        $loginUrl = 'http://www.mycyclinglog.com';
 
         $count=0;
         $ch = curl_init();

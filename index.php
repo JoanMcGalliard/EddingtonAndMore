@@ -11,8 +11,8 @@ require_once 'src/JoanMcGalliard/EddingtonAndMore/Points.php';
 require_once 'src/functions.php';
 require_once 'src/Preferences.php';
 date_default_timezone_set("$timezone");
-$info_message="";
-$error_message="";
+$info_message = "";
+$error_message = "";
 
 
 $here = "http://$_SERVER[HTTP_HOST]$_SERVER[PHP_SELF]";
@@ -22,13 +22,13 @@ const METRE_TO_KM = 0.001;
 $last = null;
 
 $preferences = new Preferences();
-$start_date=null;
-$end_date=null;
-if (isset($_POST["start_date"])) {
+$start_date = null;
+$end_date = null;
+if (isset($_POST["start_date"]) && $_POST["start_date"] <> '') {
     $start_date = strtotime($_POST["start_date"]);
 }
-if (isset($_POST["end_date"])) {
-    $end_date = strtotime($_POST["end_date"]." 23:59:59");
+if (isset($_POST["end_date"]) && $_POST["end_date"] <> "") {
+    $end_date = strtotime($_POST["end_date"] . " 23:59:59");
 }
 if (array_key_exists("tz", $_POST)) {
     $preferences->setTimezone($_POST["tz"]);
@@ -272,24 +272,24 @@ if ($state == "calculate_from_strava" || $state == "calculate_from_mcl" || $stat
         $rides_to_retry = [];
         $mcl_rides = $mcl_api->getRides($start_date, $end_date);
         foreach ($strava_rides_to_add as $date => $ride_list) {
-            $strava_day_total=sumDay($ride_list);
-            $mcl_day_total=isset($mcl_rides[$date])? sumDay($mcl_rides[$date]) : 0;
-            if (compareDistance($mcl_day_total,$strava_day_total)>=0) {
+            $strava_day_total = sumDay($ride_list);
+            $mcl_day_total = isset($mcl_rides[$date]) ? sumDay($mcl_rides[$date]) : 0;
+            if (compareDistance($mcl_day_total, $strava_day_total) >= 0) {
                 continue; //there is at least this many miles for this day already in strava
             }
             foreach ($ride_list as $ride) {
-                if (compareDistance($mcl_day_total,$strava_day_total)>=0) {
+                if (compareDistance($mcl_day_total, $strava_day_total) >= 0) {
                     break;
                 }
 
-                    $distance = $ride['distance'];
+                $distance = $ride['distance'];
                 $message = "Ride with id " . $ride['strava_id'] . " on $date, distance " . round($distance * METRE_TO_MILE, 1) . " miles/" . round($distance * METRE_TO_KM, 1) . " kms. ";
                 if (isDuplicateMCLRide($date, $distance, $ride['strava_id'], $mcl_rides)) {
                     $message = $message . "Duplicate, skipping. ";
                 } else {
-                    if (compareDistance($mcl_day_total+$distance,$strava_day_total)>=0) {
+                    if (compareDistance($mcl_day_total + $distance, $strava_day_total) >= 0) {
                         //this ride will make our day total on MCL bigger than strava
-                        $distance=$strava_day_total-$mcl_day_total;
+                        $distance = $strava_day_total - $mcl_day_total;
                     }
 
                     $bike = $strava_api->getBike($ride["bike"]);
@@ -392,11 +392,10 @@ if ($state == "calculate_from_strava" || $state == "calculate_from_mcl" || $stat
     }
     echo "<br>$count rides added.<br>";
 } else if ($state == 'delete_mcl_rides') {
-    $result=$mcl_api->deleteRides($start_date, $end_date,$_POST['mcl_username'],$_POST['mcl_password']);
+    $result = $mcl_api->deleteRides($start_date, $end_date, $_POST['mcl_username'], $_POST['mcl_password']);
     if (is_int($result)) {
         echo "Deleted $result activities from MyCyclingLog";
-    }
-    else {
+    } else {
         echo "<p style=\"color:red;\"><b>Problem connecting to MyCyclingLog: $result</b></p>";
     }
 }
@@ -443,93 +442,42 @@ if ($strava_connected || $mcl_connected || $endo_connected) {
                 <td> End Date <input type="text" name="end_date" id="datepicker_end"/></td>
                 <td><select name="tz" value="<?php echo $preferences->getTimezone(); ?>" id="tz"> </select></td>
             </tr>
-            <tr> </td></tr>
             <tr>
                 <?php
                 if ($strava_connected) {
-                    echo '<tr><td colspan="3"><input type="submit" name="calculate_from_strava" value="Eddington Number from Strava"><br>';
+                    echo '<tr><td colspan="3"><input type="submit" name="calculate_from_strava" value="Eddington Number from Strava"/><br>';
 //                echo 'Split multiday rides?:
 //            <input type="checkbox" value="split" ' . ($preferences->getStravaSplitRides() ? "checked" : "") .
-//                    ' name="strava_split_rides"/></td></tr>';
+//                    ' name="strava_split_rides"/>';
+                    echo '</td></tr>';
                 }
                 if ($mcl_connected) {
 
-                    echo '<tr><td colspan="3"><input type="submit" name="calculate_from_mcl" value="Eddington Number from MyCyclingLog"></td></tr>';
+                    echo '<tr><td colspan="3"><input type="submit" name="calculate_from_mcl" value="Eddington Number from MyCyclingLog"/></td></tr>';
                 }
                 if ($endo_connected) {
-                    echo '<tr><td colspan="3"><input type="submit" name="calculate_from_endo" value="Eddington Number from Endomondo"><br>';
+                    echo '<tr><td colspan="3"><input type="submit" name="calculate_from_endo" value="Eddington Number from Endomondo"/><br>';
                     echo 'Split multiday rides?:
             <input type="checkbox" value="split" ' . ($preferences->getEndoSplitRides() ? "checked" : "") .
                         ' name="endo_split_rides"/></td></tr>';
                 }
                 if ($strava_connected && $mcl_connected) {
-                    echo '<tr><td colspan="3"><input type="submit" name="copy_strava_to_mcl" value="Copy ride data from Strava to MyCyclingLog">  <br>';
+                    echo '<tr><td colspan="3"><input type="submit" name="copy_strava_to_mcl" value="Copy ride data from Strava to MyCyclingLog"/>  <br>';
                     echo 'Save elevation as feet: <input type="checkbox" name="elevation_units" value="feet" ' .
-                        ($preferences->getMclUseFeet() ? "checked" : "") . "></td></tr>";
+                        ($preferences->getMclUseFeet() ? "checked" : "") . "/></td></tr>";
                 }
                 if ($strava_connected && $endo_connected && $strava_api->writeScope()) {
-                    echo '<tr><td colspan="3"><input type="submit" name="copy_endo_to_strava" value="Copy rides and routes from Endomondo to Strava">  <br>';
+                    echo '<tr><td colspan="3"><input type="submit" name="copy_endo_to_strava" value="Copy rides and routes from Endomondo to Strava"/>  <br>';
                     echo "</td></tr>";
                 }
                 if ($mcl_connected) {
-                    echo '<tr><td colspan="3"><input onclick="confirm_mcl_deletes()" type="button" name="delete_mcl_rides" value="Delete MyCyclingLog rides">  <br>';
+                    echo '<tr><td colspan="3"><input onclick="confirm_mcl_deletes()" type="button" name="delete_mcl_rides" value="Delete MyCyclingLog rides"/>';
                     echo "</td></tr>";
                 }
 
                 ?>
-            <script>
-                function confirm_mcl_deletes() {
-                    var start_date=document.forms["main_form"]["start_date"].value;
-                    var end_date=document.forms["main_form"]["end_date"].value;
-                    if (start_date == "") {
-                        start_date = "the beginning"
-                    }
-                    if (end_date == "") {
-                        end_date = "today"
-                    }
-                    var password_warning = "Are you sure you want to do this?  This will remove all activities from " +
-                        "MyCyclingLog between " +start_date + " and " + end_date + ".  If you are sure, enter your MCL password here.";
-                    
-                    <?php
-                    if (!$preferences->getMclUsername()) {
-                        echo 'var username = prompt("Please enter your MyCyclingLog username");';
-                    } else {
-                        echo "var username = '".$preferences->getMclUsername()."';";
-                    }
-                    ?>
-                    var password = prompt(password_warning);
-                    if(password != null) {
-                        document.forms["main_form"]["start_date"].value;
-
-                        submit_field = document.createElement('input');
-                        submit_field.setAttribute('name', 'delete_mcl_rides');
-                        submit_field.setAttribute('type', 'hidden');
-                        submit_field.setAttribute('value', 'Delete MyCyclingLog rides');
-                        document.forms["main_form"].appendChild(submit_field);
-
-
-                        username_field = document.createElement('input');
-                        username_field.setAttribute('name', 'mcl_username');
-                        username_field.setAttribute('type', 'hidden');
-                        username_field.setAttribute('value', username);
-                        document.forms["main_form"].appendChild(username_field);
-
-                        password_field = document.createElement('input');
-                        password_field.setAttribute('name', 'mcl_password');
-                        password_field.setAttribute('type', 'hidden');
-                        password_field.setAttribute('value', password);
-                        document.forms["main_form"].appendChild(password_field);
-
-                        ;
-
-                        document.forms["main_form"].submit("hello");
-                    }
-                    else
-                        return false;
-                }
-            </script>
-                <tr>
-                <td colspan="3"><input type="submit" name="clear_cookies" value="Delete Cookies"></td>
+            <tr>
+                <td colspan="3"><input type="submit" name="clear_cookies" value="Delete Cookies"/></td>
             </tr>
         </table>
         <script>
@@ -537,6 +485,58 @@ if ($strava_connected || $mcl_connected || $endo_connected) {
             $("#datepicker_end").datepicker({changeMonth: true, changeYear: true, dateFormat: 'dd-mm-yy'});
             $("#tz").timezones();
             $("#tz").val('<?php echo $preferences->getTimezone();?>');
+
+            function confirm_mcl_deletes() {
+                var start_date = document.forms["main_form"]["start_date"].value;
+                var end_date = document.forms["main_form"]["end_date"].value;
+                if (start_date == "") {
+                    start_date = "the beginning"
+                }
+                if (end_date == "") {
+                    end_date = "today"
+                }
+                var password_warning = "Are you sure you want to do this?  This will remove all activities from " +
+                    "MyCyclingLog between " + start_date + " and " + end_date + " that have a Strava ride in the notes. "+
+                    "If you are sure, enter your MCL password here.";
+
+                <?php
+                if (!$preferences->getMclUsername()) {
+                    echo 'var username = prompt("Please enter your MyCyclingLog username");';
+                } else {
+                    echo "var username = '" . $preferences->getMclUsername() . "';";
+                }
+                ?>
+                var password = prompt(password_warning);
+                if (password != null) {
+                    document.forms["main_form"]["start_date"].value;
+
+                    submit_field = document.createElement('input');
+                    submit_field.setAttribute('name', 'delete_mcl_rides');
+                    submit_field.setAttribute('type', 'hidden');
+                    submit_field.setAttribute('value', 'Delete MyCyclingLog rides');
+                    document.forms["main_form"].appendChild(submit_field);
+
+
+                    username_field = document.createElement('input');
+                    username_field.setAttribute('name', 'mcl_username');
+                    username_field.setAttribute('type', 'hidden');
+                    username_field.setAttribute('value', username);
+                    document.forms["main_form"].appendChild(username_field);
+
+                    password_field = document.createElement('input');
+                    password_field.setAttribute('name', 'mcl_password');
+                    password_field.setAttribute('type', 'hidden');
+                    password_field.setAttribute('value', password);
+                    document.forms["main_form"].appendChild(password_field);
+
+                    ;
+
+                    document.forms["main_form"].submit("hello");
+                }
+                else
+                    return false;
+            }
+
         </script>
     </form>
 
@@ -568,12 +568,12 @@ if ($strava_connected || $mcl_connected || $endo_connected) {
                     overlaps it.
                 </em>
             </li>
-            <li><em>MyCyclingLog doesn't stores elevation as a number without units. By default, copy will leave the
+            <li><em>MyCyclingLog stores elevation as a number without units. By default, copy will leave the
                     elevation
                     in metres, but if you check the box, it will multiply elevation by 3.2, converting it to feet.</em>
             </li>
 
-            <li><em>It's a real pain to delete multiple rides from MyCyclingLog, so use copy with caution. If you want
+            <li><em>If you want
                     your
                     bike information to be included you must make sure you have bikes with <strong>exactly</strong>
                     matching
@@ -581,7 +581,8 @@ if ($strava_connected || $mcl_connected || $endo_connected) {
                     MyCyclingLog to see
                     if you like the result. It should not make duplicates if the ride has already been copied using this
                     page, or if
-                    there is another ride on the same day with 2% of the distance.</em></li>
+                    there is another ride on the same day with 2% of the distance, or if the total distance for the day on MCL is within
+                2% or greater than the distance recorded in Strava.</em></li>
             <li><em>This is open source, you can download the source from <a
                         href="http://github.com/JoanMcGalliard/EddingtonAndMore">
                         http://github.com/JoanMcGalliard/EddingtonAndMore</a>. This is
@@ -594,7 +595,7 @@ if ($strava_connected || $mcl_connected || $endo_connected) {
     </div>
     <?php
 }
-if (!$strava_connected || !$mcl_connected || !$endo_connected || !$strava_api->writeScope() ) {
+if (!$strava_connected || !$mcl_connected || !$endo_connected || !$strava_api->writeScope()) {
     ?>
     <hr>
     <h3>Connect to services</h3>
@@ -604,7 +605,7 @@ if (!$strava_connected || !$mcl_connected || !$endo_connected || !$strava_api->w
             and there is a button to delete the cookies when you are done. </em></p>
     <table>
         <tr>
-            <?php if (!$strava_connected || !$strava_api->writeScope()  ) {
+            <?php if (!$strava_connected || !$strava_api->writeScope()) {
                 echo "<td>";
                 if (!$strava_connected) {
                     echo "Read acccess (You need this to calculate E-number from Strava):<br>";
@@ -625,11 +626,11 @@ if (!$strava_connected || !$mcl_connected || !$endo_connected || !$strava_api->w
                         <table>
                             <tr>
                                 <td> MyCyclingLog Username:</td>
-                                <td><input type="text" name="username"></td>
+                                <td><input type="text" name="username"/></td>
                             </tr>
                             <tr>
                                 <td>MyCyclingLog Password:</td>
-                                <td><input type="password" name="password">
+                                <td><input type="password" name="password"/>
                                 <td>
                             </tr>
 
@@ -649,11 +650,11 @@ if (!$strava_connected || !$mcl_connected || !$endo_connected || !$strava_api->w
                         <table>
                             <tr>
                                 <td> Endomondo Username:</td>
-                                <td><input type="text" name="username"></td>
+                                <td><input type="text" name="username"/></td>
                             </tr>
                             <tr>
                                 <td>Endomondo Password:</td>
-                                <td><input type="password" name="password">
+                                <td><input type="password" name="password"/>
                                 <td>
                             </tr>
                             <tr class="w3-centered">
@@ -678,18 +679,16 @@ if (!$strava_connected || !$mcl_connected || !$endo_connected || !$strava_api->w
 <p>Bug reports, feature requests, thanks? Please use this form. <em>Note this will only stay here until the spam bots
         find it.</em></p>
 <FORM METHOD="POST">
-    <INPUT TYPE=HIDDEN NAME="subject" VALUE="Eddington">
-    <input type=hidden name="env_report" value="REMOTE_ADDR, HTTP_USER_AGENT">
+    <INPUT TYPE=HIDDEN NAME="subject" VALUE="Eddington"/>
+    <input type=hidden name="env_report" value="REMOTE_ADDR, HTTP_USER_AGENT"/>
 
-    <p><strong>Your Name:</strong> <INPUT TYPE=TEXT NAME="commentRealname"
-        >
-        <strong>Email Address:</strong> <INPUT TYPE=TEXT NAME="commentEmail"
-        >
+    <p><strong>Your Name:</strong> <INPUT TYPE=TEXT NAME="commentRealname"/>
+        <strong>Email Address:</strong> <INPUT TYPE=TEXT NAME="commentEmail"/>
     <p><strong>Comments:</strong>
         <TEXTAREA NAME="commentComments"></textarea></p>
 
-    <p><INPUT TYPE="SUBMIT" name="commentSend" VALUE="Send">
-        <INPUT TYPE="RESET" VALUE="Clear">
+    <p><INPUT TYPE="SUBMIT" name="commentSend" VALUE="Send"/>
+        <INPUT TYPE="RESET" VALUE="Clear"/>
 </FORM>
 
 <?php
@@ -698,9 +697,11 @@ function eb($x)
     echo "<br>" . $x . "<br>";
 }
 
-function vdx($xml) {
+function vdx($xml)
+{
     vd(str_replace("<", "&lt;", str_replace(">", "&gt;", $xml)));
 }
+
 function vd($x)
 {
     echo "<pre>";
@@ -714,21 +715,22 @@ function br()
     echo "<br>";
 }
 
-function log_msg($message) {
-    global $scratchDirectory,$logDiagnostics;
+function log_msg($message)
+{
+    global $scratchDirectory, $logDiagnostics;
     if (!isset($logDiagnostics) || !$logDiagnostics) {
         return;
     }
     if (is_string($message)) {
-        $string=$message;
+        $string = $message;
     } else {
-        $string=var_export($message, true);
+        $string = var_export($message, true);
     }
-    $tz=date_default_timezone_get();
+    $tz = date_default_timezone_get();
     date_default_timezone_set("UTC");
-    $date=date("Y-m-d H:i:s", time());
-    $file=fopen(dirname(__FILE__).DIRECTORY_SEPARATOR."diagnostic.log", "a");
-    fwrite($file, $date.": ".$string."\n");
+    $date = date("Y-m-d H:i:s", time());
+    $file = fopen(dirname(__FILE__) . DIRECTORY_SEPARATOR . "diagnostic.log", "a");
+    fwrite($file, $date . ": " . $string . "\n");
     fclose($file);
     date_default_timezone_set($tz);
 }

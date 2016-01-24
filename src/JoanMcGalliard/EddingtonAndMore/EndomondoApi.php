@@ -23,14 +23,6 @@ class EndomondoApi implements trackerApiInterface
     private $userId;
 
     /**
-     * @return mixed
-     */
-    public function getUserId()
-    {
-        return $this->userId;
-    }
-
-    /**
      * EndomondoApi constructor.
      * @param string $deviceId
      */
@@ -39,6 +31,14 @@ class EndomondoApi implements trackerApiInterface
         $this->deviceId = $deviceId;
         $this->tz = $tz;
         $this->googleApiKey = $googleApiKey;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getUserId()
+    {
+        return $this->userId;
     }
 
     /**
@@ -189,11 +189,15 @@ class EndomondoApi implements trackerApiInterface
                 $date = date("Y-m-d", $timestamp);
                 $record['distance'] = $ride->distance / self::METRE_TO_KM;
                 $record['elapsed_time'] = $ride->duration;
-                $record['max_speed'] = $ride->speed_max / (60 * 60 * self::METRE_TO_KM);
+                if (isset($ride->speed_max)) {
+                    $record['max_speed'] = $ride->speed_max / (60 * 60 * self::METRE_TO_KM);
+                }
                 $record['endo_id'] = $id;
-                $record['ascent'] = $ride->ascent;
+                if (isset($ride->ascent)) {
+                    $record['ascent'] = $ride->ascent;
+                }
                 $record['start_time'] = $ride->start_time;
-                $record['name'] = $ride->name;
+                $record['name'] = isset($ride->name) ? $ride->name : '';
                 if ($this->splitOvernightRides && $this->isOverNightRide($ride)) {
                     $points = $this->getPoints($record['endo_id']);
                     foreach ($points->getSplits() as $split_date => $split) {

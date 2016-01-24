@@ -29,7 +29,7 @@ class Points
     {
         $this->points = [];
         if ($start_day) {
-            $this->timezone=(new DateTime($start_day))->getTimezone()->getName();
+            $this->timezone = (new DateTime($start_day))->getTimezone()->getName();
 
         }
         $this->day($start_day);

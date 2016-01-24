@@ -48,100 +48,6 @@ class MyCyclingLogApi implements trackerApiInterface
         $this->auth = $auth;
     }
 
-    public function getRides($start_date, $end_date)
-    {
-        $records = [];
-        $eventCount = $this->getEventCount();
-        $offset = 0;
-        $limit = 500;
-        $done = false;
-
-        while ($offset < $eventCount && !$done) {
-            $doc = $this->getPageDom("?method=ride.list&limit=$limit&offset=$offset");
-            $rides = $doc->childNodes->item(0)->childNodes->item(0)->childNodes;
-            foreach ($rides as $ride) {
-                $record = [];
-                if ($ride->getElementsByTagName("is_ride")->item(0)->nodeValue != 'true') {
-                    continue;
-                }
-                $item = $ride->getElementsByTagName("distance")->item(0);
-                $distance = floatval($item->nodeValue);
-                $units = $item->getAttribute("units");
-                if ($units == 'mi') {
-                    $record['distance'] = $distance / self::METRE_TO_MILE;
-                } else if ($units == 'km') {
-                    $record['distance'] = $distance * 1000;
-                }
-                $record['mcl_id'] = $ride->getAttribute('id');
-
-
-                $pattern = "/" . str_replace("/", "\\/", self::STRAVA_NOTE_PREFIX) . "([1-9][0-9]*)$/";
-                if (preg_match($pattern, $ride->getElementsByTagName("notes")->item(0)->nodeValue, $matches) > 0) {
-                    $record['strava_id'] = $matches[1];
-                } else {
-                    $record['strava_id'] = null;
-                }
-                $record['moving_time'] = $ride->getElementsByTagName("time")->item(0)->nodeValue;
-                $record['max_speed'] = floatval($ride->getElementsByTagName("max_speed")->item(0)->nodeValue) / (60 * 60 * self::METRE_TO_MILE); // convert to m/s
-                $timestamp = strtotime($ride->getElementsByTagName("event_date")->item(0)->nodeValue);
-
-                if ($start_date && $start_date > $timestamp) {
-                    $done = true;
-                    break;
-                }
-                if ($end_date && $end_date <= $timestamp) continue;
-                $date = date("Y-m-d", $timestamp);
-
-                $records[$date][] = $record;
-            }
-            $offset = $offset + $limit;
-        }
-        return $records;
-    }
-
-    protected function getEventCount()
-    {
-        $doc = $this->getPageDom("?method=ride.list&limit=0&offset=0");
-        return intval($doc->childNodes->item(0)->childNodes->item(0)->getAttribute("total_size"));
-    }
-
-    protected function getPageDom($url)
-    {
-        $retries = 3;
-        for ($i = 0; $i < $retries; $i++) {
-            $xml = $this->getPage($url);
-            if ($xml) break;
-        }
-        if (!$xml) {
-            echo "There is a problem with MyCyclingLog.  Please try again";
-            exit();
-        }
-        if ($xml == "You are not authorized.") {
-            $this->auth = null;
-            return null;
-        }
-        $xml=$this->removeCharactersInElement("notes", $xml);  //todo find out if the same problem can occur in route or bike id.
-        $doc = new DOMDocument();
-        $doc->loadXML($xml);
-        $doc->formatOutput = true;
-        return $doc;
-    }
-
-    protected function getPage($url)
-    {
-        $process = curl_init(self::BASE_URL . $url);
-        $headers = array('Authorization: Basic ' . $this->auth);
-        curl_setopt($process, CURLOPT_HTTPHEADER, $headers);
-        curl_setopt($process, CURLOPT_HEADER, 0);
-        curl_setopt($process, CURLOPT_TIMEOUT, 30);
-        curl_setopt($process, CURLOPT_RETURNTRANSFER, TRUE);
-        $page = curl_exec($process);
-        curl_close($process);
-        log_msg("MCL get URL " . $url);
-        log_msg($page);
-        return $page;
-    }
-
     public function addRide($date, $ride)
     {
         $parameters = [];
@@ -198,6 +104,54 @@ class MyCyclingLogApi implements trackerApiInterface
         return false;
     }
 
+    protected function getPageDom($url)
+    {
+        $retries = 3;
+        for ($i = 0; $i < $retries; $i++) {
+            $xml = $this->getPage($url);
+            if ($xml) break;
+        }
+        if (!$xml) {
+            echo "There is a problem with MyCyclingLog.  Please try again";
+            exit();
+        }
+        if ($xml == "You are not authorized.") {
+            $this->auth = null;
+            return null;
+        }
+        $xml = $this->removeCharactersInElement("notes", $xml);  //todo find out if the same problem can occur in route or bike id.
+        $doc = new DOMDocument();
+        $doc->loadXML($xml);
+        $doc->formatOutput = true;
+        return $doc;
+    }
+
+    protected function getPage($url)
+    {
+        $process = curl_init(self::BASE_URL . $url);
+        $headers = array('Authorization: Basic ' . $this->auth);
+        curl_setopt($process, CURLOPT_HTTPHEADER, $headers);
+        curl_setopt($process, CURLOPT_HEADER, 0);
+        curl_setopt($process, CURLOPT_TIMEOUT, 30);
+        curl_setopt($process, CURLOPT_RETURNTRANSFER, TRUE);
+        $page = curl_exec($process);
+        curl_close($process);
+        log_msg("MCL get URL " . $url);
+        log_msg($page);
+        return $page;
+    }
+
+    protected function removeCharactersInElement($element, $xml)
+    {
+        $old = "";
+        $new = $xml;
+        while ($old <> $new) {
+            $old = $new;
+            $new = preg_replace("/(<$element>[^<>]*)[^-a-zA-Z0-9 +<>.!,()_?\/=\"':;]([^\/])/", "$1$2", $new);
+        }
+        return $new;
+    }
+
     public function bikeMatch($brand, $model, $stravaId)
     {
         if (!array_key_exists($stravaId, $this->strava_bike_match)) {
@@ -251,7 +205,7 @@ class MyCyclingLogApi implements trackerApiInterface
 
         $loginUrl = 'http://www.mycyclinglog.com';
 
-        $count=0;
+        $count = 0;
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_URL, $loginUrl);
         curl_setopt($ch, CURLOPT_POST, 1);
@@ -260,9 +214,11 @@ class MyCyclingLogApi implements trackerApiInterface
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
         $store = curl_exec($ch);
         if (strpos($store, "Logout") === false) {
-            $error=curl_error($ch);
+            $error = curl_error($ch);
             curl_close($ch);
-            if ($error) {return $error;}
+            if ($error) {
+                return $error;
+            }
             return "$error  Check username ($username) and password.";
         }
 
@@ -285,6 +241,65 @@ class MyCyclingLogApi implements trackerApiInterface
         return $count;
     }
 
+    public function getRides($start_date, $end_date)
+    {
+        $records = [];
+        $eventCount = $this->getEventCount();
+        $offset = 0;
+        $limit = 500;
+        $done = false;
+
+        while ($offset < $eventCount && !$done) {
+            $doc = $this->getPageDom("?method=ride.list&limit=$limit&offset=$offset");
+            $rides = $doc->childNodes->item(0)->childNodes->item(0)->childNodes;
+            foreach ($rides as $ride) {
+                $record = [];
+                if ($ride->getElementsByTagName("is_ride")->item(0)->nodeValue != 'true') {
+                    continue;
+                }
+                $item = $ride->getElementsByTagName("distance")->item(0);
+                $distance = floatval($item->nodeValue);
+                $units = $item->getAttribute("units");
+                if ($units == 'mi') {
+                    $record['distance'] = $distance / self::METRE_TO_MILE;
+                } else if ($units == 'km') {
+                    $record['distance'] = $distance * 1000;
+                }
+                $record['mcl_id'] = $ride->getAttribute('id');
+
+
+                $pattern = "/" . str_replace("/", "\\/", self::STRAVA_NOTE_PREFIX) . "([1-9][0-9]*)$/";
+                if (preg_match($pattern, $ride->getElementsByTagName("notes")->item(0)->nodeValue, $matches) > 0) {
+                    $record['strava_id'] = $matches[1];
+                } else {
+                    $record['strava_id'] = null;
+                }
+                $record['moving_time'] = $ride->getElementsByTagName("time")->item(0)->nodeValue;
+                $record['max_speed'] = floatval($ride->getElementsByTagName("max_speed")->item(0)->nodeValue) / (60 * 60 * self::METRE_TO_MILE); // convert to m/s
+                $timestamp = strtotime($ride->getElementsByTagName("event_date")->item(0)->nodeValue);
+
+                if ($start_date && $start_date > $timestamp) {
+                    $done = true;
+                    break;
+                }
+                if ($end_date && $end_date <= $timestamp) continue;
+                $date = date("Y-m-d", $timestamp);
+
+                $records[$date][] = $record;
+            }
+            $offset = $offset + $limit;
+        }
+        return $records;
+    }
+
+    protected function getEventCount()
+    {
+        $doc = $this->getPageDom("?method=ride.list&limit=0&offset=0");
+        return intval($doc->childNodes->item(0)->childNodes->item(0)->getAttribute("total_size"));
+    }
+    // MyCyclingLog can create non-valid xml.  This removes any character except for a select list from the field
+    // "<$element>"
+
     protected function sd($x)
     {
         echo "<pre>";
@@ -294,18 +309,6 @@ class MyCyclingLogApi implements trackerApiInterface
             echo htmlspecialchars($x->ownerDocument->saveXML($x));
         }
         echo "</pre>";
-    }
-    // MyCyclingLog can create non-valid xml.  This removes any character except for a select list from the field
-    // "<$element>"
-
-    protected function removeCharactersInElement($element, $xml) {
-        $old="";
-        $new=$xml;
-        while ($old <> $new ){
-            $old=$new;
-            $new= preg_replace("/(<$element>[^<>]*)[^-a-zA-Z0-9 +<>.!,()_?\/=\"':;]([^\/])/", "$1$2" ,$new);
-        }
-        return $new;
     }
 
 

@@ -95,19 +95,23 @@ class Preferences
         $this->preferences->mcl->use_feet = $bool;
         $this->save();
     }
+
     public function getMclUseFeet()
     {
         return isset($this->preferences->mcl->use_feet) ? $this->preferences->mcl->use_feet : null;
     }
+
     public function setEndoSplitRides($bool)
     {
         $this->preferences->endo->splitRides = $bool;
         $this->save();
     }
+
     public function getEndoSplitRides()
     {
         return isset($this->preferences->endo->splitRides) ? $this->preferences->endo->splitRides : null;
     }
+
     public function getEndoAuth()
     {
         return isset($this->preferences->endo->auth) ? $this->preferences->endo->auth : null;
@@ -128,7 +132,7 @@ class Preferences
 
     public function getStravaAccessToken()
     {
-        return isset($this->preferences->strava->access_token) ? $this->preferences->strava->access_token : null ;
+        return isset($this->preferences->strava->access_token) ? $this->preferences->strava->access_token : null;
     }
 
     public function setStravaSplitRides($bool)
@@ -136,6 +140,7 @@ class Preferences
         $this->preferences->strava->splitRides = $bool;
         $this->save();
     }
+
     public function getStravaSplitRides()
     {
         return isset($this->preferences->strava->splitRides) ? $this->preferences->strava->splitRides : null;
@@ -158,21 +163,22 @@ class Preferences
         $this->preferences->timezone = $tz;
         $this->save();
     }
+
     public function getTimezone()
     {
-        if(isset($this->preferences->timezone)) {
+        if (isset($this->preferences->timezone)) {
             return $this->preferences->timezone;
-        }
-        else {
+        } else {
             return "Europe/London";
         }
     }
 
     public function setMclUsername($username)
     {
-        $this->preferences->mcl->username=$username;
+        $this->preferences->mcl->username = $username;
         $this->save();
     }
+
     public function getMclUsername()
     {
         return isset($this->preferences->mcl->username) ? $this->preferences->mcl->username : null;

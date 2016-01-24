@@ -12,8 +12,8 @@ class StravaApi implements trackerApiInterface
     protected $bikes = [];
     private $pending_uploads = [];
     private $fileUploadTimeout = 300;
-    private $error=null;
-    private $writeScope=false;
+    private $error = null;
+    private $writeScope = false;
     private $userId;
     private $stravaApi;
 
@@ -258,4 +258,5 @@ class StravaApi implements trackerApiInterface
         return $this->stravaApi->authenticationUrl($redirect, $approvalPrompt, $scope, $state);
     }
 }
+
 ?>

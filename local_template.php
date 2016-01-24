@@ -15,5 +15,6 @@ $stravaClientSecret = null;
 //obtained from Google https://console.developers.google.com/flows/enableapi?apiid=timezone_backend&keyType=SERVER_SIDE&reusekey=true
 
 $googleApiKey="";
+$logDiagnostics=false;
 
 ?>

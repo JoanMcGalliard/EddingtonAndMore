@@ -137,6 +137,8 @@ class MyCyclingLogApi implements trackerApiInterface
         curl_setopt($process, CURLOPT_RETURNTRANSFER, TRUE);
         $page = curl_exec($process);
         curl_close($process);
+        log_msg("MCL get URL " . $url);
+        log_msg($page);
         return $page;
     }
 
@@ -156,10 +158,10 @@ class MyCyclingLogApi implements trackerApiInterface
         $parameters['distance'] = $ride['distance'] * self::METRE_TO_MILE;
         $parameters['user_unit'] = 'mi';
         $parameters['notes'] = self::STRAVA_NOTE_PREFIX . $ride['strava_id'];
-        $parameters['heart_rate'] = $ride[''];
+//        $parameters['heart_rate'] = $ride[''];
         $parameters['max_speed'] = $ride['max_speed'] * 60 * 60 * self::METRE_TO_MILE;
         $parameters['elevation'] = $ride['total_elevation_gain'] * ($this->use_feet_for_elevation ? self::METRE_TO_FOOT : 1);
-        $parameters['tags'] = $ride[''];
+//        $parameters['tags'] = $ride[''];
         $parameters['bid'] = $ride['mcl_bid']; // bid. Optional. Bike ID as returned by New Bike API.
         return $this->postPage("?method=ride.new", $parameters);
     }
@@ -176,6 +178,10 @@ class MyCyclingLogApi implements trackerApiInterface
         curl_setopt($process, CURLOPT_RETURNTRANSFER, TRUE);
         $response = curl_exec($process);
         curl_close($process);
+        log_msg("MCL post URL " . $url);
+        log_msg($parameters);
+        log_msg($response);
+
         return $response;
     }
 
@@ -238,6 +244,43 @@ class MyCyclingLogApi implements trackerApiInterface
     {
         $doc = $this->getPageDom("?method=bike.list&limit=0&offset=0");
         return intval($doc->childNodes->item(0)->childNodes->item(0)->getAttribute("total_size"));
+    }
+
+    public function deleteRides($start_date, $end_date, $username, $password)
+    {
+
+        $loginUrl = 'https://www.mycyclinglog.com';
+
+        $count=0;
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, $loginUrl);
+        curl_setopt($ch, CURLOPT_POST, 1);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, 'username=' . $username . '&password=' . $password);
+        curl_setopt($ch, CURLOPT_COOKIEJAR, 'cookie.txt');
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+        $store = curl_exec($ch);
+        if (strpos($store, "Logout") === false) {
+            curl_close($ch);
+            return "Check username and password.";
+        }
+
+        curl_setopt($ch, CURLOPT_URL, "http://www.mycyclinglog.com//add.php");
+
+
+        $rides = $this->getRides($start_date, $end_date);
+        foreach ($rides as $date => $ride_list) {
+            foreach ($ride_list as $ride) {
+                if ($ride['strava_id'] <> null) {
+                    echo "Deleting " . $ride['mcl_id'] . " from " . $date . ", strava id " . $ride["strava_id"] . ".<br>";
+                    flush();
+                    curl_setopt($ch, CURLOPT_POSTFIELDS, "r=1&lid=" . $ride['mcl_id']);
+                    curl_exec($ch);
+                    $count++;
+                }
+            }
+        }
+        curl_close($ch);
+        return $count;
     }
 
     protected function sd($x)

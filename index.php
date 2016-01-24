@@ -123,6 +123,8 @@ if ($strava_connected && array_key_exists("calculate_from_strava", $_POST)) {
 
 } else if ($endo_connected && $strava_connected && array_key_exists("copy_endo_to_strava", $_POST)) {
     $state = "copy_endo_to_strava";
+} else if ($mcl_connected && array_key_exists("delete_mcl_rides", $_POST)) {
+    $state = "delete_mcl_rides";
 }
 if (isset($_POST['commentSend'])) {
     mail("$workingEmailAddress", "eddington enquiry",
@@ -271,7 +273,7 @@ if ($state == "calculate_from_strava" || $state == "calculate_from_mcl" || $stat
         $mcl_rides = $mcl_api->getRides($start_date, $end_date);
         foreach ($strava_rides_to_add as $date => $ride_list) {
             $strava_day_total=sumDay($ride_list);
-            $mcl_day_total=sumDay($mcl_rides[$date]);
+            $mcl_day_total=isset($mcl_rides[$date])? sumDay($mcl_rides[$date]) : 0;
             if (compareDistance($mcl_day_total,$strava_day_total)>=0) {
                 continue; //there is at least this many miles for this day already in strava
             }
@@ -389,12 +391,20 @@ if ($state == "calculate_from_strava" || $state == "calculate_from_mcl" || $stat
 
     }
     echo "<br>$count rides added.<br>";
+} else if ($state == 'delete_mcl_rides') {
+    $result=$mcl_api->deleteRides($start_date, $end_date,$_POST['mcl_username'],$_POST['mcl_password']);
+    if (is_int($result)) {
+        echo "Deleted $result activities from MyCyclingLog";
+    }
+    else {
+        echo "<p style=\"color:red;\"><b>Problem connecting to MyCyclingLog: $result</b></p>";
+    }
 }
 
 if ($strava_connected || $mcl_connected || $endo_connected) {
     ?>
 
-    <form action="" method="post">
+    <form action="" method="post" name="main_form">
         <hr>
 
         <script> function populateDates(start, end) {
@@ -461,10 +471,65 @@ if ($strava_connected || $mcl_connected || $endo_connected) {
                     echo '<tr><td colspan="3"><input type="submit" name="copy_endo_to_strava" value="Copy rides and routes from Endomondo to Strava">  <br>';
                     echo "</td></tr>";
                 }
+                if ($mcl_connected) {
+                    echo '<tr><td colspan="3"><input onclick="confirm_mcl_deletes()" type="button" name="delete_mcl_rides" value="Delete MyCyclingLog rides">  <br>';
+                    echo "</td></tr>";
+                }
+
                 ?>
-            <tr>
+            <script>
+                function confirm_mcl_deletes() {
+                    var start_date=document.forms["main_form"]["start_date"].value;
+                    var end_date=document.forms["main_form"]["end_date"].value;
+                    if (start_date == "") {
+                        start_date = "the beginning"
+                    }
+                    if (end_date == "") {
+                        end_date = "today"
+                    }
+                    var password_warning = "Are you sure you want to do this?  This will remove all activities from " +
+                        "MyCyclingLog between " +start_date + " and " + end_date + ".  If you are sure, enter your MCL password here.";
+                    
+                    <?php
+                    if (!$preferences->getMclUsername()) {
+                        echo 'var username = prompt("Please enter your MyCyclingLog username");';
+                    } else {
+                        echo "var username = '".$preferences->getMclUsername()."';";
+                    }
+                    ?>
+                    var password = prompt(password_warning);
+                    if(password != null) {
+                        document.forms["main_form"]["start_date"].value;
+
+                        submit_field = document.createElement('input');
+                        submit_field.setAttribute('name', 'delete_mcl_rides');
+                        submit_field.setAttribute('type', 'hidden');
+                        submit_field.setAttribute('value', 'Delete MyCyclingLog rides');
+                        document.forms["main_form"].appendChild(submit_field);
+
+
+                        username_field = document.createElement('input');
+                        username_field.setAttribute('name', 'mcl_username');
+                        username_field.setAttribute('type', 'hidden');
+                        username_field.setAttribute('value', username);
+                        document.forms["main_form"].appendChild(username_field);
+
+                        password_field = document.createElement('input');
+                        password_field.setAttribute('name', 'mcl_password');
+                        password_field.setAttribute('type', 'hidden');
+                        password_field.setAttribute('value', password);
+                        document.forms["main_form"].appendChild(password_field);
+
+                        ;
+
+                        document.forms["main_form"].submit("hello");
+                    }
+                    else
+                        return false;
+                }
+            </script>
+                <tr>
                 <td colspan="3"><input type="submit" name="clear_cookies" value="Delete Cookies"></td>
-            </tr>
             </tr>
         </table>
         <script>
@@ -613,7 +678,7 @@ if (!$strava_connected || !$mcl_connected || !$endo_connected || !$strava_api->w
 <p>Bug reports, feature requests, thanks? Please use this form. <em>Note this will only stay here until the spam bots
         find it.</em></p>
 <FORM METHOD="POST">
-    <INPUT TYPE=HIDDEN NAME="subject" VALUE="eSquad">
+    <INPUT TYPE=HIDDEN NAME="subject" VALUE="Eddington">
     <input type=hidden name="env_report" value="REMOTE_ADDR, HTTP_USER_AGENT">
 
     <p><strong>Your Name:</strong> <INPUT TYPE=TEXT NAME="commentRealname"
@@ -650,6 +715,10 @@ function br()
 }
 
 function log_msg($message) {
+    global $scratchDirectory,$logDiagnostics;
+    if (!isset($logDiagnostics) || !$logDiagnostics) {
+        return;
+    }
     if (is_string($message)) {
         $string=$message;
     } else {

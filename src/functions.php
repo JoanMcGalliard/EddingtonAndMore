@@ -122,7 +122,7 @@ function isDuplicateMCLRide($date, $distance, $strava_id, $mcl_rides)
  */
 function compareDistance($distance1, $distance2)
 {
-    if ( abs(($distance2 - $distance1) / $distance1) < 0.02)
+    if ( $distance1 <> 0 &&  abs(($distance2 - $distance1) / $distance1) < 0.02)
     {return 0;}
     return $distance1 < $distance2 ? -1 : 1;
 }
@@ -181,8 +181,8 @@ function buildChart($imperial_history, $metric_history)
         $y = date("Y", $time);
         $m = date("m", $time);
         $d = date("d", $time);
-        $imperial_e = max(intval($imperial_history[$date]), $imperial_e);
-        $metric_e = max(intval($metric_history[$date]), $metric_e);
+        $imperial_e = max(isset($imperial_history[$date]) ? intval($imperial_history[$date]) : $imperial_e, $imperial_e);
+        $metric_e = max(isset($metric_history[$date]) ? intval($metric_history[$date]) : $metric_e, $metric_e);
         $chart .= "        [new Date($y, $m, $d),  $imperial_e, $metric_e],\n";
     }
 

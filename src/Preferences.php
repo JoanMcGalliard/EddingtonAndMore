@@ -171,10 +171,11 @@ class Preferences
     public function setMclUsername($username)
     {
         $this->preferences->mcl->username=$username;
+        $this->save();
     }
     public function getMclUsername()
     {
-        return $this->preferences->mcl->username;
+        return isset($this->preferences->mcl->username) ? $this->preferences->mcl->username : null;
     }
 }
 

@@ -103,6 +103,10 @@
 
             $response = curl_exec($curl);
             $error = curl_error($curl);
+            log_msg("URL strava: " . $url);
+            log_msg($parameters);
+            log_msg($response);
+            log_msg("ERROR: ".$error);
 
             $this->lastRequestInfo = curl_getinfo($curl);
 

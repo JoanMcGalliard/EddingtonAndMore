@@ -104,7 +104,7 @@
             $response = curl_exec($curl);
             $error = curl_error($curl);
 
-            log_msg("Request " .$request);
+            log_msg("URL " .$url);
             log_msg("parameters");
             log_msg($parameters);
             log_msg("response");

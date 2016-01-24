@@ -66,7 +66,7 @@ class StravaApi implements trackerApiInterface
         if (!$this->connected) return false;
         $this->error = null;
         $athlete = $this->stravaApi->get('athlete');
-        $this->connected = isset($athlete->username);
+        $this->connected = isset($athlete->id);
         $this->userId = $athlete->id;
         if (isset($athlete->errors)) {
             $this->error = $athlete->message;

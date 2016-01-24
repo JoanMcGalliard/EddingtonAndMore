@@ -260,8 +260,10 @@ class MyCyclingLogApi implements trackerApiInterface
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
         $store = curl_exec($ch);
         if (strpos($store, "Logout") === false) {
+            vd("store");
+            vd($store);
             curl_close($ch);
-            return "Check username($username) and password.";
+            return "Check username ($username) and password.";
         }
 
         curl_setopt($ch, CURLOPT_URL, "http://www.mycyclinglog.com//add.php");

@@ -10,6 +10,7 @@ class EndomondoApi implements trackerApiInterface
 {
     const BASE_URL = "https://api.mobile.endomondo.com/mobile/";
     const COUNTRY = 'GB';
+    const TWENTY_FOUR_HOURS = 86400;
     protected $auth = null;
     protected $connected = false;
     protected $deviceId = "";
@@ -38,7 +39,6 @@ class EndomondoApi implements trackerApiInterface
         $this->deviceId = $deviceId;
         $this->tz = $tz;
         $this->googleApiKey = $googleApiKey;
-        define("TWENTY_FOUR_HOURS", 60 * 60 * 24);
     }
 
     /**
@@ -236,7 +236,7 @@ class EndomondoApi implements trackerApiInterface
         $start = strtotime($ride->start_time);
         $midnight = strtotime(date("Y-m-d", $start));
         $start_seconds = $start - $midnight;
-        if (($start_seconds + $ride->duration) > TWENTY_FOUR_HOURS) {
+        if (($start_seconds + $ride->duration) > self::TWENTY_FOUR_HOURS) {
             return true;
         }
         return false;

@@ -11,6 +11,8 @@ require_once 'src/JoanMcGalliard/EddingtonAndMore/Points.php';
 require_once 'src/functions.php';
 require_once 'src/Preferences.php';
 date_default_timezone_set("$timezone");
+$info_message="";
+$error_message="";
 
 
 $here = "http://$_SERVER[HTTP_HOST]$_SERVER[PHP_SELF]";
@@ -21,9 +23,14 @@ $error_message = "";
 $last = null;
 
 $preferences = new Preferences();
-
-$start_date = strtotime($_POST["start_date"]);
-$end_date = strtotime($_POST["end_date"]);
+$start_date=null;
+$end_date=null;
+if (isset($_POST["start_date"])) {
+    $start_date = strtotime($_POST["start_date"]);
+}
+if (isset($_POST["end_date"])) {
+    $end_date = strtotime($_POST["end_date"]." 23:59:59");
+}
 if (array_key_exists("tz", $_POST)) {
     $preferences->setTimezone($_POST["tz"]);
 }

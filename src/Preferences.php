@@ -97,7 +97,7 @@ class Preferences
     }
     public function getMclUseFeet()
     {
-        return $this->preferences->mcl->use_feet;
+        return isset($this->preferences->mcl->use_feet) ? $this->preferences->mcl->use_feet : null;
     }
     public function setEndoSplitRides($bool)
     {
@@ -106,7 +106,7 @@ class Preferences
     }
     public function getEndoSplitRides()
     {
-        return $this->preferences->endo->splitRides;
+        return isset($this->preferences->endo->splitRides) ? $this->preferences->endo->splitRides : null;
     }
     public function getEndoAuth()
     {
@@ -150,7 +150,7 @@ class Preferences
 
     public function getMclAuth()
     {
-        return $this->preferences->mcl->auth;
+        return isset($this->preferences->mcl->auth) ? $this->preferences->mcl->auth : null;
     }
 
     public function setTimezone($tz)

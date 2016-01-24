@@ -110,7 +110,7 @@ class Preferences
     }
     public function getEndoAuth()
     {
-        return $this->preferences->endo->auth;
+        return isset($this->preferences->endo->auth) ? $this->preferences->endo->auth : null;
     }
 
     public function setEndoAuth($auth)
@@ -128,7 +128,7 @@ class Preferences
 
     public function getStravaAccessToken()
     {
-        return $this->preferences->strava->access_token;
+        return isset($this->preferences->strava->access_token) ? $this->preferences->strava->access_token : null ;
     }
 
     public function setStravaSplitRides($bool)
@@ -138,7 +138,7 @@ class Preferences
     }
     public function getStravaSplitRides()
     {
-        return $this->preferences->strava->splitRides;
+        return isset($this->preferences->strava->splitRides) ? $this->preferences->strava->splitRides : null;
     }
 
 

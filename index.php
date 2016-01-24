@@ -19,6 +19,7 @@ $here = "http://$_SERVER[HTTP_HOST]$_SERVER[PHP_SELF]";
 $state = null;
 const METRE_TO_MILE = 0.00062137119224;
 const METRE_TO_KM = 0.001;
+
 $error_message = "";
 $last = null;
 
@@ -649,6 +650,22 @@ function br()
 {
     echo "<br>";
 }
+
+function log_msg($message) {
+    if (is_string($message)) {
+        $string=$message;
+    } else {
+        $string=var_export($message, true);
+    }
+    $tz=date_default_timezone_get();
+    date_default_timezone_set("UTC");
+    $date=date("Y-m-d H:i:s", time());
+    $file=fopen(dirname(__FILE__).DIRECTORY_SEPARATOR."diagnostic.log", "a");
+    fwrite($file, $date.": ".$string."\n");
+    fclose($file);
+    date_default_timezone_set($tz);
+}
+
 
 ?>
 </body>

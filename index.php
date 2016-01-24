@@ -438,9 +438,9 @@ if ($strava_connected || $mcl_connected || $endo_connected) {
                 <?php
                 if ($strava_connected) {
                     echo '<tr><td colspan="3"><input type="submit" name="calculate_from_strava" value="Eddington Number from Strava"><br>';
-                echo 'Split multiday rides?:
-            <input type="checkbox" value="split" ' . ($preferences->getStravaSplitRides() ? "checked" : "") .
-                    ' name="strava_split_rides"/></td></tr>';
+//                echo 'Split multiday rides?:
+//            <input type="checkbox" value="split" ' . ($preferences->getStravaSplitRides() ? "checked" : "") .
+//                    ' name="strava_split_rides"/></td></tr>';
                 }
                 if ($mcl_connected) {
 

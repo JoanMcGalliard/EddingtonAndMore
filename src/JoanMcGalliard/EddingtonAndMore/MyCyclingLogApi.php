@@ -262,6 +262,8 @@ class MyCyclingLogApi implements trackerApiInterface
         if (strpos($store, "Logout") === false) {
             vd($loginUrl);
             vd('username=' . $username . '&password=' . $password);
+            vd("curl_error");
+            vd(curl_error($ch));
             vd("store");
             vd($store);
             curl_close($ch);

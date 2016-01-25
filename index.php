@@ -420,6 +420,7 @@ if ($strava_connected || $mcl_connected || $endo_connected) {
         $start_of_month = date("01-m-Y", time());
         $start_of_year = date("01-01-Y", time());
         $start_of_last_year = "01-01-" . (intval(date("Y", time())) - 1);
+        $end_of_last_year = "31-12-" . (intval(date("Y", time())) - 1);
 
         ?>
 
@@ -432,7 +433,7 @@ if ($strava_connected || $mcl_connected || $endo_connected) {
         <span class="roundbutton" onclick="populateDates('<?php echo $start_of_month ?>','')">this month</span>
         <span class="roundbutton" onclick="populateDates('<?php echo $start_of_year ?>','')">this year</span>
         <span class="roundbutton"
-              onclick="populateDates('<?php echo $start_of_last_year ?>','<?php echo $start_of_year ?>')">last year</span>
+              onclick="populateDates('<?php echo $start_of_last_year ?>','<?php echo $end_of_last_year ?>')">last year</span>
         <span class="roundbutton" onclick="populateDates('','')">reset</span>
         <br>
         <br>

@@ -286,6 +286,7 @@ class EndomondoApi implements trackerApiInterface
             $this->lastTZRequestedFromGoogle->lat = $lat;
             $this->lastTZRequestedFromGoogle->long = $long;
         }
+        $points=null;
         return $this->lastTZRequestedFromGoogle->tz;
 
     }

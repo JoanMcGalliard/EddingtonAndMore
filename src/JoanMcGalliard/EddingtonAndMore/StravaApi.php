@@ -44,10 +44,14 @@ class StravaApi implements trackerApiInterface
 
     public function setAccessTokenFromCode($code)
     {
-        $token = $this->stravaApi->tokenExchange($code)->access_token;
-        $this->setAccessToken($token);
-        $this->connected = true;
-        return $token;
+        $tokenExchange = $this->stravaApi->tokenExchange($code);
+        if (isset($tokenExchange->access_token)) {
+            $token = $tokenExchange->access_token;
+            $this->setAccessToken($token);
+            $this->connected = true;
+            return $token;
+        }
+        return null;
     }
 
     public function setAccessToken($token)

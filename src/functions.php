@@ -20,6 +20,7 @@ function sumDay($rides)
 function next_goals($x)
 {
     $next = [];
+    $next[$x+1]=1;
     $mod = ($x % 10);
     if ($mod < 5) {
         $next[$x - $mod + 5] = 1;

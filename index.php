@@ -363,6 +363,7 @@ if ($state == "calculate_from_strava" || $state == "calculate_from_mcl" || $stat
                         }
                         unlink($path);
                     }
+                    $points=null;
                 }
 
             }

@@ -12,6 +12,25 @@ class Points
     private $timezone;
     private $splits;
     private $googleApiKey;
+    private $start_times;
+    private $end_times;
+    private $generateGPX=false;
+
+    /**
+     * @param mixed $generateGPX
+     */
+    public function setGenerateGPX($generateGPX)
+    {
+        $this->generateGPX = $generateGPX;
+    }
+
+    /**
+     * @param mixed $googleApiKey
+     */
+    public function setGoogleApiKey($googleApiKey)
+    {
+        $this->googleApiKey = $googleApiKey;
+    }
     private $previous = null;
 
     private $total_distance_day = [];
@@ -25,15 +44,17 @@ class Points
     /**
      * Points constructor.
      */
-    public function __construct($start_day, $googleApiKey)
+    public function __construct($start_day, $timezone="")
     {
         $this->points = [];
+        if ($timezone <> "") {
+            $this->timezone=$timezone;
+        } else
         if ($start_day) {
             $this->timezone = (new DateTime($start_day))->getTimezone()->getName();
 
         }
         $this->day($start_day);
-        $this->googleApiKey = $googleApiKey;
         $this->gpx = '<?xml version="1.0" encoding="UTF-8"?> <gpx creator="Eddington &amp; More" >';
         $this->gpx .= "<trk><trkseg>";
         $this->gpx .= "\n";
@@ -52,9 +73,9 @@ class Points
 
     public function add($lat, $long, $time)
     {
-        $point = new stdClass();
-        $point->long = $long;
-        $point->lat = $lat;
+        $point = [];
+        $point['long'] = $long;
+        $point['lat'] = $lat;
         $this->addPointToGPX($lat, $long, $time);
         if (!isset($this->timezone) && $time) {
             $this->timezone = $this->timezoneFromCoords($lat, $long, strtotime($time));
@@ -68,17 +89,37 @@ class Points
         if (!$this->previous) {
             $this->previous = $point;
         } else {
-            $distance = $this->distance($this->previous->lat, $this->previous->long, $point->lat, $point->long);
+            $distance = $this->distance($this->previous['lat'], $this->previous['long'], $point['lat'], $point['long']);
             if (!isset($this->splits[$this->day($time)])) {
                 $this->splits[$this->day($time)]=0;
+                $this->start_times[$this->day($time)]=$time;
+                $this->end_times[$this->day($time)]=$time;
             }
             $this->splits[$this->day($time)] += $distance;
+            $this->end_times[$this->day($time)]=$time;
             $this->previous = $point;
         }
     }
 
+    /**
+     * @return mixed
+     */
+    public function getStartTimes()
+    {
+        return $this->start_times;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getEndTimes()
+    {
+        return $this->end_times;
+    }
+
     public function addPointToGPX($lat, $long, $timestr)
     {
+        if (!$this->generateGPX) {return;}
         $default_tz = date_default_timezone_get();
         date_default_timezone_set("UTC");
         if (!$timestr) {

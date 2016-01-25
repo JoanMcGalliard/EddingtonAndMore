@@ -47,12 +47,6 @@ function number_of_days_to_goal($goal, $days, $factor)
     }
 }
 
-function dot()
-{
-    echo ".";
-    flush();
-}
-
 //returns true if endo id matches or a ride overlaps this ride.
 function isDuplicateStravaRide($endo_ride, $strava_rides)
 {

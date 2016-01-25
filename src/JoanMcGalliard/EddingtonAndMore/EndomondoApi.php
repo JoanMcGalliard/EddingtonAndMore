@@ -253,7 +253,9 @@ class EndomondoApi implements trackerApiInterface
         $params = ['fields' => 'points,simple', 'workoutId' => $workoutId];
         $page = $this->getPageWithDot($url, $params);
         $json_decode = json_decode($page);
-        $points = new Points($json_decode->start_time, $this->googleApiKey);
+        $points = new Points($json_decode->start_time);
+        $points->setGenerateGPX(true);
+        $points->setGoogleApiKey($this->googleApiKey);
         if (is_array($json_decode->points)) {
             foreach ($json_decode->points as $point) {
                 if (isset($point->lat) && isset($point->lng) && isset($point->time)) {
@@ -275,7 +277,8 @@ class EndomondoApi implements trackerApiInterface
     private function getTZ($lat, $long, $timestamp)
     {
 
-        $points = (new Points(date("Y-m-d", $timestamp), $this->googleApiKey));
+        $points = (new Points(date("Y-m-d", $timestamp)));
+        $points->setGoogleApiKey($this->googleApiKey);
         if (!$this->lastTZRequestedFromGoogle ||
             $points->distance($this->lastTZRequestedFromGoogle->lat, $this->lastTZRequestedFromGoogle->long, $lat, $long) > 100000
         ) {

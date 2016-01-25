@@ -55,6 +55,7 @@ $mcl_api->setUseFeetForElevation($preferences->getMclUseFeet());
 $endo_api->setSplitOvernightRides($preferences->getEndoSplitRides());
 $strava_api->setSplitOvernightRides($preferences->getStravaSplitRides());
 
+
 if (array_key_exists("login_mcl", $_POST)) {
     $mcl_username = $_POST['username'];
     $mcl_password = $_POST['password'];
@@ -105,6 +106,20 @@ if (array_key_exists("state", $_GET)) {
 $strava_connected = $strava_api->isConnected();
 $mcl_connected = $mcl_api->isConnected();
 $endo_connected = $endo_api->isConnected();
+
+if ($strava_connected && array_key_exists("delete_files", $_POST)) {
+    $files = scandir($scratchDirectory);
+    $pattern = '/^' . $strava_api->getUserId() . "-.*\.gpx$/";
+    $count=0;
+    foreach ($files as $file) {
+        if (preg_match($pattern, $file, $match) > 0) {
+            unlink($scratchDirectory.DIRECTORY_SEPARATOR.$file);
+            $count++;
+        }
+    }
+    echo "Deleted $count files.<br>";
+}
+
 if ($strava_connected && array_key_exists("calculate_from_strava", $_POST)) {
     $state = "calculate_from_strava";
 } else if ($mcl_connected && array_key_exists("calculate_from_mcl", $_POST)) {
@@ -192,8 +207,70 @@ if ($state == "calculate_from_strava" || $state == "calculate_from_mcl" || $stat
     if ($start_date) $start_text = $_POST["start_date"];
     if ($end_date) $end_text = $_POST["end_date"];
     if ($state == "calculate_from_strava") {
+
+        if (isset($_FILES) && isset ($_FILES['gpx'])) {  //gpx have been uploaded
+
+
+            $user = $strava_api->getUserId();
+            $path = $scratchDirectory . DIRECTORY_SEPARATOR . $user;
+            for ($i = 0; $i < sizeof($_FILES['gpx']['name']); $i++) {
+
+                $name = $_FILES['gpx']['name'][$i];
+                $type = $_FILES['gpx']['type'][$i];
+                $tmp_name = $_FILES['gpx']['tmp_name'][$i];
+                $error = $_FILES['gpx']['error'][$i];
+                $size = $_FILES['gpx']['size'][$i];
+                $pattern = "/\.gpx\$/";
+                if (!preg_match($pattern, $name, $matches) > 0) {
+                    echo("Skipping $name as it doesn't end in .GPX<br>");
+                } else if ($error <> 0) {
+                    echo("Skipping $name: error number $error.<br>");
+                } else {
+                    $doc = new DOMDocument();
+                    $doc->loadXML(file_get_contents($tmp_name));
+                    $time = str_replace(":", "_",
+                        $doc->getElementsByTagName("gpx")->item(0)->getElementsByTagName("metadata")->item(0)->getElementsByTagName("time")->item(0)->nodeValue);
+
+                    copy($tmp_name, "$path-$time.gpx");
+                    echo("$name: uploaded successfully.<br>");
+                }
+            }
+
+
+        }
+
+
         $source = "Strava";
         $activities = $strava_api->getRides($start_date, $end_date);
+        $overnight_rides=$strava_api->getOvernightActivities();
+        if ($preferences->getStravaSplitRides() && $overnight_rides) {
+            echo "<br>";
+            echo "To split your strava rides, you'll need to download some of the GPX from Strava, them upload them to here. ";
+            echo "<br><strong>First</strong> click the following links to download the GPX files.";
+            uasort($overnight_rides, function ($a, $b) {
+                if ($a->distance == $b->distance) return 0; else return ($a->distance > $b->distance) ? -1 : 1;
+            });
+            echo "<ol>";
+            foreach ($overnight_rides as $id => $details) {
+                $distance = intval($details->distance * METRE_TO_KM);
+                echo "<li><a target=\"_blank\" href=\"https://www.strava.com/activities/$id/export_gpx\">
+                    $details->name $distance km</a></li>";
+            }
+            echo "</ol>";
+
+            ?>
+            <form action="" method="post" enctype="multipart/form-data">
+                <strong>Then</strong> select the GPX file(s) that you have just downloaded:<br>
+                <input type="file" name="gpx[]" id="gpx" multiple>
+                <input type="hidden" name="start_date" value="<?php echo $_POST["start_date"];?>"/>
+                <input type="hidden" name="end_date" value="<?php echo $_POST["end_date"];?>"/>
+                <input type="hidden" name="calculate_from_strava" value="Eddington Number from Strava"/>
+                <input type="hidden" value="split" checked name="strava_split_rides"/>
+                <br><br><input type="submit" value="Upload and recalculate" name="submit"/>
+            </form>
+
+            <?php
+            }
     } else if ($state == "calculate_from_mcl") {
         $source = "MyCyclingLog";
         $activities = $mcl_api->getRides($start_date, $end_date);
@@ -229,7 +306,7 @@ if ($state == "calculate_from_strava" || $state == "calculate_from_mcl" || $stat
         $goals = next_goals($eddington_imperial);
         foreach ($goals as $goal) {
             $num = number_of_days_to_goal($goal, $days, METRE_TO_MILE);
-            echo "You need to do $num rides of at least $goal to increase it to $goal.<br>";
+            echo "You need to do $num ride(s) of at least $goal to increase it to $goal.<br>";
         }
     }
     $eddington_metric = calculateEddington($days, $result, METRE_TO_KM);
@@ -247,7 +324,7 @@ if ($state == "calculate_from_strava" || $state == "calculate_from_mcl" || $stat
         $goals = next_goals($eddington_metric);
         foreach ($goals as $goal) {
             $num = number_of_days_to_goal($goal, $days, METRE_TO_KM);
-            echo "You need to do $num rides of at least $goal to increase it to $goal.<br>";
+            echo "You need to do $num ride(s) of at least $goal to increase it to $goal.<br>";
         }
     }
 
@@ -275,7 +352,7 @@ if ($state == "calculate_from_strava" || $state == "calculate_from_mcl" || $stat
             $strava_day_total = sumDay($ride_list);
             $mcl_day_total = isset($mcl_rides[$date]) ? sumDay($mcl_rides[$date]) : 0;
             if (compareDistance($mcl_day_total, $strava_day_total) >= 0) {
-                continue; //there is at least this many miles for this day already in s        trava
+                continue; //there is at least this many miles for this day already in strava
             }
             foreach ($ride_list as $ride) {
                 if (compareDistance($mcl_day_total, $strava_day_total) >= 0) {
@@ -448,9 +525,9 @@ if ($strava_connected || $mcl_connected || $endo_connected) {
                 <?php
                 if ($strava_connected) {
                     echo '<tr><td colspan="3"><input type="submit" name="calculate_from_strava" value="Eddington Number from Strava"/><br>';
-//                echo 'Split multiday rides?:
-//            <input type="checkbox" value="split" ' . ($preferences->getStravaSplitRides() ? "checked" : "") .
-//                    ' name="strava_split_rides"/>';
+                echo 'Split multiday rides?:
+            <input type="checkbox" value="split" ' . ($preferences->getStravaSplitRides() ? "checked" : "") .
+                    ' name="strava_split_rides"/>';
                     echo '</td></tr>';
                 }
                 if ($mcl_connected) {
@@ -481,6 +558,11 @@ if ($strava_connected || $mcl_connected || $endo_connected) {
             <tr>
                 <td colspan="3"><input type="submit" name="clear_cookies" value="Delete Cookies"/></td>
             </tr>
+            <?php  if ($strava_connected) { ?>
+                <tr>
+                <td colspan="3"><input type="submit" name="delete_files" value="Delete temporary files"/></td>
+            </tr>
+            <?php } ?>
         </table>
         <script>
             $("#datepicker_start").datepicker({changeMonth: true, changeYear: true, dateFormat: 'dd-mm-yy'});
@@ -551,6 +633,9 @@ if ($strava_connected || $mcl_connected || $endo_connected) {
             <li><em>You can set either or both dates, or leave them both blank your lifetime
                     E-number.</em></li>
             <li><em>the timezone is used to determine midnight for the date range</em></li>
+            <li><em>If you upload files, they will be kept on a scratch directory with your Strava User Id,
+                so you won't have to reupload them every time.  You can remove the files from the server
+                by pressing the appropriate button above.</em></li>
             <li><em>when using Strava,
                     each
                     ride's date is the local time saved by Strava</em></li>
@@ -710,6 +795,7 @@ function vd($x)
     $dump = var_export($x, true);
     echo $dump;
     echo "</pre>";
+    flush();
 }
 
 function br()

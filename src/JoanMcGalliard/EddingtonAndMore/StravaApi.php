@@ -3,6 +3,8 @@
 namespace JoanMcGalliard\EddingtonAndMore;
 require_once "Iamstuartwilson/StravaApi.php";
 require_once 'TrackerApiInterface.php';
+require_once 'Points.php';
+use DOMDocument;
 use Iamstuartwilson;
 
 class StravaApi implements trackerApiInterface
@@ -16,6 +18,8 @@ class StravaApi implements trackerApiInterface
     private $writeScope = false;
     private $userId;
     private $stravaApi;
+    private $overnightActivities = [];
+    private $splitOvernight;
 
     public function __construct($clientId, $clientSecret, $stravaApi = null)
     {
@@ -149,37 +153,101 @@ class StravaApi implements trackerApiInterface
         return $return;
     }
 
-    private function dot()
+    private function rareDot()
     {
-        echo ".";
+        if (!isset($this->rareDotCount)){ $this->rareDotCount=0;}
+        if ($this->rareDotCount++ > 1000) {$this->dot(); $this->rareDotCount=0;}
+        flush();
+    }
+    private function dot($dot='.')
+    {
+
+        if (!isset($this->dotCount)){ $this->dotCount=0;}
+        echo $dot;
+        if ($this->dotCount++ > 120) {echo "<br>"; $this->dotCount=0;}
         flush();
     }
 
     private function newActivities(&$activities_list, $to_add)
     {
+        global $scratchDirectory;
         foreach ($to_add as $activity) {
             if ($activity->type != 'Ride') continue;
             $next = [];
             $next['distance'] = floatval($activity->distance);
             $next['name'] = $activity->name;
             $next['strava_id'] = $activity->id;
-            $next['name'] = $activity->name;
             $next['start_time'] = $activity->start_date;
             $next['bike'] = $activity->gear_id;
             $next['moving_time'] = $activity->moving_time;
             $next['elapsed_time'] = $activity->elapsed_time;
             $next['total_elevation_gain'] = $activity->total_elevation_gain;
             $next['max_speed'] = $activity->max_speed;
-
-            $pattern = "/^([0-9][0-9]*)" . self::GPX_SUFFIX . "/";
-            if (preg_match($pattern, $activity->external_id, $matches) > 0) {
-                $next['endo_id'] = intval($matches[1]);
+            if (preg_match('/\([^\)]*\) (.*)$/', $activity->timezone, $matches) > 0) {
+                $next['timezone'] = $matches[1];
             } else {
-                $next['endo_id'] = null;
+                $next['timezone'] = null;
             }
-            $date = date("Y-m-d", strtotime($activity->start_date_local));
-            $activities_list[$date][] = $next;
+            $gpx_file = $scratchDirectory . DIRECTORY_SEPARATOR . $this->userId . "-" .
+                preg_replace("/:/", "_", $activity->start_date) . ".gpx";
+            $numberOfDays = $this->numberOfDays($activity->start_date, $next['timezone'], $activity->elapsed_time);
+            if ($this->splitOvernight && $numberOfDays > 1 && file_exists($gpx_file)) {
+                $xml = file_get_contents($gpx_file);
+                preg_match_all('/<trkpt[^>]*>.*?<\/trkpt>/s', $xml, $trkpts);
+                $points = new Points($activity->start_date, $next['timezone']);
+                foreach ($trkpts[0] as $trkpt) {
+                    preg_match('/<trkpt.*lat="([^"]*)"/',$trkpt, $matches);
+                    $lat=$matches[1];
+                    preg_match('/<trkpt.*lon="([^"]*)"/',$trkpt, $matches);
+                    $lon=$matches[1];
+                    preg_match('/<time>([^<]*)<\/time>/',$trkpt, $matches);
+                    $time=$matches[1];
+                    $points->add($lat, $lon, $time);
+                    $this->rareDot();
+                }
+
+                if (sizeof($points->getSplits())> 0) {
+                    $next['total_elevation_gain'] = $next['total_elevation_gain'] / sizeof($points->getSplits());
+                }
+
+                foreach ($points->getSplits() as $split_date => $split) {
+                    $new = $next;
+                    $new['distance'] = $split;
+                    $new['start_time'] = $points->getStartTimes()[$split_date];
+                    $new['elapsed_time'] = strtotime($points->getEndTimes()[$split_date]) - strtotime($points->getStartTimes()[$split_date]);
+                    $new['moving_time'] = $new['elapsed_time'];
+                    $activities_list[$split_date][] = $new;
+                }
+
+                $points = null;
+
+            } else {
+                if ($this->splitOvernight && $numberOfDays > 1) {
+                    // it's a multi day ride, but we don't have a file for it.
+                    $this->overnightActivities[$activity->id] = $activity;
+
+                }
+                $pattern = "/^([0-9][0-9]*)" . self::GPX_SUFFIX . "/";
+                if (preg_match($pattern, $activity->external_id, $matches) > 0) {
+                    $next['endo_id'] = intval($matches[1]);
+                } else {
+                    $next['endo_id'] = null;
+                }
+                $date = date("Y-m-d", strtotime($activity->start_date_local));
+                $activities_list[$date][] = $next;
+            }
         }
+    }
+
+    private function numberOfDays($start_time, $tz, $duration)
+    {
+        $def_tz = date_default_timezone_get();
+        date_default_timezone_set($tz);
+        $start = strtotime($start_time);
+        $midnight = strtotime(date("Y-m-d", $start));
+        date_default_timezone_set($def_tz);
+        $start_seconds = $start - $midnight;
+        return intval(($start_seconds + $duration) / TWENTY_FOUR_HOURS) + 1;
     }
 
     public function getBike($id)
@@ -215,7 +283,6 @@ class StravaApi implements trackerApiInterface
         return "http://www.strava.com/activities/$activityId";
     }
 
-
     public function waitForPendingUploads()
     {
         $timestamp = time();
@@ -236,7 +303,7 @@ class StravaApi implements trackerApiInterface
                     unset($this->pending_uploads[$pending_id]);
                 }
             }
-            dot();
+            $this->dot();
             sleep(1);
         }
         foreach ($this->pending_uploads as $pending_id => $queued) {
@@ -253,14 +320,21 @@ class StravaApi implements trackerApiInterface
         return $this->userId;
     }
 
-    public function setSplitOvernightRides($getStravaSplitRides)
+    public function setSplitOvernightRides($splitRides)
     {
+        $this->splitOvernight = $splitRides;
     }
 
     public function authenticationUrl($redirect, $approvalPrompt, $scope, $state)
     {
         return $this->stravaApi->authenticationUrl($redirect, $approvalPrompt, $scope, $state);
     }
+
+    public function getOvernightActivities()
+    {
+        return $this->overnightActivities;
+    }
+
 }
 
 ?>

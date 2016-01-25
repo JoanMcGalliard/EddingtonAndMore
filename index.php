@@ -275,7 +275,7 @@ if ($state == "calculate_from_strava" || $state == "calculate_from_mcl" || $stat
             $strava_day_total = sumDay($ride_list);
             $mcl_day_total = isset($mcl_rides[$date]) ? sumDay($mcl_rides[$date]) : 0;
             if (compareDistance($mcl_day_total, $strava_day_total) >= 0) {
-                continue; //there is at least this many miles for this day already in strava
+                continue; //there is at least this many miles for this day already in s        trava
             }
             foreach ($ride_list as $ride) {
                 if (compareDistance($mcl_day_total, $strava_day_total) >= 0) {

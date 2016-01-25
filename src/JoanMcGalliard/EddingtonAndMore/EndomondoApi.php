@@ -205,6 +205,7 @@ class EndomondoApi implements trackerApiInterface
                         $new['distance'] = $split;
                         $records[$split_date][] = $new;
                     }
+                    $points=null; // free memory
                 } else {
                     $records[$date][] = $record;
                 }
@@ -255,7 +256,9 @@ class EndomondoApi implements trackerApiInterface
         $points = new Points($json_decode->start_time, $this->googleApiKey);
         if (is_array($json_decode->points)) {
             foreach ($json_decode->points as $point) {
-                $points->add($point->lat, $point->lng, $point->time);
+                if (isset($point->lat) && isset($point->lng) && isset($point->time)) {
+                    $points->add($point->lat, $point->lng, $point->time);
+                }
             }
         }
         return $points;

@@ -69,6 +69,9 @@ class Points
             $this->previous = $point;
         } else {
             $distance = $this->distance($this->previous->lat, $this->previous->long, $point->lat, $point->long);
+            if (!isset($this->splits[$this->day($time)])) {
+                $this->splits[$this->day($time)]=0;
+            }
             $this->splits[$this->day($time)] += $distance;
             $this->previous = $point;
         }

@@ -192,7 +192,7 @@ function buildChart($imperial_history, $metric_history)
     return $text;
 }
 
-function askForStravaGpx($overnight_rides, $maxKmFileUploads, $message="Upload and recalculate")
+function askForStravaGpx($overnight_rides, $maxKmFileUploads, $state, $message)
 {
     if (sizeof($overnight_rides) == 0) {return;}
     echo "<br>";
@@ -228,10 +228,10 @@ function askForStravaGpx($overnight_rides, $maxKmFileUploads, $message="Upload a
     echo '<input type="file" name="gpx[]" id="gpx" multiple>';
     echo '<input type="hidden" name="start_date" value="' . $_POST["start_date"] . '"/>';
     echo '<input type="hidden" name="end_date" value="' . $_POST["end_date"] . '"/>';
-    echo '<input type="hidden" name="calculate_from_strava" value="Eddington Number from Strava"/>';
+    echo '<input type="hidden" name="'.$state.'" />';
     echo '<input type="hidden" value="split" checked name="strava_split_rides"/>';
-    echo '<br><strong>Finally</strong>, recalculate your E-number:';
-    echo '<br><input type="submit" value="'.$message.'" name="submit"/>';
+    echo "<br><strong>Finally</strong>, $message:";
+    echo '<br><input type="submit" value="Upload and '.$message.'" name="submit"/>';
     echo '</form>';
     return $distance;
 }

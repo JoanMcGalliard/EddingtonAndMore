@@ -244,7 +244,7 @@ if ($state == "calculate_from_strava" || $state == "calculate_from_mcl" || $stat
         $activities = $strava_api->getRides($start_date, $end_date);
         $overnight_rides = $strava_api->getOvernightActivities();
         if ($preferences->getStravaSplitRides() && $overnight_rides) {
-            askForStravaGpx($overnight_rides, $maxKmFileUploads);
+            askForStravaGpx($overnight_rides, $maxKmFileUploads,"calculate_from_strava", "recalculate your E-Number");
 
         }
     } else if ($state == "calculate_from_mcl") {
@@ -364,6 +364,8 @@ if ($state == "calculate_from_strava" || $state == "calculate_from_mcl" || $stat
                     }
                     echo "$message <br>";
                     flush();
+                } else {
+                    $strava_api->dot();
                 }
 
             }
@@ -379,7 +381,7 @@ if ($state == "calculate_from_strava" || $state == "calculate_from_mcl" || $stat
         echo "Some rides failed to be added.  See above.<br>";
     }
 
-    askForStravaGpx($overnightRidesNeeded,$maxKmFileUploads, "Upload and add to MyCyclingLog");
+    askForStravaGpx($overnightRidesNeeded,$maxKmFileUploads,"copy_strava_to_mcl", "add to MyCyclingLog");
 } else if ($state == "copy_endo_to_strava") {
     echo "<H3>Copying rides from Endomondo to Strava...</H3>";
     set_time_limit(300);
@@ -646,6 +648,9 @@ if ($strava_connected || $mcl_connected || $endo_connected) {
             <li><em>As I can't get the GPS points directly from Strava, Strava rides can
                 only be split by you downloading them onto your machine, and then uploading
                 them here.</em></li>
+            <li><em>As splitting Strava rides is such a faff, it's probably easiest to use the copy feature above to
+                copy them to MyCyclingLog, then calculate your E-number from that.  Then you will only need download/upload them
+                once.</em></li>
             <li><em>It might take a minute or two to come back with an answer</em></li>
             <li><em>It's much slower if you split the rides.</em></li>
             <li><em>Rides of less than 500m are not copied between systems.</em></li>

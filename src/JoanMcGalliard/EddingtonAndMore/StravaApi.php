@@ -159,9 +159,8 @@ class StravaApi implements trackerApiInterface
         if ($this->rareDotCount++ > 1000) {$this->dot(); $this->rareDotCount=0;}
         flush();
     }
-    private function dot($dot='.')
+    public function dot($dot='.')
     {
-
         if (!isset($this->dotCount)){ $this->dotCount=0;}
         echo $dot;
         if ($this->dotCount++ > 120) {echo "<br>"; $this->dotCount=0;}

@@ -263,7 +263,7 @@ class MyCyclingLogApi implements trackerApiInterface
                 if ($units == 'mi') {
                     $record['distance'] = $distance / self::METRE_TO_MILE;
                 } else if ($units == 'km') {
-                    $record['distance'] = $distance * 1000;
+                    $record['distance'] = $distance /self::METRE_TO_KM;
                 }
                 $record['mcl_id'] = $ride->getAttribute('id');
 

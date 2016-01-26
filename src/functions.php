@@ -262,6 +262,7 @@ function processUploadedGpxFiles($userId, $scratchDirectory)
                 copy($tmp_name, "$path-$time.gpx");
                 echo("$name: uploaded successfully.<br>");
             }
+            unlink($tmp_name);
         }
     }
 }

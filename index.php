@@ -349,7 +349,7 @@ if ($state == "calculate_from_strava" || $state == "calculate_from_mcl" || $stat
         $strava_rides_to_add = $rides_to_retry;
         $rides_to_retry = [];
     }
-    echo "$count rides added.<br>";
+    echo "<br>$count rides added.<br>";
     if (sizeof($rides_to_retry) != 0) {
         echo "Some rides failed to be added.  See above.<br>";
     }

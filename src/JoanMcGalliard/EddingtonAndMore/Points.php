@@ -49,10 +49,6 @@ class Points
         $this->points = [];
         if ($timezone <> "") {
             $this->timezone=$timezone;
-        } else
-        if ($start_day) {
-            $this->timezone = (new DateTime($start_day))->getTimezone()->getName();
-
         }
         $this->day($start_day);
         $this->gpx = '<?xml version="1.0" encoding="UTF-8"?> <gpx creator="Eddington &amp; More" >';
@@ -64,7 +60,9 @@ class Points
     {
         if ($timestring) {
             $default_timezone = date_default_timezone_get();
-            date_default_timezone_set($this->timezone);
+            if (isset($this->timezone)) {
+                date_default_timezone_set($this->timezone);
+            }
             $this->current_day = date("Y-m-d", strtotime($timestring));
             date_default_timezone_set($default_timezone);
         }
@@ -77,8 +75,18 @@ class Points
         $point['long'] = $long;
         $point['lat'] = $lat;
         $this->addPointToGPX($lat, $long, $time);
-        if (!isset($this->timezone) && $time) {
-            $this->timezone = $this->timezoneFromCoords($lat, $long, strtotime($time));
+        if (!isset($this->timezone)) {
+            if (!isset($this->googleApiKey)) {
+                $this->timezone="UTC";
+            } else {
+                if ($time) {
+                    $this->timezone=$this->timezoneFromCoords($lat, $long, strtotime($time));
+                } else {
+                    $this->timezone=$this->timezoneFromCoords($lat, $long, strtotime($this->start_day));
+                }
+            }
+        }
+        if ($time) {
             $default_timezone = date_default_timezone_get();
             date_default_timezone_set($this->timezone);
 
@@ -140,7 +148,6 @@ class Points
     {
         $params = ['location' => "$lat,$long",
             'timestamp' => $time, 'key', $this->googleApiKey];
-        $params["authToken"] = $this->auth;
 
         $url = "https://maps.googleapis.com/maps/api/timezone/json" . "?" . http_build_query($params);
         $process = curl_init($url);

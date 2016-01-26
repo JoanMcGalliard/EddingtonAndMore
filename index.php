@@ -266,6 +266,7 @@ if ($state == "calculate_from_strava" || $state == "calculate_from_mcl" || $stat
                 <input type="hidden" name="end_date" value="<?php echo $_POST["end_date"];?>"/>
                 <input type="hidden" name="calculate_from_strava" value="Eddington Number from Strava"/>
                 <input type="hidden" value="split" checked name="strava_split_rides"/>
+                <strong>Finally</strong>, recalculate your E-number
                 <br><br><input type="submit" value="Upload and recalculate" name="submit"/>
             </form>
 

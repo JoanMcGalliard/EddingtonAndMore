@@ -1,5 +1,5 @@
 <?php
-
+ob_implicit_flush();
 define("TWENTY_FOUR_HOURS", 60 * 60 * 24);
 set_include_path(get_include_path() . PATH_SEPARATOR . dirname(__FILE__) . DIRECTORY_SEPARATOR . "src" . PATH_SEPARATOR);
 

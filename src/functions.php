@@ -82,21 +82,19 @@ function isDuplicateStravaRide($endo_ride, $strava_rides)
     return false;
 }
 
-function isDuplicateMCLRide($date, $strava_id, $mcl_rides)
+function extractStravaIds($mcl_rides)
 {
-    if ($mcl_rides == null || !array_key_exists($date, $mcl_rides)) {
-        return false;
-    } else {
-        foreach ($mcl_rides[$date] as $ride) {
-            if ($ride['strava_id'] != null) {
-                if ($ride['strava_id'] == $strava_id) {
-                    return true;
+    $stravaIds = [];
+    if ($mcl_rides) {
+        foreach ($mcl_rides as $rides) {
+            foreach ($rides as $ride) {
+                if ($ride['strava_id'] != null) {
+                    $stravaIds[] = $ride['strava_id'];
                 }
-                continue;
             }
         }
     }
-    return false;
+    return $stravaIds;
 }
 
 /**
@@ -216,11 +214,11 @@ function askForStravaGpx($overnight_rides, $maxKmFileUploads, $state, $message)
     }
     echo "</ol>";
     if (sizeof($overnight_rides) > $count) {
-        echo "<em>You've got another " . (sizeof($overnight_rides) - $count);
-        echo " overnight ride(s) to add after this (you do like riding at midnight!), ";
+        echo "<em>(You've got another " . (sizeof($overnight_rides) - $count);
+        echo " overnight ride(s) to add after this (you do like riding over midnight!), ";
         echo "but we are restricting it to $maxKmFileUploads kilometres or so at a time to keep the ";
         echo "server behaving nicely. The rides above are the longest of your rides that ";
-        echo "are needed.</em>";
+        echo "are needed.)</em>";
     }
 
     echo '<form action="" method="post" enctype="multipart/form-data">';
@@ -234,6 +232,38 @@ function askForStravaGpx($overnight_rides, $maxKmFileUploads, $state, $message)
     echo '<br><input type="submit" value="Upload and '.$message.'" name="submit"/>';
     echo '</form>';
     return $distance;
+}
+
+function processUploadedGpxFiles($userId, $scratchDirectory)
+{
+    if (isset($_FILES) && isset ($_FILES['gpx'])) {  //gpx have been uploaded
+
+
+        $user = $userId;
+        $path = $scratchDirectory . DIRECTORY_SEPARATOR . $user;
+        for ($i = 0; $i < sizeof($_FILES['gpx']['name']); $i++) {
+
+            $name = $_FILES['gpx']['name'][$i];
+            $type = $_FILES['gpx']['type'][$i];
+            $tmp_name = $_FILES['gpx']['tmp_name'][$i];
+            $error = $_FILES['gpx']['error'][$i];
+            $size = $_FILES['gpx']['size'][$i];
+            $pattern = "/\.gpx\$/";
+            if (!preg_match($pattern, $name, $matches) > 0) {
+                echo("Skipping $name as it doesn't end in .GPX<br>");
+            } else if ($error <> 0) {
+                echo("Skipping $name: error number $error.<br>");
+            } else {
+                $doc = new DOMDocument();
+                $doc->loadXML(file_get_contents($tmp_name));
+                $time = str_replace(":", "_",
+                    $doc->getElementsByTagName("gpx")->item(0)->getElementsByTagName("metadata")->item(0)->getElementsByTagName("time")->item(0)->nodeValue);
+
+                copy($tmp_name, "$path-$time.gpx");
+                echo("$name: uploaded successfully.<br>");
+            }
+        }
+    }
 }
 
 ?>

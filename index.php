@@ -208,36 +208,7 @@ if ($state == "calculate_from_strava" || $state == "calculate_from_mcl" || $stat
     if ($end_date) $end_text = $_POST["end_date"];
     if ($state == "calculate_from_strava") {
 
-        if (isset($_FILES) && isset ($_FILES['gpx'])) {  //gpx have been uploaded
-
-
-            $user = $strava_api->getUserId();
-            $path = $scratchDirectory . DIRECTORY_SEPARATOR . $user;
-            for ($i = 0; $i < sizeof($_FILES['gpx']['name']); $i++) {
-
-                $name = $_FILES['gpx']['name'][$i];
-                $type = $_FILES['gpx']['type'][$i];
-                $tmp_name = $_FILES['gpx']['tmp_name'][$i];
-                $error = $_FILES['gpx']['error'][$i];
-                $size = $_FILES['gpx']['size'][$i];
-                $pattern = "/\.gpx\$/";
-                if (!preg_match($pattern, $name, $matches) > 0) {
-                    echo("Skipping $name as it doesn't end in .GPX<br>");
-                } else if ($error <> 0) {
-                    echo("Skipping $name: error number $error.<br>");
-                } else {
-                    $doc = new DOMDocument();
-                    $doc->loadXML(file_get_contents($tmp_name));
-                    $time = str_replace(":", "_",
-                        $doc->getElementsByTagName("gpx")->item(0)->getElementsByTagName("metadata")->item(0)->getElementsByTagName("time")->item(0)->nodeValue);
-
-                    copy($tmp_name, "$path-$time.gpx");
-                    echo("$name: uploaded successfully.<br>");
-                }
-            }
-
-
-        }
+        processUploadedGpxFiles($strava_api->getUserId(), $scratchDirectory);
 
 
         $source = "Strava";
@@ -316,6 +287,7 @@ if ($state == "calculate_from_strava" || $state == "calculate_from_mcl" || $stat
 
 
 } else if ($state == "copy_strava_to_mcl") {
+    processUploadedGpxFiles($strava_api->getUserId(), $scratchDirectory);
     echo "<H3>Copying data from Strava to MyCyclingLog...</H3>";
     set_time_limit(300);
 
@@ -325,6 +297,7 @@ if ($state == "calculate_from_strava" || $state == "calculate_from_mcl" || $stat
     for ($i = 0; $i < 5; $i++) {
         $rides_to_retry = [];
         $mcl_rides = $mcl_api->getRides($start_date, $end_date);
+        $strava_ids_in_mcl_rides=extractStravaIds($mcl_rides);
         $overnight_rides = $strava_api->getOvernightActivities();
         foreach ($strava_rides_to_add as $date => $ride_list) {
             $strava_day_total = sumDay($ride_list);
@@ -339,7 +312,7 @@ if ($state == "calculate_from_strava" || $state == "calculate_from_mcl" || $stat
                 }
 
                 $distance = $ride['distance'];
-                if (!isDuplicateMCLRide($date, $ride['strava_id'], $mcl_rides)) {
+                if (!in_array($ride['strava_id'],$strava_ids_in_mcl_rides)) { // not an already copied strava ride
                     if ($preferences->getStravaSplitRides() && isset($overnight_rides[$ride['strava_id']])) {
                         $overnightRidesNeeded[$ride['strava_id']]=$overnight_rides[$ride['strava_id']];
                         continue; // this is an unsplit overnight ride

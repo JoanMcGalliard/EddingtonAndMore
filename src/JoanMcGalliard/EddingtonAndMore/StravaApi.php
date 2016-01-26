@@ -161,10 +161,9 @@ class StravaApi implements trackerApiInterface
     }
     public function dot($dot='.')
     {
-        if (!isset($this->dotCount)){ $this->dotCount=0;}
         echo $dot;
-        if ($this->dotCount++ > 120) {echo "<br>"; $this->dotCount=0;}
-        flush();
+        echo str_pad('',4096);  // so firefox will display something
+        flush();  // maybe unnecessary, test later
     }
 
     private function newActivities(&$activities_list, $to_add)

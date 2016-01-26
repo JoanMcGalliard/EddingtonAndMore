@@ -17,4 +17,6 @@ $stravaClientSecret = null;
 $googleApiKey="";
 $logDiagnostics=false;
 
+$maxKmFileUploads=1000;
+
 ?>

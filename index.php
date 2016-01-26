@@ -15,7 +15,7 @@ $info_message = "";
 $error_message = "";
 
 
-$here = "http://$_SERVER[HTTP_HOST]$_SERVER[PHP_SELF]";
+$here = "http://$_SERVER[HTTP_HOST]$_SERVER[REQUEST_URI]";
 $state = null;
 const METRE_TO_MILE = 0.00062137119224;
 const METRE_TO_KM = 0.001;
@@ -36,7 +36,7 @@ if (array_key_exists("tz", $_POST)) {
 if (array_key_exists("calculate_from_endo", $_POST)) {
     $preferences->setEndoSplitRides((array_key_exists("endo_split_rides", $_POST)));
 }
-if (array_key_exists("calculate_from_strava", $_POST)) {
+if (array_key_exists("calculate_from_strava", $_POST) || array_key_exists("copy_strava_to_mcl", $_POST)) {
     $preferences->setStravaSplitRides((array_key_exists("strava_split_rides", $_POST)));
 }
 
@@ -110,10 +110,10 @@ $endo_connected = $endo_api->isConnected();
 if ($strava_connected && array_key_exists("delete_files", $_POST)) {
     $files = scandir($scratchDirectory);
     $pattern = '/^' . $strava_api->getUserId() . "-.*\.gpx$/";
-    $count=0;
+    $count = 0;
     foreach ($files as $file) {
         if (preg_match($pattern, $file, $match) > 0) {
-            unlink($scratchDirectory.DIRECTORY_SEPARATOR.$file);
+            unlink($scratchDirectory . DIRECTORY_SEPARATOR . $file);
             $count++;
         }
     }
@@ -242,36 +242,11 @@ if ($state == "calculate_from_strava" || $state == "calculate_from_mcl" || $stat
 
         $source = "Strava";
         $activities = $strava_api->getRides($start_date, $end_date);
-        $overnight_rides=$strava_api->getOvernightActivities();
+        $overnight_rides = $strava_api->getOvernightActivities();
         if ($preferences->getStravaSplitRides() && $overnight_rides) {
-            echo "<br>";
-            echo "To split your strava rides, you'll need to download some of the GPX from Strava, them upload them to here. ";
-            echo "<br><strong>First</strong> click the following links to download the GPX files.";
-            uasort($overnight_rides, function ($a, $b) {
-                if ($a->distance == $b->distance) return 0; else return ($a->distance > $b->distance) ? -1 : 1;
-            });
-            echo "<ol>";
-            foreach ($overnight_rides as $id => $details) {
-                $distance = intval($details->distance * METRE_TO_KM);
-                echo "<li><a target=\"_blank\" href=\"https://www.strava.com/activities/$id/export_gpx\">
-                    $details->name $distance km</a></li>";
-            }
-            echo "</ol>";
+            askForStravaGpx($overnight_rides, $maxKmFileUploads);
 
-            ?>
-            <form action="" method="post" enctype="multipart/form-data">
-                <strong>Then</strong> select the GPX file(s) that you have just downloaded:<br>
-                <input type="file" name="gpx[]" id="gpx" multiple>
-                <input type="hidden" name="start_date" value="<?php echo $_POST["start_date"];?>"/>
-                <input type="hidden" name="end_date" value="<?php echo $_POST["end_date"];?>"/>
-                <input type="hidden" name="calculate_from_strava" value="Eddington Number from Strava"/>
-                <input type="hidden" value="split" checked name="strava_split_rides"/>
-                <strong>Finally</strong>, recalculate your E-number
-                <br><br><input type="submit" value="Upload and recalculate" name="submit"/>
-            </form>
-
-            <?php
-            }
+        }
     } else if ($state == "calculate_from_mcl") {
         $source = "MyCyclingLog";
         $activities = $mcl_api->getRides($start_date, $end_date);
@@ -346,9 +321,11 @@ if ($state == "calculate_from_strava" || $state == "calculate_from_mcl" || $stat
 
     $strava_rides_to_add = $strava_api->getRides($start_date, $end_date);
     $count = 0;
+    $overnightRidesNeeded=[];  // these are unsplit overnight rides that haven't already been added to MCL
     for ($i = 0; $i < 5; $i++) {
         $rides_to_retry = [];
         $mcl_rides = $mcl_api->getRides($start_date, $end_date);
+        $overnight_rides = $strava_api->getOvernightActivities();
         foreach ($strava_rides_to_add as $date => $ride_list) {
             $strava_day_total = sumDay($ride_list);
             $mcl_day_total = isset($mcl_rides[$date]) ? sumDay($mcl_rides[$date]) : 0;
@@ -356,20 +333,23 @@ if ($state == "calculate_from_strava" || $state == "calculate_from_mcl" || $stat
                 continue; //there is at least this many miles for this day already in strava
             }
             foreach ($ride_list as $ride) {
+
                 if (compareDistance($mcl_day_total, $strava_day_total) >= 0) {
                     break;
                 }
 
                 $distance = $ride['distance'];
-                $message = "Ride with id " . $ride['strava_id'] . " on $date, distance " . round($distance * METRE_TO_MILE, 1) . " miles/" . round($distance * METRE_TO_KM, 1) . " kms. ";
-                if (isDuplicateMCLRide($date, $distance, $ride['strava_id'], $mcl_rides)) {
-                    $message = $message . "Duplicate, skipping. ";
-                } else {
+                if (!isDuplicateMCLRide($date, $ride['strava_id'], $mcl_rides)) {
+                    if ($preferences->getStravaSplitRides() && isset($overnight_rides[$ride['strava_id']])) {
+                        $overnightRidesNeeded[$ride['strava_id']]=$overnight_rides[$ride['strava_id']];
+                        continue; // this is an unsplit overnight ride
+                    }
+
                     if (compareDistance($mcl_day_total + $distance, $strava_day_total) >= 0) {
                         //this ride will make our day total on MCL bigger than strava
                         $distance = $strava_day_total - $mcl_day_total;
                     }
-
+                    $message = "Ride with id " . $ride['strava_id'] . " on $date, distance " . round($distance * METRE_TO_MILE, 1) . " miles/" . round($distance * METRE_TO_KM, 1) . " kms. ";
                     $bike = $strava_api->getBike($ride["bike"]);
                     $mcl_bike_id = $mcl_api->bikeMatch($bike['brand'], $bike['model'], $ride['bike']);
                     $ride['mcl_bid'] = $mcl_bike_id;
@@ -382,9 +362,10 @@ if ($state == "calculate_from_strava" || $state == "calculate_from_mcl" || $stat
                         $mcl_rides[$date][] = $ride; // in case strava gives us duplicates, we won't post them twice
                         $count++;
                     }
+                    echo "$message <br>";
+                    flush();
                 }
-                echo "$message <br>";
-                flush();
+
             }
         }
         if (sizeof($rides_to_retry) == 0) {
@@ -397,6 +378,8 @@ if ($state == "calculate_from_strava" || $state == "calculate_from_mcl" || $stat
     if (sizeof($rides_to_retry) != 0) {
         echo "Some rides failed to be added.  See above.<br>";
     }
+
+    askForStravaGpx($overnightRidesNeeded,$maxKmFileUploads, "Upload and add to MyCyclingLog");
 } else if ($state == "copy_endo_to_strava") {
     echo "<H3>Copying rides from Endomondo to Strava...</H3>";
     set_time_limit(300);
@@ -409,7 +392,7 @@ if ($state == "calculate_from_strava" || $state == "calculate_from_mcl" || $stat
             $distance = $ride['distance'];
             $start_time = $ride['start_time'];
             $message = 'Ride with id <a target="_blank" href="' . $endo_api->activityUrl($ride['endo_id']) . '">' . $ride['endo_id'] . '</a>' . " on $start_time, distance " . round($distance * METRE_TO_MILE, 1) . " miles/" . round($distance * METRE_TO_KM, 1) . " kms. ";
-            if (!$distance || $distance < 500) {
+            if ($distance || $distance < 500) {
                 $message .= "Skipping, too short: $distance metres";
             } else {
                 $duplicateStravaRide = isDuplicateStravaRide($ride, $strava_rides);
@@ -441,7 +424,7 @@ if ($state == "calculate_from_strava" || $state == "calculate_from_mcl" || $stat
                         }
                         unlink($path);
                     }
-                    $points=null;
+                    $points = null;
                 }
 
             }
@@ -526,9 +509,9 @@ if ($strava_connected || $mcl_connected || $endo_connected) {
                 <?php
                 if ($strava_connected) {
                     echo '<tr><td colspan="3"><input type="submit" name="calculate_from_strava" value="Eddington Number from Strava"/><br>';
-                echo 'Split multiday rides?:
+                    echo 'Split multiday rides?:
             <input type="checkbox" value="split" ' . ($preferences->getStravaSplitRides() ? "checked" : "") .
-                    ' name="strava_split_rides"/>';
+                        ' id="strava_split_1" name="strava_split_rides"/>';
                     echo '</td></tr>';
                 }
                 if ($mcl_connected) {
@@ -544,7 +527,11 @@ if ($strava_connected || $mcl_connected || $endo_connected) {
                 if ($strava_connected && $mcl_connected) {
                     echo '<tr><td colspan="3"><input type="submit" name="copy_strava_to_mcl" value="Copy ride data from Strava to MyCyclingLog"/>  <br>';
                     echo 'Save elevation as feet: <input type="checkbox" name="elevation_units" value="feet" ' .
-                        ($preferences->getMclUseFeet() ? "checked" : "") . "/></td></tr>";
+                        ($preferences->getMclUseFeet() ? "checked" : "") . "/>";
+                    echo '<br>Split multiday rides?:
+            <input type="checkbox" value="split" ' . ($preferences->getStravaSplitRides() ? "checked" : "") .
+                        ' id="strava_split_2" name="strava_split_rides"/>';
+                    echo "</td></tr>";
                 }
                 if ($strava_connected && $endo_connected && $strava_api->writeScope()) {
                     echo '<tr><td colspan="3"><input type="submit" name="copy_endo_to_strava" value="Copy rides and routes from Endomondo to Strava"/>  <br>';
@@ -559,10 +546,10 @@ if ($strava_connected || $mcl_connected || $endo_connected) {
             <tr>
                 <td colspan="3"><input type="submit" name="clear_cookies" value="Delete Cookies"/></td>
             </tr>
-            <?php  if ($strava_connected) { ?>
+            <?php if ($strava_connected) { ?>
                 <tr>
-                <td colspan="3"><input type="submit" name="delete_files" value="Delete temporary files"/></td>
-            </tr>
+                    <td colspan="3"><input type="submit" name="delete_files" value="Delete temporary files"/></td>
+                </tr>
             <?php } ?>
         </table>
         <script>
@@ -581,7 +568,7 @@ if ($strava_connected || $mcl_connected || $endo_connected) {
                     end_date = "today"
                 }
                 var password_warning = "Are you sure you want to do this?  This will remove all activities from " +
-                    "MyCyclingLog between " + start_date + " and " + end_date + " that have a Strava ride in the notes. "+
+                    "MyCyclingLog between " + start_date + " and " + end_date + " that have a Strava ride in the notes. " +
                     "If you are sure, enter your MCL password here.";
 
                 <?php
@@ -622,6 +609,13 @@ if ($strava_connected || $mcl_connected || $endo_connected) {
                     return false;
             }
 
+            $("#strava_split_1").click(function () {
+                $("#strava_split_2").prop('checked', $("#strava_split_1").prop('checked'));
+            });
+            $("#strava_split_2").click(function () {
+                $("#strava_split_1").prop('checked', $("#strava_split_2").prop('checked'));
+            });
+
         </script>
     </form>
 
@@ -635,8 +629,8 @@ if ($strava_connected || $mcl_connected || $endo_connected) {
                     E-number.</em></li>
             <li><em>the timezone is used to determine midnight for the date range</em></li>
             <li><em>If you upload files, they will be kept on a scratch directory with your Strava User Id,
-                so you won't have to reupload them every time.  You can remove the files from the server
-                by pressing the appropriate button above.</em></li>
+                    so you won't have to reupload them every time. You can remove the files from the server
+                    by pressing the appropriate button above.</em></li>
             <li><em>when using Strava,
                     each
                     ride's date is the local time saved by Strava</em></li>
@@ -649,9 +643,12 @@ if ($strava_connected || $mcl_connected || $endo_connected) {
 
             <li><em>If you are using Endomondo, you can choose to split it into multiple days, to get the
                     mileage for each day midnight-midnight.</em></li>
-            <li><em>Rides from Strava can't be split, as I can't get the GPS points from Strava. </em></li>
+            <li><em>As I can't get the GPS points directly from Strava, Strava rides can
+                only be split by you downloading them onto your machine, and then uploading
+                them here.</em></li>
             <li><em>It might take a minute or two to come back with an answer</em></li>
             <li><em>It's much slower if you split the rides.</em></li>
+            <li><em>Rides of less than 500m are not copied between systems.</em></li>
             <li><em>Rides copied from endomondo are considered duplicates if there is already a ride on strava that
                     overlaps it.
                 </em>
@@ -661,16 +658,12 @@ if ($strava_connected || $mcl_connected || $endo_connected) {
                     in metres, but if you check the box, it will multiply elevation by 3.2, converting it to feet.</em>
             </li>
 
-            <li><em>If you want
-                    your
-                    bike information to be included you must make sure you have bikes with <strong>exactly</strong>
-                    matching
-                    make/model in both accounts. To test, select start and end dates close together, then check
-                    MyCyclingLog to see
-                    if you like the result. It should not make duplicates if the ride has already been copied using this
-                    page, or if
-                    there is another ride on the same day with 2% of the distance, or if the total distance for the day on MCL is within
-                2% or greater than the distance recorded in Strava.</em></li>
+            <li><em>If you want your bike information to be included you must make sure you have bikes with <strong>exactly</strong>
+                    matching make/model in both accounts. To test, select start and end dates close together, then check
+                    MyCyclingLog to see if you like the result. </em></li>
+            <li><em>It should not make duplicates if the ride has already been copied using this
+                    page, or if the total distance for the day on MCL is within
+                    2% or greater than the distance recorded in Strava.</em></li>
             <li><em>This is open source, you can download the source from <a
                         href="http://github.com/JoanMcGalliard/EddingtonAndMore">
                         http://github.com/JoanMcGalliard/EddingtonAndMore</a>. This is

@@ -82,7 +82,7 @@ function isDuplicateStravaRide($endo_ride, $strava_rides)
     return false;
 }
 
-function isDuplicateMCLRide($date, $distance, $strava_id, $mcl_rides)
+function isDuplicateMCLRide($date, $strava_id, $mcl_rides)
 {
     if ($mcl_rides == null || !array_key_exists($date, $mcl_rides)) {
         return false;
@@ -93,17 +93,6 @@ function isDuplicateMCLRide($date, $distance, $strava_id, $mcl_rides)
                     return true;
                 }
                 continue;
-            }
-
-            if ($distance == 0) {
-                if ($ride['distance'] == 0) {
-                    return true;
-                } else {
-                    continue;
-                }
-            }
-            if (compareDistance($distance, $ride['distance'])==0) {
-                return true;
             }
         }
     }
@@ -201,6 +190,50 @@ function buildChart($imperial_history, $metric_history)
     $text .= "</script>";
     $text .= '<div id="eddington_chart" style="width: 900px; height: 500px"></div>';
     return $text;
+}
+
+function askForStravaGpx($overnight_rides, $maxKmFileUploads, $message="Upload and recalculate")
+{
+    if (sizeof($overnight_rides) == 0) {return;}
+    echo "<br>";
+    echo "To split your strava rides, you'll need to download some of the GPX from Strava, them upload them to here. ";
+    echo "<br><strong>First</strong> click the following links to download the GPX files. ";
+    uasort($overnight_rides, function ($a, $b) {
+        if ($a->distance == $b->distance) return 0; else return ($a->distance > $b->distance) ? -1 : 1;
+    });
+    echo "<ol>";
+
+    $count = 0;
+    $total = 0;
+    foreach ($overnight_rides as $id => $details) {
+        $distance = intval($details->distance * METRE_TO_KM);
+        echo "<li><a target=\"_blank\" href=\"https://www.strava.com/activities/$id/export_gpx\">
+                    $details->name $distance km</a></li>";
+
+        $count++;
+        $total += $distance;
+        if ($total >= $maxKmFileUploads) break;
+    }
+    echo "</ol>";
+    if (sizeof($overnight_rides) > $count) {
+        echo "<em>You've got another " . (sizeof($overnight_rides) - $count);
+        echo " overnight ride(s) to add after this (you do like riding at midnight!), ";
+        echo "but we are restricting it to $maxKmFileUploads kilometres or so at a time to keep the ";
+        echo "server behaving nicely. The rides above are the longest of your rides that ";
+        echo "are needed.</em>";
+    }
+
+    echo '<form action="" method="post" enctype="multipart/form-data">';
+    echo '<strong>Then</strong> select the GPX file(s) that you have just downloaded:<br>';
+    echo '<input type="file" name="gpx[]" id="gpx" multiple>';
+    echo '<input type="hidden" name="start_date" value="' . $_POST["start_date"] . '"/>';
+    echo '<input type="hidden" name="end_date" value="' . $_POST["end_date"] . '"/>';
+    echo '<input type="hidden" name="calculate_from_strava" value="Eddington Number from Strava"/>';
+    echo '<input type="hidden" value="split" checked name="strava_split_rides"/>';
+    echo '<br><strong>Finally</strong>, recalculate your E-number:';
+    echo '<br><input type="submit" value="'.$message.'" name="submit"/>';
+    echo '</form>';
+    return $distance;
 }
 
 ?>

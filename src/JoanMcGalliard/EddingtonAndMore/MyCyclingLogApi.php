@@ -119,7 +119,7 @@ class MyCyclingLogApi implements trackerApiInterface
             $this->auth = null;
             return null;
         }
-        $xml = $this->removeCharactersInElement("notes", $xml);  //todo find out if the same problem can occur in route or bike id.
+        $xml =  $this->removeCharactersInElement("bike", ($this->removeCharactersInElement("route", $this->removeCharactersInElement("notes", $xml))));
         $doc = new DOMDocument();
         $doc->loadXML($xml);
         $doc->formatOutput = true;
@@ -147,7 +147,7 @@ class MyCyclingLogApi implements trackerApiInterface
         $new = $xml;
         while ($old <> $new) {
             $old = $new;
-            $new = preg_replace("/(<$element>[^<>]*)[^-a-zA-Z0-9 +<>.!,()_?\/=\"':;]([^\/])/", "$1$2", $new);
+            $new = preg_replace("/(<${element}[^>]*>[^<>]*?)[^-a-zA-Z0-9 +<>.!,\(\)_?\/=\"':;]([^<>]*?<\/$element>)/", "$1$2", $new);
         }
         return $new;
     }

@@ -95,6 +95,8 @@ class EndomondoApi implements trackerApiInterface
         curl_close($process);
         $this->lastPage = $page;
         $this->lastPath = $path;
+        log_msg("endomondo ".$path);
+        log_msg($page);
         return $page;
     }
 

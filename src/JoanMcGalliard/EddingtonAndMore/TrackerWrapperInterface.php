@@ -2,7 +2,7 @@
 namespace JoanMcGalliard\EddingtonAndMore;
 
 // For classes that connected to tracking websites (eg strava, endomondo_
-interface trackerApiInterface
+interface trackerWrapperInterface
 {
     const METRE_TO_MILE = 0.00062137119224;
     const METRE_TO_KM = 0.001;

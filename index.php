@@ -4,9 +4,9 @@ define("TWENTY_FOUR_HOURS", 60 * 60 * 24);
 set_include_path(get_include_path() . PATH_SEPARATOR . dirname(__FILE__) . DIRECTORY_SEPARATOR . "src" . PATH_SEPARATOR);
 
 require_once 'local.php';
-require_once 'src/JoanMcGalliard/EddingtonAndMore/StravaApi.php';
-require_once 'src/JoanMcGalliard/EddingtonAndMore/MyCyclingLogApi.php';
-require_once 'src/JoanMcGalliard/EddingtonAndMore/EndomondoApi.php';
+require_once 'src/JoanMcGalliard/EddingtonAndMore/StravaWrapper.php';
+require_once 'src/JoanMcGalliard/EddingtonAndMore/MyCyclingLogWrapper.php';
+require_once 'src/JoanMcGalliard/EddingtonAndMore/EndomondoWrapper.php';
 require_once 'src/JoanMcGalliard/EddingtonAndMore/Points.php';
 require_once 'src/functions.php';
 require_once 'src/Preferences.php';
@@ -47,9 +47,9 @@ if (array_key_exists("clear_cookies", $_POST)) {
     unset($_GET["state"]);
 }
 
-$strava_api = new JoanMcGalliard\EddingtonAndMore\StravaApi($stravaClientId, $stravaClientSecret);
-$mcl_api = new JoanMcGalliard\EddingtonAndMore\MyCyclingLogApi();
-$endo_api = new JoanMcGalliard\EddingtonAndMore\EndomondoApi($deviceId, $googleApiKey, $preferences->getTimezone());
+$strava_api = new JoanMcGalliard\EddingtonAndMore\StravaWrapper($stravaClientId, $stravaClientSecret);
+$mcl_api = new JoanMcGalliard\EddingtonAndMore\MyCyclingLogWrapper();
+$endo_api = new JoanMcGalliard\EddingtonAndMore\EndomondoWrapper($deviceId, $googleApiKey, $preferences->getTimezone());
 
 $mcl_api->setUseFeetForElevation($preferences->getMclUseFeet());
 $endo_api->setSplitOvernightRides($preferences->getEndoSplitRides());

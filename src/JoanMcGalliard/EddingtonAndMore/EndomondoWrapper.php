@@ -1,36 +1,38 @@
 <?php
 namespace JoanMcGalliard\EddingtonAndMore;
 
-require_once 'TrackerApiInterface.php';
+require_once 'TrackerWrapperInterface.php';
 require_once 'Points.php';
-
+require_once 'JoanMcGalliard/EndomondoApi.php';
 use ArrayObject;
+use JoanMcGalliard;
 
-class EndomondoApi implements trackerApiInterface
+
+class EndomondoWrapper implements trackerWrapperInterface
 {
-    const BASE_URL = "https://api.mobile.endomondo.com/mobile/";
-    const COUNTRY = 'GB';
     const TWENTY_FOUR_HOURS = 86400;
-    protected $auth = null;
-    protected $connected = false;
     protected $deviceId = "";
-    private $lastPage = null;
-    private $errorMessage = null;
     private $googleApiKey;
     private $lastTZRequestedFromGoogle = null;
-    private $tz;
+    private $timezone;
     private $splitOvernightRides = false;
-    private $userId;
+    private $api;
+    protected $connected = false;
 
-    /**
-     * EndomondoApi constructor.
-     * @param string $deviceId
-     */
-    public function __construct($deviceId, $googleApiKey, $tz)
+    private $userId="";
+
+
+
+    public function __construct($deviceId, $googleApiKey, $tz, $api = null)
     {
         $this->deviceId = $deviceId;
-        $this->tz = $tz;
+        $this->timezone = $tz;
         $this->googleApiKey = $googleApiKey;
+        if ($api) {
+            $this->api = $api;
+        } else {
+            $this->api = new JoanMcGalliard\EndomondoApi();
+        }
     }
 
     /**
@@ -46,98 +48,35 @@ class EndomondoApi implements trackerApiInterface
      */
     public function getErrorMessage()
     {
-        return $this->errorMessage;
-    }
-
-    /**
-     * @return null
-     */
-    public function getLastPage()
-    {
-        return $this->lastPage;
+        return $this->api->getErrorMessage();
     }
 
     public function setAuth($auth)
     {
-        $this->auth = $auth;
+        $this->api->setAuth($auth);
     }
+
 
     public function isConnected()
     {
-        if (!$this->auth) {
+        if (!$this->api->getAuth()) {
             $this->connected = false;
         } else if (!$this->connected) {
-            $page = $this->getPage('api/profile/account/get');
+            $page = $this->api->getPage('api/profile/account/get');
             $this->connected = isset(json_decode($page)->data->id);
             $this->userId = json_decode($page)->data->id;
         }
         return $this->connected;
     }
 
-    protected function getPage($url, $params = [])
-    {
-        if (!$this->auth) {
-            return null;
-        }
-        if (!$params) {
-            $params = [];
-        }
-        $params["authToken"] = $this->auth;
-
-        $path = self::BASE_URL . $url . "?" . http_build_query($params);
-        $process = curl_init($path);
-
-        curl_setopt($process, CURLOPT_HEADER, 0);
-        curl_setopt($process, CURLOPT_TIMEOUT, 30);
-        curl_setopt($process, CURLOPT_RETURNTRANSFER, TRUE);
-
-        $page = curl_exec($process);
-        curl_close($process);
-        $this->lastPage = $page;
-        $this->lastPath = $path;
-        log_msg("endomondo ".$path);
-        log_msg($page);
-        return $page;
-    }
-
     public function activityUrl($workoutId)
     {
-        return "https://www.endomondo.com/users/$this->userId/workouts/$workoutId";
+        return "https://www.endomondo.com/users/{$this->userId}/workouts/$workoutId";
     }
 
     public function connect($username, $password)
     {
-        $url = "auth";
-        $params = [];
-        $params['deviceId'] = $this->getDeviceId();
-        $params['action'] = 'pair';
-        $params['email'] = $username;
-        $params['password'] = $password;
-        $params['country'] = self::COUNTRY;
-
-        {
-
-            $path = self::BASE_URL . $url . "?" . http_build_query($params);
-            $process = curl_init($path);
-            curl_setopt($process, CURLOPT_HEADER, 0);
-            curl_setopt($process, CURLOPT_TIMEOUT, 30);
-            curl_setopt($process, CURLOPT_RETURNTRANSFER, TRUE);
-            $page = curl_exec($process);
-            curl_close($process);
-            $pattern = "/^authToken=(.*)/";
-            foreach (explode("\n", $page) as $line) {
-                if (preg_match($pattern, $line, $matches) > 0) {
-                    $this->auth = $matches[1];
-                    $this->connected = true;
-                    return $this->auth;
-                }
-
-            }
-            $this->errorMessage = $page;
-
-            return null;
-        }
-
+        return $this->api->connect($username, $password, $this->deviceId);
     }
 
     /**
@@ -158,7 +97,7 @@ class EndomondoApi implements trackerApiInterface
             $start_date = 0;
         }
         $default_tz = date_default_timezone_get();
-        date_default_timezone_set($this->tz);
+        date_default_timezone_set($this->timezone);
         $maxResults = 500;
         $params = [];
         date_default_timezone_set("UTC");
@@ -187,7 +126,7 @@ class EndomondoApi implements trackerApiInterface
                     continue; // not a bike ride or not include in stats
                 }
                 $record = [];
-                date_default_timezone_set($this->tz);
+                date_default_timezone_set($this->timezone);
                 $date = date("Y-m-d", $timestamp);
                 $record['distance'] = $ride->distance / self::METRE_TO_KM;
                 $record['elapsed_time'] = $ride->duration;
@@ -207,7 +146,7 @@ class EndomondoApi implements trackerApiInterface
                         $new['distance'] = $split;
                         $records[$split_date][] = $new;
                     }
-                    $points=null; // free memory
+                    $points = null; // free memory
                 } else {
                     $records[$date][] = $record;
                 }
@@ -226,7 +165,7 @@ class EndomondoApi implements trackerApiInterface
 
     protected function getPageWithDot($url, $params)
     {
-        $return = $this->getPage($url, $params);
+        $return = $this->api->getPage($url, $params);
         self::dot();
         return $return;
     }
@@ -239,7 +178,7 @@ class EndomondoApi implements trackerApiInterface
 
     private function isOverNightRide($ride)
     {
-        date_default_timezone_set($this->tz);
+        date_default_timezone_set($this->timezone);
         $start = strtotime($ride->start_time);
         $midnight = strtotime(date("Y-m-d", $start));
         $start_seconds = $start - $midnight;
@@ -275,27 +214,6 @@ class EndomondoApi implements trackerApiInterface
     {
         $this->splitOvernightRides = $splitOvernightRides;
     }
-
-    private function getTZ($lat, $long, $timestamp)
-    {
-
-        $points = (new Points(date("Y-m-d", $timestamp)));
-        $points->setGoogleApiKey($this->googleApiKey);
-        if (!$this->lastTZRequestedFromGoogle ||
-            $points->distance($this->lastTZRequestedFromGoogle->lat, $this->lastTZRequestedFromGoogle->long, $lat, $long) > 100000
-        ) {
-
-            $tz = $points->timezoneFromCoords($lat, $long, $timestamp);
-            $this->lastTZRequestedFromGoogle = new \stdClass();
-            $this->lastTZRequestedFromGoogle->tz = $tz;
-            $this->lastTZRequestedFromGoogle->lat = $lat;
-            $this->lastTZRequestedFromGoogle->long = $long;
-        }
-        $points=null;
-        return $this->lastTZRequestedFromGoogle->tz;
-
-    }
-
 }
 
 ?>

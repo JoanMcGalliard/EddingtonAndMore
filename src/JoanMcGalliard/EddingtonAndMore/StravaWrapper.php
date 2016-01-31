@@ -2,12 +2,12 @@
 
 namespace JoanMcGalliard\EddingtonAndMore;
 require_once "Iamstuartwilson/StravaApi.php";
-require_once 'TrackerApiInterface.php';
+require_once 'TrackerWrapperInterface.php';
 require_once 'Points.php';
 use DOMDocument;
 use Iamstuartwilson;
 
-class StravaApi implements trackerApiInterface
+class StravaWrapper implements trackerWrapperInterface
 {
     const GPX_SUFFIX = "\.gpx";
     protected $connected = false;

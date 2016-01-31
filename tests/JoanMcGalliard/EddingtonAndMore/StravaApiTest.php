@@ -2,7 +2,7 @@
 
 namespace JoanMcGalliard\EddingtonAndMore;
 
-require_once "JoanMcGalliard/EddingtonAndMore/StravaApi.php";
+require_once "JoanMcGalliard/EddingtonAndMore/StravaWrapper.php";
 require_once 'StravaApiMock.php';
 
 use PHPUnit_Framework_TestCase;
@@ -242,7 +242,7 @@ class StravaApiTest extends PHPUnit_Framework_TestCase
         $mock = new StravaApiMock();
         $mock->clearResponses("get", 'activities');
         $mock->primeResponse('get', 'activities', $response);
-        $stravaApi = new StravaApi("", "", $mock);
+        $stravaApi = new StravaWrapper("", "", $mock);
         $this->assertEquals($expected, $stravaApi->getRides(null, null));
 
 

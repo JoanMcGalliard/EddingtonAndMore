@@ -1,22 +1,37 @@
 <?php
 namespace JoanMcGalliard\EddingtonAndMore;
 
-require_once 'TrackerApiInterface.php';
+require_once 'JoanMcGalliard/MyCyclingLogApi.php';
+
 use DOMDocument;
 use Iamstuartwilson;
+use JoanMcGalliard;
 
-class MyCyclingLogApi implements trackerApiInterface
+
+class MyCyclingLogWrapper implements trackerWrapperInterface
 {
-    const BASE_URL = "http://www.mycyclinglog.com/api/restserver.php";
     const STRAVA_NOTE_PREFIX = "http://www.strava.com/activities/";
 
 
-    protected $auth = null;
     protected $connected = false;
     protected $bikes = null;
     protected $strava_bike_match = [];
     protected $use_feet_for_elevation = false;
     private $user_id;
+    private $api = null;
+
+    /**
+     * MyCyclingLogWrapper constructor.
+     * @param null $api
+     */
+    public function __construct($api = null)
+    {
+        if ($api) {
+            $this->api = $api;
+        } else {
+            $this->api = new JoanMcGalliard\MyCyclingLogApi();
+        }
+    }
 
     /**
      * @return mixed
@@ -45,7 +60,7 @@ class MyCyclingLogApi implements trackerApiInterface
 
     public function setAuth($auth)
     {
-        $this->auth = $auth;
+        $this->api->setAuth($auth);
     }
 
     public function addRide($date, $ride)
@@ -72,28 +87,10 @@ class MyCyclingLogApi implements trackerApiInterface
         return $this->postPage("?method=ride.new", $parameters);
     }
 
-    protected function postPage($url, $parameters)
-    {
-        $process = curl_init(self::BASE_URL . $url);
-        $headers = array('Authorization: Basic ' . $this->auth);
-        curl_setopt($process, CURLOPT_HTTPHEADER, $headers);
-        curl_setopt($process, CURLOPT_HEADER, 0);
-        curl_setopt($process, CURLOPT_TIMEOUT, 30);
-        curl_setopt($process, CURLOPT_POST, 1);
-        curl_setopt($process, CURLOPT_POSTFIELDS, http_build_query($parameters));
-        curl_setopt($process, CURLOPT_RETURNTRANSFER, TRUE);
-        $response = curl_exec($process);
-        curl_close($process);
-        log_msg("MCL post URL " . $url);
-        log_msg($parameters);
-        log_msg($response);
-
-        return $response;
-    }
 
     public function isConnected()
     {
-        if ($this->auth != null) {
+        if ($this->api->getAuth() != null) {
             $rides = $this->getPageDom("?method=ride.list&limit=0&offset=0");
             if ($rides != null && preg_match('/^[0-9][0-9]*$/',
                     $rides->childNodes->item(0)->childNodes->item(0)->getAttribute('total_size'))
@@ -108,7 +105,7 @@ class MyCyclingLogApi implements trackerApiInterface
     {
         $retries = 3;
         for ($i = 0; $i < $retries; $i++) {
-            $xml = $this->getPage($url);
+            $xml = $this->api->getPage($url);
             if ($xml) break;
         }
         if (!$xml) {
@@ -116,30 +113,16 @@ class MyCyclingLogApi implements trackerApiInterface
             exit();
         }
         if ($xml == "You are not authorized.") {
-            $this->auth = null;
+            $this->setAuth(null);
             return null;
         }
-        $xml =  $this->removeCharactersInElement("bike", ($this->removeCharactersInElement("route", $this->removeCharactersInElement("notes", $xml))));
+        $xml = $this->removeCharactersInElement("bike", ($this->removeCharactersInElement("route", $this->removeCharactersInElement("notes", $xml))));
         $doc = new DOMDocument();
         $doc->loadXML($xml);
         $doc->formatOutput = true;
         return $doc;
     }
 
-    protected function getPage($url)
-    {
-        $process = curl_init(self::BASE_URL . $url);
-        $headers = array('Authorization: Basic ' . $this->auth);
-        curl_setopt($process, CURLOPT_HTTPHEADER, $headers);
-        curl_setopt($process, CURLOPT_HEADER, 0);
-        curl_setopt($process, CURLOPT_TIMEOUT, 30);
-        curl_setopt($process, CURLOPT_RETURNTRANSFER, TRUE);
-        $page = curl_exec($process);
-        curl_close($process);
-        log_msg("MCL get URL " . $url);
-        log_msg($page);
-        return $page;
-    }
 
     protected function removeCharactersInElement($element, $xml)
     {
@@ -202,44 +185,27 @@ class MyCyclingLogApi implements trackerApiInterface
 
     public function deleteRides($start_date, $end_date, $username, $password)
     {
-
-        $loginUrl = 'http://www.mycyclinglog.com';
-
-        $count = 0;
-        $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL, $loginUrl);
-        curl_setopt($ch, CURLOPT_POST, 1);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, 'username=' . $username . '&password=' . $password);
-        curl_setopt($ch, CURLOPT_COOKIEJAR, 'cookie.txt');
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-        $store = curl_exec($ch);
-        if (strpos($store, "Logout") === false) {
-            $error = curl_error($ch);
-            curl_close($ch);
-            if ($error) {
-                return $error;
-            }
-            return "$error  Check username ($username) and password.";
+        $login=$this->api->login($username,$password);
+        if ($login <> "OK") {
+            return $login; // error message
         }
 
-        curl_setopt($ch, CURLOPT_URL, "http://www.mycyclinglog.com//add.php");
-
-
+        $count=0;
         $rides = $this->getRides($start_date, $end_date);
         foreach ($rides as $date => $ride_list) {
             foreach ($ride_list as $ride) {
                 if ($ride['strava_id'] <> null) {
                     echo "Deleting " . $ride['mcl_id'] . " from " . $date . ", strava id " . $ride["strava_id"] . ".<br>";
                     flush();
-                    curl_setopt($ch, CURLOPT_POSTFIELDS, "r=1&lid=" . $ride['mcl_id']);
-                    curl_exec($ch);
+                    $this->api->delete($ride['mcl_id']);
                     $count++;
                 }
             }
         }
-        curl_close($ch);
+        $this->api->logout();
         return $count;
     }
+
 
     public function getRides($start_date, $end_date)
     {
@@ -263,7 +229,7 @@ class MyCyclingLogApi implements trackerApiInterface
                 if ($units == 'mi') {
                     $record['distance'] = $distance / self::METRE_TO_MILE;
                 } else if ($units == 'km') {
-                    $record['distance'] = $distance /self::METRE_TO_KM;
+                    $record['distance'] = $distance / self::METRE_TO_KM;
                 }
                 $record['mcl_id'] = $ride->getAttribute('id');
 
@@ -310,6 +276,7 @@ class MyCyclingLogApi implements trackerApiInterface
         }
         echo "</pre>";
     }
+
 
 
 }

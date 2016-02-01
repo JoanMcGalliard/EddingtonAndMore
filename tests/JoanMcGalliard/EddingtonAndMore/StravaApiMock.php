@@ -153,7 +153,7 @@ class StravaApiMock
     public function get($request, $parameters = array())
     {
         if (isset($this->responses['get'][$request]) && sizeof($this->responses['get'][$request]) > 0) {
-            return $this->getResponse('get', $request);
+            return $this->getResponse('get', $request,$parameters);
         } else {
 
             throw new Exception("get $request: no response available");
@@ -214,7 +214,7 @@ class StravaApiMock
     {
         unset($this->responses[$type][$request]);
     }
-    private function getResponse ($type, $request)
+    private function getResponse ($type, $request,$params)
     {
         return  array_shift($this->responses[$type][$request]);
     }

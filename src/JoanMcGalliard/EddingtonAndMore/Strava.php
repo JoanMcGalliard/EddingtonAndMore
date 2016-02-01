@@ -18,16 +18,16 @@ class Strava implements trackerInterface
     private $error = null;
     private $writeScope = false;
     private $userId;
-    private $stravaApi;
+    private $api;
     private $overnightActivities = [];
     private $splitOvernight;
 
-    public function __construct($clientId, $clientSecret, $stravaApi = null)
+    public function __construct($clientId, $clientSecret, $api = null)
     {
-        if ($stravaApi) {
-            $this->stravaApi = $stravaApi;
+        if ($api) {
+            $this->api = $api;
         } else {
-            $this->stravaApi = new Iamstuartwilson\StravaApi($clientId, $clientSecret);
+            $this->api = new Iamstuartwilson\StravaApi($clientId, $clientSecret);
         }
     }
 
@@ -49,7 +49,7 @@ class Strava implements trackerInterface
 
     public function setAccessTokenFromCode($code)
     {
-        $tokenExchange = $this->stravaApi->tokenExchange($code);
+        $tokenExchange = $this->api->tokenExchange($code);
         if (isset($tokenExchange->access_token)) {
             $token = $tokenExchange->access_token;
             $this->setAccessToken($token);
@@ -62,7 +62,7 @@ class Strava implements trackerInterface
     public function setAccessToken($token)
     {
         $this->connected = true;
-        $this->stravaApi->setAccessToken($token);
+        $this->api->setAccessToken($token);
     }
 
     public function uploadUrl()
@@ -74,7 +74,7 @@ class Strava implements trackerInterface
     {
         if (!$this->connected) return false;
         $this->error = null;
-        $athlete = $this->stravaApi->get('athlete');
+        $athlete = $this->api->get('athlete');
         if (isset($athlete->id)) {
             $this->connected = true ;
             $this->userId = $athlete->id;
@@ -95,9 +95,8 @@ class Strava implements trackerInterface
         return $this->error;
     }
 
-    public function getRides($start_date, $end_date)
+    public function getRides($start_date, $end_date, $activities_per_page = 200)
     {
-        $activities_per_page = 200;
         $activities_list = [];
         if (!$start_date && !$end_date) {
             for ($i = 1; ; $i++) {
@@ -153,7 +152,7 @@ class Strava implements trackerInterface
 
     private function getWithDot($request, $parameters = array())
     {
-        $return = $this->stravaApi->get($request, $parameters);
+        $return = $this->api->get($request, $parameters);
         $this->dot();
         return $return;
     }
@@ -269,7 +268,7 @@ class Strava implements trackerInterface
         $params = ["activity_type" => "ride", "file" => "@" . $file_path,
             "data_type" => "gpx", "external_id" => $external_id,
             "name" => $name, "description" => $description];
-        $result = $this->stravaApi->post("uploads", $params);
+        $result = $this->api->post("uploads", $params);
         if ($result->error) {
             return $result->error;
         }
@@ -330,7 +329,7 @@ class Strava implements trackerInterface
 
     public function authenticationUrl($redirect, $approvalPrompt, $scope, $state)
     {
-        return $this->stravaApi->authenticationUrl($redirect, $approvalPrompt, $scope, $state);
+        return $this->api->authenticationUrl($redirect, $approvalPrompt, $scope, $state);
     }
 
     public function getOvernightActivities()

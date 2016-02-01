@@ -4,9 +4,9 @@ define("TWENTY_FOUR_HOURS", 60 * 60 * 24);
 set_include_path(get_include_path() . PATH_SEPARATOR . dirname(__FILE__) . DIRECTORY_SEPARATOR . "src" . PATH_SEPARATOR);
 
 require_once 'local.php';
-require_once 'src/JoanMcGalliard/EddingtonAndMore/StravaWrapper.php';
-require_once 'src/JoanMcGalliard/EddingtonAndMore/MyCyclingLogWrapper.php';
-require_once 'src/JoanMcGalliard/EddingtonAndMore/EndomondoWrapper.php';
+require_once 'src/JoanMcGalliard/EddingtonAndMore/Strava.php';
+require_once 'src/JoanMcGalliard/EddingtonAndMore/MyCyclingLog.php';
+require_once 'src/JoanMcGalliard/EddingtonAndMore/Endomondo.php';
 require_once 'src/JoanMcGalliard/EddingtonAndMore/Points.php';
 require_once 'src/functions.php';
 require_once 'src/Preferences.php';
@@ -15,7 +15,7 @@ $info_message = "";
 $error_message = "";
 
 
-$here = "http://$_SERVER[HTTP_HOST]$_SERVER[REQUEST_URI]";
+$here = "http://$_SERVER[HTTP_HOST]$_SERVER[SCRIPT_NAME]";
 $state = null;
 const METRE_TO_MILE = 0.00062137119224;
 const METRE_TO_KM = 0.001;
@@ -47,69 +47,69 @@ if (array_key_exists("clear_cookies", $_POST)) {
     unset($_GET["state"]);
 }
 
-$strava_api = new JoanMcGalliard\EddingtonAndMore\StravaWrapper($stravaClientId, $stravaClientSecret);
-$mcl_api = new JoanMcGalliard\EddingtonAndMore\MyCyclingLogWrapper();
-$endo_api = new JoanMcGalliard\EddingtonAndMore\EndomondoWrapper($deviceId, $googleApiKey, $preferences->getTimezone());
+$strava = new JoanMcGalliard\EddingtonAndMore\Strava($stravaClientId, $stravaClientSecret);
+$myCyclingLog = new JoanMcGalliard\EddingtonAndMore\MyCyclingLog();
+$endomondo = new JoanMcGalliard\EddingtonAndMore\Endomondo($deviceId, $googleApiKey, $preferences->getTimezone());
 
-$mcl_api->setUseFeetForElevation($preferences->getMclUseFeet());
-$endo_api->setSplitOvernightRides($preferences->getEndoSplitRides());
-$strava_api->setSplitOvernightRides($preferences->getStravaSplitRides());
+$myCyclingLog->setUseFeetForElevation($preferences->getMclUseFeet());
+$endomondo->setSplitOvernightRides($preferences->getEndoSplitRides());
+$strava->setSplitOvernightRides($preferences->getStravaSplitRides());
 
 
 if (array_key_exists("login_mcl", $_POST)) {
     $mcl_username = $_POST['username'];
     $mcl_password = $_POST['password'];
     $auth = base64_encode("$mcl_username:$mcl_password");
-    $mcl_api->setAuth("$auth");
-    if ($mcl_api->isConnected()) {
+    $myCyclingLog->setAuth("$auth");
+    if ($myCyclingLog->isConnected()) {
         $preferences->setMclAuth($auth);
         $preferences->setMclUsername($_POST['username']);
     } else {
         $error_message = "There was a problem connecting to MyCyclingLog, please try again";
     }
 } else if ($preferences->getMclAuth()) {
-    $mcl_api->setAuth($preferences->getMclAuth());
+    $myCyclingLog->setAuth($preferences->getMclAuth());
 }
 if (array_key_exists("login_endo", $_POST)) {
     $endo_username = $_POST['username'];
     $endo_password = $_POST['password'];
-    $auth = $endo_api->connect($endo_username, $endo_password);
-    if ($endo_api->isConnected()) {
+    $auth = $endomondo->connect($endo_username, $endo_password);
+    if ($endomondo->isConnected()) {
         $preferences->setEndoAuth($auth);
     } else {
-        $error_message = "There was a problem connecting to Endomondo, please try again.<br>(" . $endo_api->getErrorMessage() . ")";
+        $error_message = "There was a problem connecting to Endomondo, please try again.<br>(" . $endomondo->getErrorMessage() . ")";
     }
 } else if ($preferences->getEndoAuth() != null) {
-    $endo_api->setAuth($preferences->getEndoAuth());
+    $endomondo->setAuth($preferences->getEndoAuth());
 }
 if (array_key_exists("state", $_GET)) {
     if (!array_key_exists("error", $_GET) && array_key_exists("code", $_GET)) {
         $code = $_GET["code"];
-        $token = $strava_api->setAccessTokenFromCode($code);
-        if ($strava_api->isConnected()) {
-            $strava_api->setWriteScope(($_GET["state"] == "write"));
+        $token = $strava->setAccessTokenFromCode($code);
+        if ($strava->isConnected()) {
+            $strava->setWriteScope(($_GET["state"] == "write"));
             $preferences->setStravaAccessToken($token);
         }
     } else {
         $error_message .= 'There was a problem connecting to strava, please try again: ' . $_GET["error"] . " ";
     }
-    if ($strava_api->getError()) {
-        $error_message .= 'There was a problem connecting to strava, please try again: ' . $strava_api->getError() . " ";
+    if ($strava->getError()) {
+        $error_message .= 'There was a problem connecting to strava, please try again: ' . $strava->getError() . " ";
 
     }
     unset($_GET["state"]);
     unset($_GET["code"]);
     unset($_GET["error"]);
 } else if ($preferences->getStravaAccessToken() != null) {
-    $strava_api->setAccessToken($preferences->getStravaAccessToken());
+    $strava->setAccessToken($preferences->getStravaAccessToken());
 }
-$strava_connected = $strava_api->isConnected();
-$mcl_connected = $mcl_api->isConnected();
-$endo_connected = $endo_api->isConnected();
+$strava_connected = $strava->isConnected();
+$mcl_connected = $myCyclingLog->isConnected();
+$endo_connected = $endomondo->isConnected();
 
 if ($strava_connected && array_key_exists("delete_files", $_POST)) {
     $files = scandir($scratchDirectory);
-    $pattern = '/^' . $strava_api->getUserId() . "-.*\.gpx$/";
+    $pattern = '/^' . $strava->getUserId() . "-.*\.gpx$/";
     $count = 0;
     foreach ($files as $file) {
         if (preg_match($pattern, $file, $match) > 0) {
@@ -130,10 +130,10 @@ if ($strava_connected && array_key_exists("calculate_from_strava", $_POST)) {
     $state = "copy_strava_to_mcl";
     if (array_key_exists("elevation_units", $_POST)) {
         $preferences->setMclUseFeet(true);
-        $mcl_api->setUseFeetForElevation(true);
+        $myCyclingLog->setUseFeetForElevation(true);
     } else {
         $preferences->setMclUseFeet(false);
-        $mcl_api->setUseFeetForElevation(false);
+        $myCyclingLog->setUseFeetForElevation(false);
     }
 
 } else if ($endo_connected && $strava_connected && array_key_exists("copy_endo_to_strava", $_POST)) {
@@ -208,22 +208,22 @@ if ($state == "calculate_from_strava" || $state == "calculate_from_mcl" || $stat
     if ($end_date) $end_text = $_POST["end_date"];
     if ($state == "calculate_from_strava") {
 
-        processUploadedGpxFiles($strava_api->getUserId(), $scratchDirectory);
+        processUploadedGpxFiles($strava->getUserId(), $scratchDirectory);
 
 
         $source = "Strava";
-        $activities = $strava_api->getRides($start_date, $end_date);
-        $overnight_rides = $strava_api->getOvernightActivities();
+        $activities = $strava->getRides($start_date, $end_date);
+        $overnight_rides = $strava->getOvernightActivities();
         if ($preferences->getStravaSplitRides() && $overnight_rides) {
             askForStravaGpx($overnight_rides, $maxKmFileUploads,"calculate_from_strava", "recalculate your E-Number");
 
         }
     } else if ($state == "calculate_from_mcl") {
         $source = "MyCyclingLog";
-        $activities = $mcl_api->getRides($start_date, $end_date);
+        $activities = $myCyclingLog->getRides($start_date, $end_date);
     } else if ($state == "calculate_from_endo") {
         $source = "Endomondo";
-        $activities = $endo_api->getRides($start_date, $end_date);
+        $activities = $endomondo->getRides($start_date, $end_date);
     }
     if (!$start_date) {
         $start_date = strtotime(array_keys($activities)[sizeof($activities) - 1]);
@@ -287,18 +287,18 @@ if ($state == "calculate_from_strava" || $state == "calculate_from_mcl" || $stat
 
 
 } else if ($state == "copy_strava_to_mcl") {
-    processUploadedGpxFiles($strava_api->getUserId(), $scratchDirectory);
+    processUploadedGpxFiles($strava->getUserId(), $scratchDirectory);
     echo "<H3>Copying data from Strava to MyCyclingLog...</H3>";
     set_time_limit(300);
 
-    $strava_rides_to_add = $strava_api->getRides($start_date, $end_date);
+    $strava_rides_to_add = $strava->getRides($start_date, $end_date);
     $count = 0;
     $overnightRidesNeeded=[];  // these are unsplit overnight rides that haven't already been added to MCL
     for ($i = 0; $i < 5; $i++) {
         $rides_to_retry = [];
-        $mcl_rides = $mcl_api->getRides($start_date, $end_date);
+        $mcl_rides = $myCyclingLog->getRides($start_date, $end_date);
         $strava_ids_in_mcl_rides=extractStravaIds($mcl_rides);
-        $overnight_rides = $strava_api->getOvernightActivities();
+        $overnight_rides = $strava->getOvernightActivities();
         foreach ($strava_rides_to_add as $date => $ride_list) {
             $strava_day_total = sumDay($ride_list);
             $mcl_day_total = isset($mcl_rides[$date]) ? sumDay($mcl_rides[$date]) : 0;
@@ -323,10 +323,10 @@ if ($state == "calculate_from_strava" || $state == "calculate_from_mcl" || $stat
                         $distance = $strava_day_total - $mcl_day_total;
                     }
                     $message = "Ride with id " . $ride['strava_id'] . " on $date, distance " . round($distance * METRE_TO_MILE, 1) . " miles/" . round($distance * METRE_TO_KM, 1) . " kms. ";
-                    $bike = $strava_api->getBike($ride["bike"]);
-                    $mcl_bike_id = $mcl_api->bikeMatch($bike['brand'], $bike['model'], $ride['bike']);
+                    $bike = $strava->getBike($ride["bike"]);
+                    $mcl_bike_id = $myCyclingLog->bikeMatch($bike['brand'], $bike['model'], $ride['bike']);
                     $ride['mcl_bid'] = $mcl_bike_id;
-                    $new_id = $mcl_api->addRide($date, $ride);
+                    $new_id = $myCyclingLog->addRide($date, $ride);
                     if (strlen($new_id) == 0) {
                         $message = $message . "Appears to be a problem. Queued to retry.";
                         $rides_to_retry[$date][] = $ride;
@@ -338,7 +338,7 @@ if ($state == "calculate_from_strava" || $state == "calculate_from_mcl" || $stat
                     echo "$message <br>";
                     flush();
                 } else {
-                    $strava_api->dot();
+                    $strava->dot();
                 }
 
             }
@@ -359,14 +359,14 @@ if ($state == "calculate_from_strava" || $state == "calculate_from_mcl" || $stat
     echo "<H3>Copying rides from Endomondo to Strava...</H3>";
     set_time_limit(300);
 
-    $endo_rides_to_add = $endo_api->getRides($start_date, $end_date);
-    $strava_rides = $strava_api->getRides($start_date, $end_date);
+    $endo_rides_to_add = $endomondo->getRides($start_date, $end_date);
+    $strava_rides = $strava->getRides($start_date, $end_date);
 
     foreach ($endo_rides_to_add as $date => $ride_list) {
         foreach ($ride_list as $ride) {
             $distance = $ride['distance'];
             $start_time = $ride['start_time'];
-            $message = 'Ride with id <a target="_blank" href="' . $endo_api->activityUrl($ride['endo_id']) . '">' . $ride['endo_id'] . '</a>' . " on $start_time, distance " . round($distance * METRE_TO_MILE, 1) . " miles/" . round($distance * METRE_TO_KM, 1) . " kms. ";
+            $message = 'Ride with id <a target="_blank" href="' . $endomondo->activityUrl($ride['endo_id']) . '">' . $ride['endo_id'] . '</a>' . " on $start_time, distance " . round($distance * METRE_TO_MILE, 1) . " miles/" . round($distance * METRE_TO_KM, 1) . " kms. ";
             if ($distance || $distance < 500) {
                 $message .= "Skipping, too short: $distance metres";
             } else {
@@ -374,24 +374,24 @@ if ($state == "calculate_from_strava" || $state == "calculate_from_mcl" || $stat
 
                 if ($duplicateStravaRide) {
                     if (is_int($duplicateStravaRide)) {
-                        $message .= 'Duplicate with  <a target="_blank" href="' . $strava_api->activityUrl($duplicateStravaRide) .
+                        $message .= 'Duplicate with  <a target="_blank" href="' . $strava->activityUrl($duplicateStravaRide) .
                             '">' . $duplicateStravaRide . '</a>, skipping. ';
                     } else {
                         $message .= "Duplicate, skipping. ";
                     }
                 } else {
                     $path = $scratchDirectory . DIRECTORY_SEPARATOR . "endomondo+" . $ride['endo_id'] . ".gpx";
-                    $points = $endo_api->getPoints($ride['endo_id']);
+                    $points = $endomondo->getPoints($ride['endo_id']);
                     if ($points->gpxBad()) {
                         $message .= '<span style="color:red;">' . $points->gpxBad() . '</span>';
                         $message .= 'To add manually, try going downloading GPX from  <a href="'
-                            . $endo_api->activityUrl($ride['endo_id']) . '" target="_blank">Endomondo</a>'
-                            . ' then uploading it to <a href="' . $strava_api->uploadUrl() . '" target="_blank">Strava</a>.';
+                            . $endomondo->activityUrl($ride['endo_id']) . '" target="_blank">Endomondo</a>'
+                            . ' then uploading it to <a href="' . $strava->uploadUrl() . '" target="_blank">Strava</a>.';
 
                     } else {
                         file_put_contents($path, $points->gpx());
-                        $error = $strava_api->uploadGpx($path, $ride['endo_id'], $message,
-                            $ride['name'], $endo_api->activityUrl($ride['endo_id']));
+                        $error = $strava->uploadGpx($path, $ride['endo_id'], $message,
+                            $ride['name'], $endomondo->activityUrl($ride['endo_id']));
                         if ($error) {
                             $message = $message . '<span style="color:red;">Failed: </span>' . $error;
                         } else {
@@ -410,12 +410,12 @@ if ($state == "calculate_from_strava" || $state == "calculate_from_mcl" || $stat
 
 
     }
-    $results = $strava_api->waitForPendingUploads();
+    $results = $strava->waitForPendingUploads();
     $count = 0;
 
     foreach ($results as $endo_id => $result) {
         if (isset($result->strava_id)) {
-            $message = $result->message . ' Uploaded successfully, id: <a target="_blank" href="' . $strava_api->activityUrl($result->strava_id) .
+            $message = $result->message . ' Uploaded successfully, id: <a target="_blank" href="' . $strava->activityUrl($result->strava_id) .
                 '">' . $result->strava_id . '</a>.';
             $count++;
         } else {
@@ -429,7 +429,7 @@ if ($state == "calculate_from_strava" || $state == "calculate_from_mcl" || $stat
     }
     echo "<br>$count rides added.<br>";
 } else if ($state == 'delete_mcl_rides') {
-    $result = $mcl_api->deleteRides($start_date, $end_date, $_POST['mcl_username'], $_POST['mcl_password']);
+    $result = $myCyclingLog->deleteRides($start_date, $end_date, $_POST['mcl_username'], $_POST['mcl_password']);
     if (is_int($result)) {
         echo "Deleted $result activities from MyCyclingLog";
     } else {
@@ -440,7 +440,7 @@ if ($state == "calculate_from_strava" || $state == "calculate_from_mcl" || $stat
 if ($strava_connected || $mcl_connected || $endo_connected) {
     ?>
 
-    <form action="" method="post" name="main_form">
+    <form action="<?php echo $here;?>" method="post" name="main_form">
         <hr>
 
         <script> function populateDates(start, end) {
@@ -508,7 +508,7 @@ if ($strava_connected || $mcl_connected || $endo_connected) {
                         ' id="strava_split_2" name="strava_split_rides"/>';
                     echo "</td></tr>";
                 }
-                if ($strava_connected && $endo_connected && $strava_api->writeScope()) {
+                if ($strava_connected && $endo_connected && $strava->writeScope()) {
                     echo '<tr><td colspan="3"><input type="submit" name="copy_endo_to_strava" value="Copy rides and routes from Endomondo to Strava"/>  <br>';
                     echo "</td></tr>";
                 }
@@ -654,7 +654,7 @@ if ($strava_connected || $mcl_connected || $endo_connected) {
     </div>
     <?php
 }
-if (!$strava_connected || !$mcl_connected || !$endo_connected || !$strava_api->writeScope()) {
+if (!$strava_connected || !$mcl_connected || !$endo_connected || !$strava->writeScope()) {
     ?>
     <hr>
     <h3>Connect to services</h3>
@@ -664,24 +664,24 @@ if (!$strava_connected || !$mcl_connected || !$endo_connected || !$strava_api->w
             and there is a button to delete the cookies when you are done. </em></p>
     <table>
         <tr>
-            <?php if (!$strava_connected || !$strava_api->writeScope()) {
+            <?php if (!$strava_connected || !$strava->writeScope()) {
                 echo "<td>";
                 if (!$strava_connected) {
                     echo "Read acccess (You need this to calculate E-number from Strava):<br>";
                     echo '<a href="' .
-                        $strava_api->authenticationUrl($here, 'auto', null, "read_only") .
+                        $strava->authenticationUrl($here, 'auto', null, "read_only") .
                         '"> <img src="images/ConnectWithStrava@2x.png"></a><br><br>';
                 }
                 echo "Read/write acccess (only click this if you want to upload rides from Endomondo to Strava): <br>";
                 echo '<a href="' .
-                    $strava_api->authenticationUrl($here, 'auto', "write", "write") .
+                    $strava->authenticationUrl($here, 'auto', "write", "write") .
                     '"> <img src="images/ConnectWithStrava@2x.png"></a>';
                 echo "</td>";
             }
             ?>
             <?php if (!$mcl_connected) { ?>
                 <td>
-                    <form action="" method="post">
+                    <form action="<?php echo $here;?>" method="post">
                         <table>
                             <tr>
                                 <td> MyCyclingLog Username:</td>
@@ -705,7 +705,7 @@ if (!$strava_connected || !$mcl_connected || !$endo_connected || !$strava_api->w
             <?php } ?>
             <?php if (!$endo_connected) { ?>
                 <td>
-                    <form action="" method="post">
+                    <form action="<?php echo $here;?>" method="post">
                         <table>
                             <tr>
                                 <td> Endomondo Username:</td>

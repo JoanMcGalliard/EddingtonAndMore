@@ -8,7 +8,7 @@ use Iamstuartwilson;
 use JoanMcGalliard;
 
 
-class MyCyclingLogWrapper implements trackerWrapperInterface
+class MyCyclingLog implements trackerInterface
 {
     const STRAVA_NOTE_PREFIX = "http://www.strava.com/activities/";
 

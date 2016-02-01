@@ -1,14 +1,14 @@
 <?php
 namespace JoanMcGalliard\EddingtonAndMore;
 
-require_once 'TrackerWrapperInterface.php';
+require_once 'TrackerInterface.php';
 require_once 'Points.php';
 require_once 'JoanMcGalliard/EndomondoApi.php';
 use ArrayObject;
 use JoanMcGalliard;
 
 
-class EndomondoWrapper implements trackerWrapperInterface
+class Endomondo implements trackerInterface
 {
     const TWENTY_FOUR_HOURS = 86400;
     protected $deviceId = "";

@@ -2,15 +2,15 @@
 
 namespace JoanMcGalliard\EddingtonAndMore;
 require_once "Iamstuartwilson/StravaApi.php";
-require_once 'TrackerWrapperInterface.php';
+require_once 'TrackerInterface.php';
 require_once 'Points.php';
 use DOMDocument;
 use Iamstuartwilson;
 
-class StravaWrapper implements trackerWrapperInterface
+class Strava implements trackerInterface
 {
     const GPX_SUFFIX = "\.gpx";
-    protected $connected = false;
+    protected $connected = true;
     protected $bikes = [];
     private $pending_uploads = [];
     private $fileUploadTimeout = 300;
@@ -74,8 +74,12 @@ class StravaWrapper implements trackerWrapperInterface
         if (!$this->connected) return false;
         $this->error = null;
         $athlete = $this->stravaApi->get('athlete');
-        $this->connected = isset($athlete->id);
-        $this->userId = $athlete->id;
+        if (isset($athlete->id)) {
+            $this->connected = true ;
+            $this->userId = $athlete->id;
+        } else {
+            $this->connected=false;
+        }
         if (isset($athlete->errors)) {
             $this->error = $athlete->message;
         }

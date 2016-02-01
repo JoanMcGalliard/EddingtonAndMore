@@ -7,6 +7,7 @@ require_once 'Points.php';
 use DOMDocument;
 use Iamstuartwilson;
 
+
 class Strava implements trackerInterface
 {
     const GPX_SUFFIX = "\.gpx";
@@ -249,7 +250,7 @@ class Strava implements trackerInterface
         $midnight = strtotime(date("Y-m-d", $start));
         date_default_timezone_set($def_tz);
         $start_seconds = $start - $midnight;
-        return intval(($start_seconds + $duration) / TWENTY_FOUR_HOURS) + 1;
+        return intval(($start_seconds + $duration) / self::TWENTY_FOUR_HOURS) + 1;
     }
 
     public function getBike($id)

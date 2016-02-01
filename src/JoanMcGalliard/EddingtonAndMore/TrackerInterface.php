@@ -7,7 +7,7 @@ interface trackerInterface
     const METRE_TO_MILE = 0.00062137119224;
     const METRE_TO_KM = 0.001;
     const METRE_TO_FOOT = 3.280;
-
+    const TWENTY_FOUR_HOURS = 86400;
     public function isConnected();
 
     public function getUserId();

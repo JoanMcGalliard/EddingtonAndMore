@@ -10,7 +10,6 @@ use JoanMcGalliard;
 
 class Endomondo implements trackerInterface
 {
-    const TWENTY_FOUR_HOURS = 86400;
     protected $deviceId = "";
     private $googleApiKey;
     private $lastTZRequestedFromGoogle = null;

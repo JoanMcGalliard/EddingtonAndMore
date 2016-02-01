@@ -213,6 +213,10 @@ if ($state == "calculate_from_strava" || $state == "calculate_from_mcl" || $stat
 
         $source = "Strava";
         $activities = $strava->getRides($start_date, $end_date);
+        if ($strava->getError()) {
+            echo "There was a problem getting data from Strava.<br>".$strava->getError();
+        }
+
         $overnight_rides = $strava->getOvernightActivities();
         if ($preferences->getStravaSplitRides() && $overnight_rides) {
             askForStravaGpx($overnight_rides, $maxKmFileUploads,"calculate_from_strava", "recalculate your E-Number");
@@ -292,6 +296,9 @@ if ($state == "calculate_from_strava" || $state == "calculate_from_mcl" || $stat
     set_time_limit(300);
 
     $strava_rides_to_add = $strava->getRides($start_date, $end_date);
+    if ($strava->getError()) {
+        echo "There was a problem getting data from Strava.<br>".$strava->getError();
+    }
     $count = 0;
     $overnightRidesNeeded=[];  // these are unsplit overnight rides that haven't already been added to MCL
     for ($i = 0; $i < 5; $i++) {
@@ -361,6 +368,10 @@ if ($state == "calculate_from_strava" || $state == "calculate_from_mcl" || $stat
 
     $endo_rides_to_add = $endomondo->getRides($start_date, $end_date);
     $strava_rides = $strava->getRides($start_date, $end_date);
+    if ($strava->getError()) {
+        echo "There was a problem getting data from Strava.<br>".$strava->getError();
+    }
+
 
     foreach ($endo_rides_to_add as $date => $ride_list) {
         foreach ($ride_list as $ride) {

@@ -278,7 +278,10 @@ class MyCyclingLog implements trackerInterface
     }
 
 
-
+    public function getError()
+    {
+        // TODO: Implement getError() method.
+    }
 }
 
 ?>

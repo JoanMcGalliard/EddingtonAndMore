@@ -213,6 +213,11 @@ class Endomondo implements trackerInterface
     {
         $this->splitOvernightRides = $splitOvernightRides;
     }
+
+    public function getError()
+    {
+        // TODO: Implement getError() method.
+    }
 }
 
 ?>

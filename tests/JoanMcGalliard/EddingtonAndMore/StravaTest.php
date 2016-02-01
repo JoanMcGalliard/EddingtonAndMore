@@ -3,7 +3,7 @@
 namespace JoanMcGalliard\EddingtonAndMore;
 
 require_once "JoanMcGalliard/EddingtonAndMore/Strava.php";
-require_once 'StravaApiMock.php';
+require_once 'mocks/StravaApiMock.php';
 
 use PHPUnit_Framework_TestCase;
 use StravaApiMock;
@@ -13,11 +13,21 @@ class StravaTest extends PHPUnit_Framework_TestCase
     public function testGetRides()
     {
         $mock = new StravaApiMock();
-        $mock->clearResponses("get", 'activities');
-        $mock->primeResponse('get', 'activities', include("data/apiResponses/example1.php"));
         $stravaApi = new Strava("", "", $mock);
+        $mock->clearResponses("get", 'activities');
+
         // tests that a simple request for rides returns expect structure.
+        $mock->primeResponse('get', 'activities', include("data/apiResponses/example1.php"));
         $this->assertEquals(include("data/expected/example1.php"), $stravaApi->getRides(null, null));
+        $this->assertEquals("", $stravaApi->getError());
+
+        // if we get an error from strava, we should record an error.
+        $mock->primeResponse('get', 'activities', include("data/apiResponses/example1.php"));
+        $mock->primeResponse('get', 'activities', "Operation timed out after 0 milliseconds with 0 out of 0 bytes received");
+        $this->assertEquals(include("data/expected/example1.php"), $stravaApi->getRides(null, null,2));
+        $this->assertEquals("Operation timed out after 0 milliseconds with 0 out of 0 bytes received<br>",
+            $stravaApi->getError());
+
 
 
     }

@@ -31,6 +31,7 @@ interface trackerInterface
      */
     public function getRides($start_date, $end_date);
 
+    public function getError();
 }
 
 ?>

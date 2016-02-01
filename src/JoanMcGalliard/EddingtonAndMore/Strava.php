@@ -97,6 +97,7 @@ class Strava implements trackerInterface
 
     public function getRides($start_date, $end_date, $activities_per_page = 200)
     {
+        $this->error="";
         $activities_list = [];
         if (!$start_date && !$end_date) {
             for ($i = 1; ; $i++) {
@@ -173,70 +174,75 @@ class Strava implements trackerInterface
     private function newActivities(&$activities_list, $to_add)
     {
         global $scratchDirectory;
-        foreach ($to_add as $activity) {
-            if ($activity->type != 'Ride') continue;
-            $next = [];
-            $next['distance'] = floatval($activity->distance);
-            $next['name'] = $activity->name;
-            $next['strava_id'] = $activity->id;
-            $next['start_time'] = $activity->start_date;
-            $next['bike'] = $activity->gear_id;
-            $next['moving_time'] = $activity->moving_time;
-            $next['elapsed_time'] = $activity->elapsed_time;
-            $next['total_elevation_gain'] = $activity->total_elevation_gain;
-            $next['max_speed'] = $activity->max_speed;
-            if (preg_match('/\([^\)]*\) (.*)$/', $activity->timezone, $matches) > 0) {
-                $next['timezone'] = $matches[1];
-            } else {
-                $next['timezone'] = null;
-            }
-            $gpx_file = $scratchDirectory . DIRECTORY_SEPARATOR . $this->userId . "-" .
-                preg_replace("/:/", "_", $activity->start_date) . ".gpx";
-            $numberOfDays = $this->numberOfDays($activity->start_date, $next['timezone'], $activity->elapsed_time);
-            if ($this->splitOvernight && $numberOfDays > 1 && file_exists($gpx_file)) {
-                $xml = file_get_contents($gpx_file);
-                preg_match_all('/<trkpt[^>]*>.*?<\/trkpt>/s', $xml, $trkpts);
-                $points = new Points($activity->start_date, $next['timezone']);
-                foreach ($trkpts[0] as $trkpt) {
-                    preg_match('/<trkpt.*lat="([^"]*)"/',$trkpt, $matches);
-                    $lat=$matches[1];
-                    preg_match('/<trkpt.*lon="([^"]*)"/',$trkpt, $matches);
-                    $lon=$matches[1];
-                    preg_match('/<time>([^<]*)<\/time>/',$trkpt, $matches);
-                    $time=$matches[1];
-                    $points->add($lat, $lon, $time);
-                    $this->rareDot();
-                }
-
-                if (sizeof($points->getSplits())> 0) {
-                    $next['total_elevation_gain'] = $next['total_elevation_gain'] / sizeof($points->getSplits());
-                }
-
-                foreach ($points->getSplits() as $split_date => $split) {
-                    $new = $next;
-                    $new['distance'] = $split;
-                    $new['start_time'] = $points->getStartTimes()[$split_date];
-                    $new['elapsed_time'] = strtotime($points->getEndTimes()[$split_date]) - strtotime($points->getStartTimes()[$split_date]);
-                    $new['moving_time'] = $new['elapsed_time'];
-                    $activities_list[$split_date][] = $new;
-                }
-
-                $points = null;
-
-            } else {
-                if ($this->splitOvernight && $numberOfDays > 1) {
-                    // it's a multi day ride, but we don't have a file for it.
-                    $this->overnightActivities[$activity->id] = $activity;
-
-                }
-                $pattern = "/^([0-9][0-9]*)" . self::GPX_SUFFIX . "/";
-                if (preg_match($pattern, $activity->external_id, $matches) > 0) {
-                    $next['endo_id'] = intval($matches[1]);
+        if (is_string($to_add)) {
+            // strava has given us an error instead of data :(
+            $this->error.= $to_add."<br>";
+        } else {
+            foreach ($to_add as $activity) {
+                if ($activity->type != 'Ride') continue;
+                $next = [];
+                $next['distance'] = floatval($activity->distance);
+                $next['name'] = $activity->name;
+                $next['strava_id'] = $activity->id;
+                $next['start_time'] = $activity->start_date;
+                $next['bike'] = $activity->gear_id;
+                $next['moving_time'] = $activity->moving_time;
+                $next['elapsed_time'] = $activity->elapsed_time;
+                $next['total_elevation_gain'] = $activity->total_elevation_gain;
+                $next['max_speed'] = $activity->max_speed;
+                if (preg_match('/\([^\)]*\) (.*)$/', $activity->timezone, $matches) > 0) {
+                    $next['timezone'] = $matches[1];
                 } else {
-                    $next['endo_id'] = null;
+                    $next['timezone'] = null;
                 }
-                $date = date("Y-m-d", strtotime($activity->start_date_local));
-                $activities_list[$date][] = $next;
+                $gpx_file = $scratchDirectory . DIRECTORY_SEPARATOR . $this->userId . "-" .
+                    preg_replace("/:/", "_", $activity->start_date) . ".gpx";
+                $numberOfDays = $this->numberOfDays($activity->start_date, $next['timezone'], $activity->elapsed_time);
+                if ($this->splitOvernight && $numberOfDays > 1 && file_exists($gpx_file)) {
+                    $xml = file_get_contents($gpx_file);
+                    preg_match_all('/<trkpt[^>]*>.*?<\/trkpt>/s', $xml, $trkpts);
+                    $points = new Points($activity->start_date, $next['timezone']);
+                    foreach ($trkpts[0] as $trkpt) {
+                        preg_match('/<trkpt.*lat="([^"]*)"/', $trkpt, $matches);
+                        $lat = $matches[1];
+                        preg_match('/<trkpt.*lon="([^"]*)"/', $trkpt, $matches);
+                        $lon = $matches[1];
+                        preg_match('/<time>([^<]*)<\/time>/', $trkpt, $matches);
+                        $time = $matches[1];
+                        $points->add($lat, $lon, $time);
+                        $this->rareDot();
+                    }
+
+                    if (sizeof($points->getSplits()) > 0) {
+                        $next['total_elevation_gain'] = $next['total_elevation_gain'] / sizeof($points->getSplits());
+                    }
+
+                    foreach ($points->getSplits() as $split_date => $split) {
+                        $new = $next;
+                        $new['distance'] = $split;
+                        $new['start_time'] = $points->getStartTimes()[$split_date];
+                        $new['elapsed_time'] = strtotime($points->getEndTimes()[$split_date]) - strtotime($points->getStartTimes()[$split_date]);
+                        $new['moving_time'] = $new['elapsed_time'];
+                        $activities_list[$split_date][] = $new;
+                    }
+
+                    $points = null;
+
+                } else {
+                    if ($this->splitOvernight && $numberOfDays > 1) {
+                        // it's a multi day ride, but we don't have a file for it.
+                        $this->overnightActivities[$activity->id] = $activity;
+
+                    }
+                    $pattern = "/^([0-9][0-9]*)" . self::GPX_SUFFIX . "/";
+                    if (preg_match($pattern, $activity->external_id, $matches) > 0) {
+                        $next['endo_id'] = intval($matches[1]);
+                    } else {
+                        $next['endo_id'] = null;
+                    }
+                    $date = date("Y-m-d", strtotime($activity->start_date_local));
+                    $activities_list[$date][] = $next;
+                }
             }
         }
     }

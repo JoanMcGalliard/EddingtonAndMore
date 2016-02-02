@@ -546,26 +546,26 @@ if ($strava_connected || $mcl_connected || $endo_connected) {
             $("#datepicker_start").datepicker({changeMonth: true, changeYear: true, dateFormat: 'dd-mm-yy'});
             $("#datepicker_end").datepicker({changeMonth: true, changeYear: true, dateFormat: 'dd-mm-yy'});
             $("#tz").timezones();
-            $("#tz").val('<?php myEcho($preferences->getTimezone()); ?>'));
+            $("#tz").val('<?php echo($preferences->getTimezone()); ?>');
 
             function confirm_mcl_deletes() {
-                var start_date = document.forms["main_form"]["start_date"].value;
+                var start = document.forms["main_form"]["start_date"].value;
                 var end_date = document.forms["main_form"]["end_date"].value;
-                if (start_date == "") {
-                    start_date = "the beginning"
+                if (start == "") {
+                    start = "the beginning"
                 }
                 if (end_date == "") {
                     end_date = "today"
                 }
                 var password_warning = "Are you sure you want to do this?  This will remove all activities from " +
-                    "MyCyclingLog between " + start_date + " and " + end_date + " that have a Strava ride in the notes. " +
+                    "MyCyclingLog between " + start + " and " + end_date + " that have a Strava ride in the notes. " +
                     "If you are sure, enter your MCL password here.";
 
                 <?php
                 if (!$preferences->getMclUsername()) {
-                    myEcho('var username = prompt("Please enter your MyCyclingLog username");');
+                    echo('var username = prompt("Please enter your MyCyclingLog username");');
                 } else {
-                    myEcho("var username = '" . $preferences->getMclUsername() . "';");
+                    echo("var username = '" . $preferences->getMclUsername() . "';");
                 }
                 ?>
                 var password = prompt(password_warning);

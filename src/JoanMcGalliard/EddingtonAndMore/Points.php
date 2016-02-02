@@ -164,14 +164,20 @@ private $start_day = 0;
         $tz = false;
         if ($page) {
             $tz = json_decode($page)->timeZoneId;
+        }
+        if (!$tz) {
+            if (isset(self::$previousPoint)) {
+                $tz = self::$previousPoint->tz;
+            } else {
+                $tz="UTC";
+            }
+            $this->output("<br>Unable to find timezone for ride on $this->current_day, defaulting to $tz.<br>");
+            $tz = self::$previousPoint->tz;
+        } else {
             self::$previousPoint = new stdClass();
             self::$previousPoint->lat = $lat;
             self::$previousPoint->long = $long;
             self::$previousPoint->tz = $tz;
-        }
-        if (!$tz) {
-            $this->output("Unable to find TZ from ride on $this->current_day, defaulting to UTC<br>");
-            $tz = "UTC";
         }
         return $tz;
     }

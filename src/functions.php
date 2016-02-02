@@ -20,7 +20,7 @@ function sumDay($rides)
 function next_goals($x)
 {
     $next = [];
-    $next[$x+1]=1;
+    $next[$x + 1] = 1;
     $mod = ($x % 10);
     if ($mod < 5) {
         $next[$x - $mod + 5] = 1;
@@ -104,8 +104,9 @@ function extractStravaIds($mcl_rides)
  */
 function compareDistance($distance1, $distance2)
 {
-    if ( $distance1 <> 0 &&  abs(($distance2 - $distance1) / $distance1) < 0.02)
-    {return 0;}
+    if ($distance1 <> 0 && abs(($distance2 - $distance1) / $distance1) < 0.02) {
+        return 0;
+    }
     return $distance1 < $distance2 ? -1 : 1;
 }
 
@@ -192,7 +193,9 @@ function buildChart($imperial_history, $metric_history)
 
 function askForStravaGpx($overnight_rides, $maxKmFileUploads, $state, $message)
 {
-    if (sizeof($overnight_rides) == 0) {return;}
+    if (sizeof($overnight_rides) == 0) {
+        return;
+    }
     echo "<br>";
     echo "To split your strava rides, you'll need to download some of the GPX from Strava, them upload them to here. ";
     echo "<br><strong>First</strong> click the following links to download the GPX files. ";
@@ -226,10 +229,10 @@ function askForStravaGpx($overnight_rides, $maxKmFileUploads, $state, $message)
     echo '<input type="file" name="gpx[]" id="gpx" multiple>';
     echo '<input type="hidden" name="start_date" value="' . $_POST["start_date"] . '"/>';
     echo '<input type="hidden" name="end_date" value="' . $_POST["end_date"] . '"/>';
-    echo '<input type="hidden" name="'.$state.'" />';
+    echo '<input type="hidden" name="' . $state . '" />';
     echo '<input type="hidden" value="split" checked name="strava_split_rides"/>';
     echo "<br><strong>Finally</strong>, $message:";
-    echo '<br><input type="submit" value="Upload and '.$message.'" name="submit"/>';
+    echo '<br><input type="submit" value="Upload and ' . $message . '" name="submit"/>';
     echo '</form>';
     return $distance;
 }
@@ -267,9 +270,10 @@ function processUploadedGpxFiles($userId, $scratchDirectory)
     }
 }
 
-function myEcho($msg) {
+function myEcho($msg)
+{
     echo $msg;
-    echo str_pad('',4096);
+    echo str_pad('', 4096);
 }
 
 ?>

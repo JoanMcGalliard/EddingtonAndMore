@@ -19,13 +19,14 @@ class MyCyclingLog extends trackerAbstract
     protected $use_feet_for_elevation = false;
     private $user_id;
     private $api = null;
+
     /**
      * MyCyclingLogWrapper constructor.
      * @param null $api
      */
-    public function __construct($echoCallback,$api = null)
+    public function __construct($echoCallback, $api = null)
     {
-        $this->echoCallback=$echoCallback;
+        $this->echoCallback = $echoCallback;
         if ($api) {
             $this->api = $api;
         } else {
@@ -186,12 +187,12 @@ class MyCyclingLog extends trackerAbstract
 
     public function deleteRides($start_date, $end_date, $username, $password)
     {
-        $login=$this->api->login($username,$password);
+        $login = $this->api->login($username, $password);
         if ($login <> "OK") {
             return $login; // error message
         }
 
-        $count=0;
+        $count = 0;
         $rides = $this->getRides($start_date, $end_date);
         foreach ($rides as $date => $ride_list) {
             foreach ($ride_list as $ride) {
@@ -266,7 +267,6 @@ class MyCyclingLog extends trackerAbstract
     }
     // MyCyclingLog can create non-valid xml.  This removes any character except for a select list from the field
     // "<$element>"
-
 
 
 }

@@ -10,7 +10,7 @@ class StravaApiMock
     public $lastRequest;
     public $lastRequestData;
     public $lastRequestInfo;
-    private $responses=[];
+    private $responses = [];
 
 
     /**
@@ -153,12 +153,17 @@ class StravaApiMock
     public function get($request, $parameters = array())
     {
         if (isset($this->responses['get'][$request]) && sizeof($this->responses['get'][$request]) > 0) {
-            return $this->getResponse('get', $request,$parameters);
+            return $this->getResponse('get', $request, $parameters);
         } else {
 
             throw new Exception("get $request: no response available");
         }
 
+    }
+
+    private function getResponse($type, $request, $params)
+    {
+        return array_shift($this->responses[$type][$request]);
     }
 
     /**
@@ -191,6 +196,8 @@ class StravaApiMock
         throw new Exception("post $request: Not implemented");
     }
 
+    // the next time we get a type (eg "get") request that matches the (eg 'activities') we will give the $response;
+
     /**
      * Sends DELETE request to specified API endpoint
      *
@@ -206,17 +213,14 @@ class StravaApiMock
         throw new Exception("delete $request: Not implemented");
     }
 
-    // the next time we get a type (eg "get") request that matches the (eg 'activities') we will give the $response;
-    public function primeResponse ($type, $request, $response) {
-        $this->responses[$type][$request][]=$response;
+    public function primeResponse($type, $request, $response)
+    {
+        $this->responses[$type][$request][] = $response;
     }
-    public function clearResponses ($type, $request)
+
+    public function clearResponses($type, $request)
     {
         unset($this->responses[$type][$request]);
-    }
-    private function getResponse ($type, $request,$params)
-    {
-        return  array_shift($this->responses[$type][$request]);
     }
 
 }

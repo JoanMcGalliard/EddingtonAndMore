@@ -41,7 +41,8 @@ abstract class trackerAbstract
     }
 
 
-    protected function output($msg) {
+    protected function output($msg)
+    {
         call_user_func($this->echoCallback, $msg);
     }
 

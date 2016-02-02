@@ -17,7 +17,6 @@ class EndomondoApi
     }
 
 
-
     public function getPage($url, $params = [])
     {
         if (!$this->auth) {
@@ -37,10 +36,10 @@ class EndomondoApi
 
         $page = curl_exec($process);
         $error = curl_error($process);
-        log_msg("endomondo ".$path);
+        log_msg("endomondo " . $path);
         log_msg($page);
-        if ($error) log_msg("ERROR: ".$error);
-        log_msg("Total time: ".curl_getinfo($process)["total_time"]);
+        if ($error) log_msg("ERROR: " . $error);
+        log_msg("Total time: " . curl_getinfo($process)["total_time"]);
         curl_close($process);
         if ($page) {
             return $page;
@@ -50,8 +49,7 @@ class EndomondoApi
     }
 
 
-
-    public function connect($username, $password,$deviceId)
+    public function connect($username, $password, $deviceId)
     {
         $url = "auth";
         $params = [];

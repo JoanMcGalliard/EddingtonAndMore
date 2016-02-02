@@ -6,19 +6,10 @@ namespace JoanMcGalliard;
 class MyCyclingLogApi
 {
 
-    protected $auth = null;
     const REST_SERVER_BASE_URL = "http://www.mycyclinglog.com/api/restserver.php";
     const WEB_PAGE_BASE_URL = 'http://www.mycyclinglog.com';
-    private $session=null;
-
-
-    /**
-     * @param null $auth
-     */
-    public function setAuth($auth)
-    {
-        $this->auth = $auth;
-    }
+    protected $auth = null;
+    private $session = null;
 
     /**
      * @return null
@@ -26,6 +17,14 @@ class MyCyclingLogApi
     public function getAuth()
     {
         return $this->auth;
+    }
+
+    /**
+     * @param null $auth
+     */
+    public function setAuth($auth)
+    {
+        $this->auth = $auth;
     }
 
     public function postPage($url, $parameters)
@@ -43,13 +42,14 @@ class MyCyclingLogApi
         log_msg($parameters);
         log_msg($response);
 
-        $error=curl_error($process);
-        if ($error) log_msg("ERROR: ".$error);
+        $error = curl_error($process);
+        if ($error) log_msg("ERROR: " . $error);
 
-        log_msg("Total time: ".curl_getinfo($process)["total_time"]);
+        log_msg("Total time: " . curl_getinfo($process)["total_time"]);
         curl_close($process);
         return $response;
     }
+
     public function getPage($url)
     {
         $process = curl_init(self::REST_SERVER_BASE_URL . $url);
@@ -61,9 +61,9 @@ class MyCyclingLogApi
         $page = curl_exec($process);
         log_msg("MCL get URL " . $url);
         log_msg($page);
-        $error=curl_error($process);
-        if ($error) log_msg("ERROR: ".$error);
-        log_msg("Total time: ".curl_getinfo($process)["total_time"]);
+        $error = curl_error($process);
+        if ($error) log_msg("ERROR: " . $error);
+        log_msg("Total time: " . curl_getinfo($process)["total_time"]);
         curl_close($process);
 
         return $page;
@@ -99,23 +99,23 @@ class MyCyclingLogApi
      * This is for deleting rides, which only availble via the web page, not the API.  You need to login, then
      * delete the rides then logout.
      */
-    public function delete($id)     {
-        if (!$this->session) {return false;}
-        curl_setopt($this->session, CURLOPT_URL, self::WEB_PAGE_BASE_URL."/add.php");
+    public function delete($id)
+    {
+        if (!$this->session) {
+            return false;
+        }
+        curl_setopt($this->session, CURLOPT_URL, self::WEB_PAGE_BASE_URL . "/add.php");
         curl_setopt($this->session, CURLOPT_POSTFIELDS, "r=1&lid=$id");
         curl_exec($this->session);
         return true;
     }
 
-    public function logout () {
+    public function logout()
+    {
         if ($this->session) {
             curl_close($this->session);
         }
     }
-
-
-
-
 
 
 }

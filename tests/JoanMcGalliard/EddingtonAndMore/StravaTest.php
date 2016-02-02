@@ -12,19 +12,20 @@ class StravaTest extends PHPUnit_Framework_TestCase
 {
     private $output;
 
-    public function myEcho($msg) {
-        $this->output.= $msg;
+    public function myEcho($msg)
+    {
+        $this->output .= $msg;
     }
 
     public function testGetRides()
     {
         $mock = new StravaApiMock();
-        $stravaApi = new Strava("", "", array($this,'myEcho'), $mock);
+        $stravaApi = new Strava("", "", array($this, 'myEcho'), $mock);
         $mock->clearResponses("get", 'activities');
 
         // tests that a simple request for rides returns expect structure.
         $mock->primeResponse('get', 'activities', include("data/apiResponses/example1.php"));
-        $this->output="";
+        $this->output = "";
         $this->assertEquals(include("data/expected/example1.php"), $stravaApi->getRides(null, null));
         $this->assertEquals("", $stravaApi->getError());
         $this->assertEquals(".", $this->output);
@@ -33,10 +34,9 @@ class StravaTest extends PHPUnit_Framework_TestCase
         // if we get an error from strava, we should record an error.
         $mock->primeResponse('get', 'activities', include("data/apiResponses/example1.php"));
         $mock->primeResponse('get', 'activities', "Operation timed out after 0 milliseconds with 0 out of 0 bytes received");
-        $this->assertEquals(include("data/expected/example1.php"), $stravaApi->getRides(null, null,2));
+        $this->assertEquals(include("data/expected/example1.php"), $stravaApi->getRides(null, null, 2));
         $this->assertEquals("Operation timed out after 0 milliseconds with 0 out of 0 bytes received<br>",
             $stravaApi->getError());
-
 
 
     }
@@ -52,7 +52,6 @@ class StravaTest extends PHPUnit_Framework_TestCase
         parent::tearDown();
     }
 }
-
 
 
 /*

@@ -2,58 +2,39 @@
 
 namespace JoanMcGalliard\EddingtonAndMore;
 
-use DateTime;
 use stdClass;
 
 class Points
 {
 
+    private static $previousPoint = null;
     private $points;
     private $timezone;
     private $splits;
     private $googleApiKey;
     private $start_times;
     private $end_times;
-    private $generateGPX=false;
+    private $generateGPX = false;
     private $echoCallback;
-
-    /**
-     * @param mixed $generateGPX
-     */
-    public function setGenerateGPX($generateGPX)
-    {
-        $this->generateGPX = $generateGPX;
-    }
-
-    /**
-     * @param mixed $googleApiKey
-     */
-    public function setGoogleApiKey($googleApiKey)
-    {
-        $this->googleApiKey = $googleApiKey;
-    }
     private $previous = null;
-
     private $total_distance_day = [];
-    private $start_day = 0; // midnight local time in seconds on the day this ride started
-
-    private $current_day;
+private $start_day = 0;
+        private $current_day; // midnight local time in seconds on the day this ride started
     private $gpx;
     private $bad_points = 0;
     private $good_points = 0;
-    private static $previousPoint=null;
 
     /**
      * Points constructor.
      */
-    public function __construct($start_day, $echoCallback,$timezone = "")
+    public function __construct($start_day, $echoCallback, $timezone = "")
     {
         $this->points = [];
         if ($timezone <> "") {
-            $this->timezone=$timezone;
+            $this->timezone = $timezone;
         }
         $this->day($start_day);
-        $this->echoCallback=$echoCallback;
+        $this->echoCallback = $echoCallback;
         $this->gpx = '<?xml version="1.0" encoding="UTF-8"?> <gpx creator="Eddington &amp; More" >';
         $this->gpx .= "<trk><trkseg>";
         $this->gpx .= "\n";
@@ -72,6 +53,22 @@ class Points
         return $this->current_day;
     }
 
+    /**
+     * @param mixed $generateGPX
+     */
+    public function setGenerateGPX($generateGPX)
+    {
+        $this->generateGPX = $generateGPX;
+    }
+
+    /**
+     * @param mixed $googleApiKey
+     */
+    public function setGoogleApiKey($googleApiKey)
+    {
+        $this->googleApiKey = $googleApiKey;
+    }
+
     public function add($lat, $long, $time)
     {
         $point = [];
@@ -80,12 +77,12 @@ class Points
         $this->addPointToGPX($lat, $long, $time);
         if (!isset($this->timezone)) {
             if (!isset($this->googleApiKey)) {
-                $this->timezone="UTC";
+                $this->timezone = "UTC";
             } else {
                 if ($time) {
-                    $this->timezone=$this->timezoneFromCoords($lat, $long, strtotime($time));
+                    $this->timezone = $this->timezoneFromCoords($lat, $long, strtotime($time));
                 } else {
-                    $this->timezone=$this->timezoneFromCoords($lat, $long, strtotime($this->start_day));
+                    $this->timezone = $this->timezoneFromCoords($lat, $long, strtotime($this->start_day));
                 }
             }
         }
@@ -102,35 +99,21 @@ class Points
         } else {
             $distance = $this->distance($this->previous['lat'], $this->previous['long'], $point['lat'], $point['long']);
             if (!isset($this->splits[$this->day($time)])) {
-                $this->splits[$this->day($time)]=0;
-                $this->start_times[$this->day($time)]=$time;
-                $this->end_times[$this->day($time)]=$time;
+                $this->splits[$this->day($time)] = 0;
+                $this->start_times[$this->day($time)] = $time;
+                $this->end_times[$this->day($time)] = $time;
             }
             $this->splits[$this->day($time)] += $distance;
-            $this->end_times[$this->day($time)]=$time;
+            $this->end_times[$this->day($time)] = $time;
             $this->previous = $point;
         }
     }
 
-    /**
-     * @return mixed
-     */
-    public function getStartTimes()
-    {
-        return $this->start_times;
-    }
-
-    /**
-     * @return mixed
-     */
-    public function getEndTimes()
-    {
-        return $this->end_times;
-    }
-
     public function addPointToGPX($lat, $long, $timestr)
     {
-        if (!$this->generateGPX) {return;}
+        if (!$this->generateGPX) {
+            return;
+        }
         $default_tz = date_default_timezone_get();
         date_default_timezone_set("UTC");
         if (!$timestr) {
@@ -150,11 +133,12 @@ class Points
     public function timezoneFromCoords($lat, $long, $time)
     {
         if (isset(self::$previousPoint) &&
-            abs($this->distance(self::$previousPoint->lat,self::$previousPoint->long,$lat,$long)) < 50000) {
+            abs($this->distance(self::$previousPoint->lat, self::$previousPoint->long, $lat, $long)) < 50000
+        ) {
             //previous TZ was less than 50km from here.  Use same timezone.  Needed as google is taking >3s to return TZ.
             return self::$previousPoint->tz;
         }
-        $retries=3;
+        $retries = 3;
         $params = ['location' => "$lat,$long",
             'timestamp' => $time, 'key', $this->googleApiKey];
 
@@ -165,25 +149,25 @@ class Points
         curl_setopt($process, CURLOPT_TIMEOUT, 30);
         curl_setopt($process, CURLOPT_RETURNTRANSFER, TRUE);
 
-        for ($i=0;$i<$retries; $i++) {
+        for ($i = 0; $i < $retries; $i++) {
             $page = curl_exec($process);
             $error = curl_error($process);
             log_msg($url);
             log_msg($page);
-            if ($error) log_msg("ERROR: ".$error);
-            log_msg("Total time: ".curl_getinfo($process)["total_time"]);
+            if ($error) log_msg("ERROR: " . $error);
+            log_msg("Total time: " . curl_getinfo($process)["total_time"]);
 
             if ($page) break;
             log_msg("retrying");
         }
         curl_close($process);
-        $tz=false;
+        $tz = false;
         if ($page) {
             $tz = json_decode($page)->timeZoneId;
             self::$previousPoint = new stdClass();
-            self::$previousPoint->lat=$lat;
-            self::$previousPoint->long=$long;
-            self::$previousPoint->tz=$tz;
+            self::$previousPoint->lat = $lat;
+            self::$previousPoint->long = $long;
+            self::$previousPoint->tz = $tz;
         }
         if (!$tz) {
             $this->output("Unable to find TZ from ride on $this->current_day, defaulting to UTC<br>");
@@ -221,9 +205,30 @@ class Points
 
     }
 
+    private function output($msg)
+    {
+        call_user_func($this->echoCallback, $msg);
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getStartTimes()
+    {
+        return $this->start_times;
+    }
+
     /*thank you stackexchange!
      * http://stackoverflow.com/questions/569980/how-to-calculate-distance-from-a-gpx-file
      */
+
+    /**
+     * @return mixed
+     */
+    public function getEndTimes()
+    {
+        return $this->end_times;
+    }
 
     public function gpxBad()
     {
@@ -254,10 +259,6 @@ class Points
     public function getSplits()
     {
         return $this->splits;
-    }
-
-    private function output($msg) {
-        call_user_func($this->echoCallback, $msg);
     }
 
 }

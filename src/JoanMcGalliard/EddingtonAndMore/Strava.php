@@ -4,7 +4,6 @@ namespace JoanMcGalliard\EddingtonAndMore;
 require_once "Iamstuartwilson/StravaApi.php";
 require_once 'TrackerAbstract.php';
 require_once 'Points.php';
-use DOMDocument;
 use Iamstuartwilson;
 
 
@@ -21,9 +20,9 @@ class Strava extends trackerAbstract
     private $overnightActivities = [];
     private $splitOvernight;
 
-    public function __construct($clientId, $clientSecret, $echoCallback,$api = null)
+    public function __construct($clientId, $clientSecret, $echoCallback, $api = null)
     {
-        $this->echoCallback=$echoCallback;
+        $this->echoCallback = $echoCallback;
         if ($api) {
             $this->api = $api;
         } else {
@@ -76,10 +75,10 @@ class Strava extends trackerAbstract
         $this->error = null;
         $athlete = $this->api->get('athlete');
         if (isset($athlete->id)) {
-            $this->connected = true ;
+            $this->connected = true;
             $this->userId = $athlete->id;
         } else {
-            $this->connected=false;
+            $this->connected = false;
         }
         if (isset($athlete->errors)) {
             $this->error = $athlete->message;
@@ -93,7 +92,7 @@ class Strava extends trackerAbstract
 
     public function getRides($start_date, $end_date, $activities_per_page = 200)
     {
-        $this->error="";
+        $this->error = "";
         $activities_list = [];
         if (!$start_date && !$end_date) {
             for ($i = 1; ; $i++) {
@@ -154,19 +153,12 @@ class Strava extends trackerAbstract
         return $return;
     }
 
-    private function rareDot()
-    {
-        if (!isset($this->rareDotCount)){ $this->rareDotCount=0;}
-        if ($this->rareDotCount++ > 1000) {$this->output('.'); $this->rareDotCount=0;}
-        flush();
-    }
-
     private function newActivities(&$activities_list, $to_add)
     {
         global $scratchDirectory;
         if (is_string($to_add)) {
             // strava has given us an error instead of data :(
-            $this->error.= $to_add."<br>";
+            $this->error .= $to_add . "<br>";
         } else {
             foreach ($to_add as $activity) {
                 if ($activity->type != 'Ride') continue;
@@ -246,6 +238,18 @@ class Strava extends trackerAbstract
         date_default_timezone_set($def_tz);
         $start_seconds = $start - $midnight;
         return intval(($start_seconds + $duration) / self::TWENTY_FOUR_HOURS) + 1;
+    }
+
+    private function rareDot()
+    {
+        if (!isset($this->rareDotCount)) {
+            $this->rareDotCount = 0;
+        }
+        if ($this->rareDotCount++ > 1000) {
+            $this->output('.');
+            $this->rareDotCount = 0;
+        }
+        flush();
     }
 
     public function getBike($id)

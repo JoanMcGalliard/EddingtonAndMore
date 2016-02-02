@@ -10,16 +10,25 @@ use StravaApiMock;
 
 class StravaTest extends PHPUnit_Framework_TestCase
 {
+    private $output;
+
+    public function myEcho($msg) {
+        $this->output.= $msg;
+    }
+
     public function testGetRides()
     {
         $mock = new StravaApiMock();
-        $stravaApi = new Strava("", "", $mock);
+        $stravaApi = new Strava("", "", array($this,'myEcho'), $mock);
         $mock->clearResponses("get", 'activities');
 
         // tests that a simple request for rides returns expect structure.
         $mock->primeResponse('get', 'activities', include("data/apiResponses/example1.php"));
+        $this->output="";
         $this->assertEquals(include("data/expected/example1.php"), $stravaApi->getRides(null, null));
         $this->assertEquals("", $stravaApi->getError());
+        $this->assertEquals(".", $this->output);
+
 
         // if we get an error from strava, we should record an error.
         $mock->primeResponse('get', 'activities', include("data/apiResponses/example1.php"));

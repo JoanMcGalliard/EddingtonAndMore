@@ -267,4 +267,9 @@ function processUploadedGpxFiles($userId, $scratchDirectory)
     }
 }
 
+function myEcho($msg) {
+    echo $msg;
+    echo str_pad('',4096);
+}
+
 ?>

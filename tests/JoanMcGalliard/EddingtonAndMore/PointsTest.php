@@ -22,7 +22,7 @@ class PointsTest extends PHPUnit_Framework_TestCase
 
     public function testEmptyGpx ()
     {
-        $points = new Points("2015-12-27 21:56:00 UTC");
+        $points = new Points("2015-12-27 21:56:00 UTC",'echo');
         $expected = '<?xml version="1.0" encoding="UTF-8"?> <gpx creator="Eddington &amp; More" ><trk><trkseg>
 </trkseg> </trk> </gpx>';
         $this->assertEquals($expected, $points->gpx());

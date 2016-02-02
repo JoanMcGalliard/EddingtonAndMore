@@ -28,7 +28,7 @@ class MyCyclingLogApi
         return $this->auth;
     }
 
-    protected function postPage($url, $parameters)
+    public function postPage($url, $parameters)
     {
         $process = curl_init(self::REST_SERVER_BASE_URL . $url);
         $headers = array('Authorization: Basic ' . $this->auth);
@@ -39,11 +39,15 @@ class MyCyclingLogApi
         curl_setopt($process, CURLOPT_POSTFIELDS, http_build_query($parameters));
         curl_setopt($process, CURLOPT_RETURNTRANSFER, TRUE);
         $response = curl_exec($process);
-        curl_close($process);
         log_msg("MCL post URL " . $url);
         log_msg($parameters);
         log_msg($response);
 
+        $error=curl_error($process);
+        if ($error) log_msg("ERROR: ".$error);
+
+        log_msg("Total time: ".curl_getinfo($process)["total_time"]);
+        curl_close($process);
         return $response;
     }
     public function getPage($url)
@@ -55,9 +59,13 @@ class MyCyclingLogApi
         curl_setopt($process, CURLOPT_TIMEOUT, 30);
         curl_setopt($process, CURLOPT_RETURNTRANSFER, TRUE);
         $page = curl_exec($process);
-        curl_close($process);
         log_msg("MCL get URL " . $url);
         log_msg($page);
+        $error=curl_error($process);
+        if ($error) log_msg("ERROR: ".$error);
+        log_msg("Total time: ".curl_getinfo($process)["total_time"]);
+        curl_close($process);
+
         return $page;
     }
 
@@ -84,7 +92,7 @@ class MyCyclingLogApi
             }
             return "$error  Check username ($username) and password.";
         }
-        return "OK`";
+        return "OK";
     }
 
     /*

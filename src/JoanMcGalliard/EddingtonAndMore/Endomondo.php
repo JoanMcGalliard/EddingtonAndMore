@@ -1,32 +1,31 @@
 <?php
 namespace JoanMcGalliard\EddingtonAndMore;
 
-require_once 'TrackerInterface.php';
+require_once 'TrackerAbstract.php';
 require_once 'Points.php';
 require_once 'JoanMcGalliard/EndomondoApi.php';
 use ArrayObject;
 use JoanMcGalliard;
 
 
-class Endomondo implements trackerInterface
+class Endomondo extends trackerAbstract
 {
     protected $deviceId = "";
     private $googleApiKey;
-    private $lastTZRequestedFromGoogle = null;
     private $timezone;
     private $splitOvernightRides = false;
     private $api;
     protected $connected = false;
 
     private $userId="";
+    private $error;
 
-
-
-    public function __construct($deviceId, $googleApiKey, $tz, $api = null)
+    public function __construct($deviceId, $googleApiKey, $tz, $echoCallback, $api = null)
     {
         $this->deviceId = $deviceId;
         $this->timezone = $tz;
         $this->googleApiKey = $googleApiKey;
+        $this->echoCallback=$echoCallback;
         if ($api) {
             $this->api = $api;
         } else {
@@ -62,8 +61,12 @@ class Endomondo implements trackerInterface
             $this->connected = false;
         } else if (!$this->connected) {
             $page = $this->api->getPage('api/profile/account/get');
-            $this->connected = isset(json_decode($page)->data->id);
-            $this->userId = json_decode($page)->data->id;
+            if (isset(json_decode($page)->data->id)) {
+                $this->connected = true;
+                $this->userId = json_decode($page)->data->id;
+            } else {
+                $this->connected=false;
+            }
         }
         return $this->connected;
     }
@@ -88,6 +91,7 @@ class Endomondo implements trackerInterface
 
     public function getRides($start_date, $end_date)
     {
+        $this->error="";
         $records = [];
         if (!isset($end_date) || !is_int($end_date)) {
             $end_date = time();
@@ -109,48 +113,63 @@ class Endomondo implements trackerInterface
             $params['before'] = $before;
             $params['maxResults'] = $maxResults;
             $params['fields'] = 'simple,basic';
-            $page = $this->getPageWithDot("api/workouts", $params);
-
-            foreach (json_decode($page)->data as $ride) {
-                $count++;
-                $timestamp = strtotime($ride->start_time);
-                date_default_timezone_set("UTC");
-                $before = date("Y-m-d H:i:s e", $timestamp);
-                if ($start_date > $timestamp) {
-                    $done = true;
-                    break;
-                }
-                $id = $ride->id;
-                if (!in_array(intval($ride->sport), [1, 2, 3]) || !$ride->is_valid) {
-                    continue; // not a bike ride or not include in stats
-                }
-                $record = [];
-                date_default_timezone_set($this->timezone);
-                $date = date("Y-m-d", $timestamp);
-                $record['distance'] = $ride->distance / self::METRE_TO_KM;
-                $record['elapsed_time'] = $ride->duration;
-                if (isset($ride->speed_max)) {
-                    $record['max_speed'] = $ride->speed_max / (60 * 60 * self::METRE_TO_KM);
-                }
-                $record['endo_id'] = $id;
-                if (isset($ride->ascent)) {
-                    $record['ascent'] = $ride->ascent;
-                }
-                $record['start_time'] = $ride->start_time;
-                $record['name'] = isset($ride->name) ? $ride->name : '';
-                if ($this->splitOvernightRides && $this->isOverNightRide($ride)) {
-                    $points = $this->getPoints($record['endo_id']);
-                    foreach ($points->getSplits() as $split_date => $split) {
-                        $new = new ArrayObject($record);
-                        $new['distance'] = $split;
-                        $records[$split_date][] = $new;
-                    }
-                    $points = null; // free memory
-                } else {
-                    $records[$date][] = $record;
-                }
+            for ($i=0; $i< self::RETRIES; $i++) {
+                $page = $this->getPageWithDot("api/workouts", $params);
+                $json_decode = json_decode($page);
+                if ($json_decode) break;
+                log_msg("retrying");
             }
+            if (!$json_decode) {
+                // three tries, and we data
+                $this->error.="$page<br>";
+                $done=true;
+            } else {
+                foreach ($json_decode->data as $ride) {
+                    $count++;
+                    $timestamp = strtotime($ride->start_time);
+                    date_default_timezone_set("UTC");
+                    $before = date("Y-m-d H:i:s e", $timestamp);
+                    if ($start_date > $timestamp) {
+                        $done = true;
+                        break;
+                    }
+                    $id = $ride->id;
+                    if (!in_array(intval($ride->sport), [1, 2, 3]) || !$ride->is_valid) {
+                        continue; // not a bike ride or not include in stats
+                    }
+                    $record = [];
+                    date_default_timezone_set($this->timezone);
+                    $date = date("Y-m-d", $timestamp);
+                    $record['distance'] = $ride->distance / self::METRE_TO_KM;
+                    $record['elapsed_time'] = $ride->duration;
+                    if (isset($ride->speed_max)) {
+                        $record['max_speed'] = $ride->speed_max / (60 * 60 * self::METRE_TO_KM);
+                    }
+                    $record['endo_id'] = $id;
+                    if (isset($ride->ascent)) {
+                        $record['ascent'] = $ride->ascent;
+                    }
+                    $record['start_time'] = $ride->start_time;
+                    $record['name'] = isset($ride->name) ? $ride->name : '';
+                    if ($this->splitOvernightRides && $this->isOverNightRide($ride)) {
+                        $points = $this->getPoints($record['endo_id']);
+                        if (!$points) {
+                            $this->error.="Could not split overnight ride on $ride->start_time due to errors.<br>";
+                            $records[$date][] = $record;
+                        } else {
+                            foreach ($points->getSplits() as $split_date => $split) {
+                                $new = new ArrayObject($record);
+                                $new['distance'] = $split;
+                                $records[$split_date][] = $new;
+                            }
+                        }
+                        $points = null; // free memory
+                    } else {
+                        $records[$date][] = $record;
+                    }
+                }
 
+            }
             if (sizeof(json_decode($page)->data) < $maxResults) {
                 break;
             }
@@ -165,14 +184,8 @@ class Endomondo implements trackerInterface
     protected function getPageWithDot($url, $params)
     {
         $return = $this->api->getPage($url, $params);
-        self::dot();
+        $this->output(".");
         return $return;
-    }
-
-    private function dot()
-    {
-        echo ".";
-        flush();
     }
 
     private function isOverNightRide($ride)
@@ -191,9 +204,18 @@ class Endomondo implements trackerInterface
     {
         $url = "api/workout/get";
         $params = ['fields' => 'points,simple', 'workoutId' => $workoutId];
-        $page = $this->getPageWithDot($url, $params);
-        $json_decode = json_decode($page);
-        $points = new Points($json_decode->start_time);
+        for ($i=0; $i< self::RETRIES; $i++) {
+            $page = $this->getPageWithDot($url, $params);
+            $json_decode = json_decode($page);
+            if ($json_decode) break;
+            log_msg("retrying");
+        }
+        if (!$json_decode) {
+            // three tries, and we can't get points
+            $this->error.="$page<br>";
+            return null;
+        }
+        $points = new Points($json_decode->start_time,$this->echoCallback);
         $points->setGenerateGPX(true);
         $points->setGoogleApiKey($this->googleApiKey);
         if (is_array($json_decode->points)) {
@@ -216,7 +238,7 @@ class Endomondo implements trackerInterface
 
     public function getError()
     {
-        // TODO: Implement getError() method.
+        return $this->error;
     }
 }
 

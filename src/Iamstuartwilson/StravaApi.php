@@ -106,7 +106,8 @@
             log_msg("URL strava: " . $url);
             log_msg($parameters);
             log_msg($response);
-            log_msg("ERROR: ".$error);
+            if ($error) log_msg("ERROR: ".$error);
+            log_msg("Total time: ".curl_getinfo($curl)["total_time"]);
 
             $this->lastRequestInfo = curl_getinfo($curl);
 

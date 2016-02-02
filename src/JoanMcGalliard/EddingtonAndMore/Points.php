@@ -15,6 +15,7 @@ class Points
     private $start_times;
     private $end_times;
     private $generateGPX=false;
+    private $echoCallback;
 
     /**
      * @param mixed $generateGPX
@@ -40,17 +41,19 @@ class Points
     private $gpx;
     private $bad_points = 0;
     private $good_points = 0;
+    private static $previousPoint=null;
 
     /**
      * Points constructor.
      */
-    public function __construct($start_day, $timezone="")
+    public function __construct($start_day, $echoCallback,$timezone = "")
     {
         $this->points = [];
         if ($timezone <> "") {
             $this->timezone=$timezone;
         }
         $this->day($start_day);
+        $this->echoCallback=$echoCallback;
         $this->gpx = '<?xml version="1.0" encoding="UTF-8"?> <gpx creator="Eddington &amp; More" >';
         $this->gpx .= "<trk><trkseg>";
         $this->gpx .= "\n";
@@ -146,6 +149,12 @@ class Points
 
     public function timezoneFromCoords($lat, $long, $time)
     {
+        if (isset(self::$previousPoint) &&
+            abs($this->distance(self::$previousPoint->lat,self::$previousPoint->long,$lat,$long)) < 50000) {
+            //previous TZ was less than 50km from here.  Use same timezone.  Needed as google is taking >3s to return TZ.
+            return self::$previousPoint->tz;
+        }
+        $retries=3;
         $params = ['location' => "$lat,$long",
             'timestamp' => $time, 'key', $this->googleApiKey];
 
@@ -156,10 +165,28 @@ class Points
         curl_setopt($process, CURLOPT_TIMEOUT, 30);
         curl_setopt($process, CURLOPT_RETURNTRANSFER, TRUE);
 
-        $page = curl_exec($process);
+        for ($i=0;$i<$retries; $i++) {
+            $page = curl_exec($process);
+            $error = curl_error($process);
+            log_msg($url);
+            log_msg($page);
+            if ($error) log_msg("ERROR: ".$error);
+            log_msg("Total time: ".curl_getinfo($process)["total_time"]);
+
+            if ($page) break;
+            log_msg("retrying");
+        }
         curl_close($process);
-        $tz = json_decode($page)->timeZoneId;
+        $tz=false;
+        if ($page) {
+            $tz = json_decode($page)->timeZoneId;
+            self::$previousPoint = new stdClass();
+            self::$previousPoint->lat=$lat;
+            self::$previousPoint->long=$long;
+            self::$previousPoint->tz=$tz;
+        }
         if (!$tz) {
+            $this->output("Unable to find TZ from ride on $this->current_day, defaulting to UTC<br>");
             $tz = "UTC";
         }
         return $tz;
@@ -228,4 +255,9 @@ class Points
     {
         return $this->splits;
     }
+
+    private function output($msg) {
+        call_user_func($this->echoCallback, $msg);
+    }
+
 }

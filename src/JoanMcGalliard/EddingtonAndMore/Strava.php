@@ -2,13 +2,13 @@
 
 namespace JoanMcGalliard\EddingtonAndMore;
 require_once "Iamstuartwilson/StravaApi.php";
-require_once 'TrackerInterface.php';
+require_once 'TrackerAbstract.php';
 require_once 'Points.php';
 use DOMDocument;
 use Iamstuartwilson;
 
 
-class Strava implements trackerInterface
+class Strava extends trackerAbstract
 {
     const GPX_SUFFIX = "\.gpx";
     protected $connected = true;
@@ -22,8 +22,9 @@ class Strava implements trackerInterface
     private $overnightActivities = [];
     private $splitOvernight;
 
-    public function __construct($clientId, $clientSecret, $api = null)
+    public function __construct($clientId, $clientSecret, $echoCallback,$api = null)
     {
+        $this->echoCallback=$echoCallback;
         if ($api) {
             $this->api = $api;
         } else {
@@ -154,21 +155,15 @@ class Strava implements trackerInterface
     private function getWithDot($request, $parameters = array())
     {
         $return = $this->api->get($request, $parameters);
-        $this->dot();
+        $this->output('.');
         return $return;
     }
 
     private function rareDot()
     {
         if (!isset($this->rareDotCount)){ $this->rareDotCount=0;}
-        if ($this->rareDotCount++ > 1000) {$this->dot(); $this->rareDotCount=0;}
+        if ($this->rareDotCount++ > 1000) {$this->output('.'); $this->rareDotCount=0;}
         flush();
-    }
-    public function dot($dot='.')
-    {
-        echo $dot;
-        echo str_pad('',4096);  // so firefox will display something
-        flush();  // maybe unnecessary, test later
     }
 
     private function newActivities(&$activities_list, $to_add)
@@ -201,7 +196,7 @@ class Strava implements trackerInterface
                 if ($this->splitOvernight && $numberOfDays > 1 && file_exists($gpx_file)) {
                     $xml = file_get_contents($gpx_file);
                     preg_match_all('/<trkpt[^>]*>.*?<\/trkpt>/s', $xml, $trkpts);
-                    $points = new Points($activity->start_date, $next['timezone']);
+                    $points = new Points($activity->start_date, $this->echoCallback, $next['timezone']);
                     foreach ($trkpts[0] as $trkpt) {
                         preg_match('/<trkpt.*lat="([^"]*)"/', $trkpt, $matches);
                         $lat = $matches[1];
@@ -311,7 +306,7 @@ class Strava implements trackerInterface
                     unset($this->pending_uploads[$pending_id]);
                 }
             }
-            $this->dot();
+            $this->output('.');
             sleep(1);
         }
         foreach ($this->pending_uploads as $pending_id => $queued) {

@@ -38,10 +38,17 @@ class EndomondoApi
         curl_setopt($process, CURLOPT_RETURNTRANSFER, TRUE);
 
         $page = curl_exec($process);
-        curl_close($process);
+        $error = curl_error($process);
         log_msg("endomondo ".$path);
         log_msg($page);
-        return $page;
+        if ($error) log_msg("ERROR: ".$error);
+        log_msg("Total time: ".curl_getinfo($process)["total_time"]);
+        curl_close($process);
+        if ($page) {
+            return $page;
+        } else {
+            return $error;
+        }
     }
 
 

@@ -47,9 +47,9 @@ if (array_key_exists("clear_cookies", $_POST)) {
     unset($_GET["state"]);
 }
 
-$strava = new JoanMcGalliard\EddingtonAndMore\Strava($stravaClientId, $stravaClientSecret);
-$myCyclingLog = new JoanMcGalliard\EddingtonAndMore\MyCyclingLog();
-$endomondo = new JoanMcGalliard\EddingtonAndMore\Endomondo($deviceId, $googleApiKey, $preferences->getTimezone());
+$strava = new JoanMcGalliard\EddingtonAndMore\Strava($stravaClientId,'myEcho', $stravaClientSecret);
+$myCyclingLog = new JoanMcGalliard\EddingtonAndMore\MyCyclingLog('myEcho');
+$endomondo = new JoanMcGalliard\EddingtonAndMore\Endomondo($deviceId, $googleApiKey, $preferences->getTimezone(),'myEcho');
 
 $myCyclingLog->setUseFeetForElevation($preferences->getMclUseFeet());
 $endomondo->setSplitOvernightRides($preferences->getEndoSplitRides());
@@ -117,7 +117,7 @@ if ($strava_connected && array_key_exists("delete_files", $_POST)) {
             $count++;
         }
     }
-    echo "Deleted $count files.<br>";
+    myEcho("Deleted $count files.<br>");
 }
 
 if ($strava_connected && array_key_exists("calculate_from_strava", $_POST)) {
@@ -184,21 +184,19 @@ if (isset($_POST['commentSend'])) {
 </head>
 <body>
 <h2>Eddington &amp; More</h2>
-<p style="color:red;"><b><?php echo $error_message ?></b></p>
-<p style="color:blueviolet;"><em><?php echo $info_message ?></em></p>
-
-
-<p>On this page you can calculate your Eddington Number from your Strava, Endomondo or MyCyclingLog accounts, or
-    transfer rides from Strava
-    to MyCyclingLog.
-<p>
-<hr>
-<p>Your Eddington Number is the largest value of E where you have cycled at least E miles on E days. So if you have
-    cycled 35 miles or more on 35 days, that's your E-number.</p>
 <?php
+myEcho("<p style=\"color:red;\"><b>$error_message</b></p>");
+myEcho("<p style=\"color:blueviolet;\"><em>$info_message</em></p>");
+myEcho("<p>On this page you can calculate your Eddington Number from your Strava, Endomondo or MyCyclingLog accounts, or
+    transfer rides from Strava
+    to MyCyclingLog or from Endomondo to Strava.</p>");
+myEcho("<hr>");
+myEcho("<p>The Eddington Number is a metric for long distance cyclists.  It's the largest value of E where you
+    have cycled at least E miles on E days. So if you have
+    cycled 35 miles or more on 35 days but have not cycled at 36 miles or more on 36 days, then your E-number is 35.</p>");
 if ($state == "calculate_from_strava" || $state == "calculate_from_mcl" || $state == "calculate_from_endo") {
     set_time_limit(300);
-    echo "<H3>Calculating....</H3>";
+    myEcho("<H3>Calculating....</H3>");
     date_default_timezone_set($preferences->getTimezone());
     $start_text = "the beginning";
     $end_text = "today";
@@ -214,7 +212,9 @@ if ($state == "calculate_from_strava" || $state == "calculate_from_mcl" || $stat
         $source = "Strava";
         $activities = $strava->getRides($start_date, $end_date);
         if ($strava->getError()) {
-            echo "There was a problem getting data from Strava.<br>".$strava->getError();
+            myEcho("<br><span style=\"color:red;\">There was a problem getting data from Strava.</span><br><em>"
+                .$strava->getError()
+                ."</em>");
         }
 
         $overnight_rides = $strava->getOvernightActivities();
@@ -228,6 +228,10 @@ if ($state == "calculate_from_strava" || $state == "calculate_from_mcl" || $stat
     } else if ($state == "calculate_from_endo") {
         $source = "Endomondo";
         $activities = $endomondo->getRides($start_date, $end_date);
+        $error=$endomondo->getError();
+        if ($error) {
+            myEcho("There was a problem getting data from Endomondo:<br>".$error);
+        }
     }
     if (!$start_date) {
         $start_date = strtotime(array_keys($activities)[sizeof($activities) - 1]);
@@ -236,9 +240,9 @@ if ($state == "calculate_from_strava" || $state == "calculate_from_mcl" || $stat
         $end_date = time();
     }
     $days = sumActivities($activities);
-    echo "<p>According to $source, for the period from $start_text to $end_text, "
+    myEcho( "<p>According to $source, for the period from $start_text to $end_text, "
         . round(($end_date - $start_date) / TWENTY_FOUR_HOURS)
-        . " elapsed days</p>";
+        . " elapsed days</p>");
     uasort($days, function ($a, $b) {
         if ($a == $b) return 0; else return ($a > $b) ? -1 : 1;
     });
@@ -252,12 +256,12 @@ if ($state == "calculate_from_strava" || $state == "calculate_from_mcl" || $stat
         $table_imperial .= "<tr><td> $i </td><td> $day</td><td class=\"w3-right-align\">$actual_distance miles</td></tr>";
     }
     $table_imperial .= "</table>";
-    echo "<br><a href=\"#imperial\">Your imperial Eddington Number</a> is <strong>$eddington_imperial</strong>.<br>";
+    myEcho("<br><a href=\"#imperial\">Your imperial Eddington Number</a> is <strong>$eddington_imperial</strong>.<br>");
     if ($end_text == "today") {
         $goals = next_goals($eddington_imperial);
         foreach ($goals as $goal) {
             $num = number_of_days_to_goal($goal, $days, METRE_TO_MILE);
-            echo "You need to do $num ride(s) of at least $goal to increase it to $goal.<br>";
+            myEcho("You need to do $num ride(s) of at least $goal to increase it to $goal.<br>");
         }
     }
     $eddington_metric = calculateEddington($days, $result, METRE_TO_KM);
@@ -270,34 +274,34 @@ if ($state == "calculate_from_strava" || $state == "calculate_from_mcl" || $stat
     }
 
     $table_metric .= "</table>";
-    echo "<br><a href=\"#metric\">Your metric Eddington Number</a> is <strong>$eddington_metric</strong><br>";
+    myEcho("<br><a href=\"#metric\">Your metric Eddington Number</a> is <strong>$eddington_metric</strong><br>");
     if ($end_text == "today") {
         $goals = next_goals($eddington_metric);
         foreach ($goals as $goal) {
             $num = number_of_days_to_goal($goal, $days, METRE_TO_KM);
-            echo "You need to do $num ride(s) of at least $goal to increase it to $goal.<br>";
+            myEcho("You need to do $num ride(s) of at least $goal to increase it to $goal.<br>");
         }
     }
 
-    echo '<br><a href="#eddington_chart">See a chart of how your Eddington number has grown over the years.</a><br>';
-    echo "<p><em>Run time " . (time() - $timestamp) . " seconds.</em></p>";
+    myEcho('<br><a href="#eddington_chart">See a chart of how your Eddington number has grown over the years.</a><br>');
+    myEcho("<p><em>Run time " . (time() - $timestamp) . " seconds.</em></p>");
 
-    echo $table_imperial;
-    echo $table_metric;
+    myEcho($table_imperial);
+    myEcho($table_metric);
     $imperial_history = eddingtonHistory($days, METRE_TO_MILE);
     $metric_history = eddingtonHistory($days, METRE_TO_KM);
 
-    echo buildChart($imperial_history, $metric_history);
+    myEcho(buildChart($imperial_history, $metric_history));
 
 
 } else if ($state == "copy_strava_to_mcl") {
     processUploadedGpxFiles($strava->getUserId(), $scratchDirectory);
-    echo "<H3>Copying data from Strava to MyCyclingLog...</H3>";
+    myEcho("<H3>Copying data from Strava to MyCyclingLog...</H3>");
     set_time_limit(300);
 
     $strava_rides_to_add = $strava->getRides($start_date, $end_date);
     if ($strava->getError()) {
-        echo "There was a problem getting data from Strava.<br>".$strava->getError();
+        myEcho("<br>There was a problem getting data from Strava.<br>".$strava->getError());
     }
     $count = 0;
     $overnightRidesNeeded=[];  // these are unsplit overnight rides that haven't already been added to MCL
@@ -342,10 +346,10 @@ if ($state == "calculate_from_strava" || $state == "calculate_from_mcl" || $stat
                         $mcl_rides[$date][] = $ride; // in case strava gives us duplicates, we won't post them twice
                         $count++;
                     }
-                    echo "$message <br>";
+                    myEcho("$message <br>");
                     flush();
                 } else {
-                    $strava->dot();
+                    myEcho('.');
                 }
 
             }
@@ -356,20 +360,20 @@ if ($state == "calculate_from_strava" || $state == "calculate_from_mcl" || $stat
         $strava_rides_to_add = $rides_to_retry;
         $rides_to_retry = [];
     }
-    echo "<br>$count rides added.<br>";
+    myEcho("<br>$count rides added.<br>");
     if (sizeof($rides_to_retry) != 0) {
-        echo "Some rides failed to be added.  See above.<br>";
+        myEcho("Some rides failed to be added.  See above.<br>");
     }
 
     askForStravaGpx($overnightRidesNeeded,$maxKmFileUploads,"copy_strava_to_mcl", "add to MyCyclingLog");
 } else if ($state == "copy_endo_to_strava") {
-    echo "<H3>Copying rides from Endomondo to Strava...</H3>";
+    myEcho("<H3>Copying rides from Endomondo to Strava...</H3>");
     set_time_limit(300);
 
     $endo_rides_to_add = $endomondo->getRides($start_date, $end_date);
     $strava_rides = $strava->getRides($start_date, $end_date);
     if ($strava->getError()) {
-        echo "There was a problem getting data from Strava.<br>".$strava->getError();
+        myEcho("<br>There was a problem getting data from Strava.<br>".$strava->getError());
     }
 
 
@@ -414,7 +418,7 @@ if ($state == "calculate_from_strava" || $state == "calculate_from_mcl" || $stat
                 }
 
             }
-            echo "<br>$message ";
+            myEcho("<br>$message ");
             flush();
 
         }
@@ -433,18 +437,18 @@ if ($state == "calculate_from_strava" || $state == "calculate_from_mcl" || $stat
             $message = $result->message . '<span style="color:red;"> There was a problem. </span>' . $result->error;
 
         }
-        echo "<br>$message";
+        myEcho("<br>$message");
         flush();
 
 
     }
-    echo "<br>$count rides added.<br>";
+    myEcho("<br>$count rides added.<br>");
 } else if ($state == 'delete_mcl_rides') {
     $result = $myCyclingLog->deleteRides($start_date, $end_date, $_POST['mcl_username'], $_POST['mcl_password']);
     if (is_int($result)) {
-        echo "Deleted $result activities from MyCyclingLog";
+        myEcho("Deleted $result activities from MyCyclingLog");
     } else {
-        echo "<p style=\"color:red;\"><b>Problem connecting to MyCyclingLog: $result</b></p>";
+        myEcho("<p style=\"color:red;\"><b>Problem connecting to MyCyclingLog: $result</b></p>");
     }
 }
 
@@ -494,38 +498,38 @@ if ($strava_connected || $mcl_connected || $endo_connected) {
             <tr>
                 <?php
                 if ($strava_connected) {
-                    echo '<tr><td colspan="3"><input type="submit" name="calculate_from_strava" value="Eddington Number from Strava"/><br>';
+                    myEcho('<tr><td colspan="3"><input type="submit" name="calculate_from_strava" value="Eddington Number from Strava"/><br>');
                     echo 'Split multiday rides?:
             <input type="checkbox" value="split" ' . ($preferences->getStravaSplitRides() ? "checked" : "") .
                         ' id="strava_split_1" name="strava_split_rides"/>';
-                    echo '</td></tr>';
+                    myEcho('</td></tr>');
                 }
                 if ($mcl_connected) {
 
-                    echo '<tr><td colspan="3"><input type="submit" name="calculate_from_mcl" value="Eddington Number from MyCyclingLog"/></td></tr>';
+                    myEcho('<tr><td colspan="3"><input type="submit" name="calculate_from_mcl" value="Eddington Number from MyCyclingLog"/></td></tr>');
                 }
                 if ($endo_connected) {
-                    echo '<tr><td colspan="3"><input type="submit" name="calculate_from_endo" value="Eddington Number from Endomondo"/><br>';
+                    myEcho('<tr><td colspan="3"><input type="submit" name="calculate_from_endo" value="Eddington Number from Endomondo"/><br>');
                     echo 'Split multiday rides?:
             <input type="checkbox" value="split" ' . ($preferences->getEndoSplitRides() ? "checked" : "") .
                         ' name="endo_split_rides"/></td></tr>';
                 }
                 if ($strava_connected && $mcl_connected) {
-                    echo '<tr><td colspan="3"><input type="submit" name="copy_strava_to_mcl" value="Copy ride data from Strava to MyCyclingLog"/>  <br>';
+                    myEcho('<tr><td colspan="3"><input type="submit" name="copy_strava_to_mcl" value="Copy ride data from Strava to MyCyclingLog"/>  <br>');
                     echo 'Save elevation as feet: <input type="checkbox" name="elevation_units" value="feet" ' .
                         ($preferences->getMclUseFeet() ? "checked" : "") . "/>";
                     echo '<br>Split multiday rides?:
             <input type="checkbox" value="split" ' . ($preferences->getStravaSplitRides() ? "checked" : "") .
                         ' id="strava_split_2" name="strava_split_rides"/>';
-                    echo "</td></tr>";
+                    myEcho("</td></tr>");
                 }
                 if ($strava_connected && $endo_connected && $strava->writeScope()) {
-                    echo '<tr><td colspan="3"><input type="submit" name="copy_endo_to_strava" value="Copy rides and routes from Endomondo to Strava"/>  <br>';
-                    echo "</td></tr>";
+                    myEcho('<tr><td colspan="3"><input type="submit" name="copy_endo_to_strava" value="Copy rides and routes from Endomondo to Strava"/>  <br>');
+                    myEcho("</td></tr>");
                 }
                 if ($mcl_connected) {
-                    echo '<tr><td colspan="3"><input onclick="confirm_mcl_deletes()" type="button" name="delete_mcl_rides" value="Delete MyCyclingLog rides"/>';
-                    echo "</td></tr>";
+                    myEcho('<tr><td colspan="3"><input onclick="confirm_mcl_deletes()" type="button" name="delete_mcl_rides" value="Delete MyCyclingLog rides"/>');
+                    myEcho("</td></tr>");
                 }
 
                 ?>
@@ -542,7 +546,7 @@ if ($strava_connected || $mcl_connected || $endo_connected) {
             $("#datepicker_start").datepicker({changeMonth: true, changeYear: true, dateFormat: 'dd-mm-yy'});
             $("#datepicker_end").datepicker({changeMonth: true, changeYear: true, dateFormat: 'dd-mm-yy'});
             $("#tz").timezones();
-            $("#tz").val('<?php echo $preferences->getTimezone();?>');
+            $("#tz").val('<?php myEcho($preferences->getTimezone()); ?>'));
 
             function confirm_mcl_deletes() {
                 var start_date = document.forms["main_form"]["start_date"].value;
@@ -559,9 +563,9 @@ if ($strava_connected || $mcl_connected || $endo_connected) {
 
                 <?php
                 if (!$preferences->getMclUsername()) {
-                    echo 'var username = prompt("Please enter your MyCyclingLog username");';
+                    myEcho('var username = prompt("Please enter your MyCyclingLog username");');
                 } else {
-                    echo "var username = '" . $preferences->getMclUsername() . "';";
+                    myEcho("var username = '" . $preferences->getMclUsername() . "';");
                 }
                 ?>
                 var password = prompt(password_warning);
@@ -676,18 +680,18 @@ if (!$strava_connected || !$mcl_connected || !$endo_connected || !$strava->write
     <table>
         <tr>
             <?php if (!$strava_connected || !$strava->writeScope()) {
-                echo "<td>";
+                myEcho("<td>");
                 if (!$strava_connected) {
                     echo "Read acccess (You need this to calculate E-number from Strava):<br>";
                     echo '<a href="' .
                         $strava->authenticationUrl($here, 'auto', null, "read_only") .
                         '"> <img src="images/ConnectWithStrava@2x.png"></a><br><br>';
                 }
-                echo "Read/write acccess (only click this if you want to upload rides from Endomondo to Strava): <br>";
+                myEcho("Read/write acccess (only click this if you want to upload rides from Endomondo to Strava): <br>");
                 echo '<a href="' .
                     $strava->authenticationUrl($here, 'auto', "write", "write") .
                     '"> <img src="images/ConnectWithStrava@2x.png"></a>';
-                echo "</td>";
+                myEcho("</td>");
             }
             ?>
             <?php if (!$mcl_connected) { ?>
@@ -764,6 +768,8 @@ if (!$strava_connected || !$mcl_connected || !$endo_connected || !$strava->write
 <?php
 function eb($x)
 {
+    global $debug;
+    if (!isset($debug) || !$debug) return;
     echo "<br>" . $x . "<br>";
 }
 
@@ -774,6 +780,8 @@ function vdx($xml)
 
 function vd($x)
 {
+    global $debug;
+    if (!isset($debug) || !$debug) return;
     echo "<pre>";
     $dump = var_export($x, true);
     echo $dump;
@@ -781,10 +789,6 @@ function vd($x)
     flush();
 }
 
-function br()
-{
-    echo "<br>";
-}
 
 function log_msg($message)
 {

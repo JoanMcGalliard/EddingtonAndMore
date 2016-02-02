@@ -2,15 +2,19 @@
 namespace JoanMcGalliard\EddingtonAndMore;
 
 // For classes that connected to tracking websites (eg strava, endomondo_
-interface trackerInterface
+abstract class trackerAbstract
 {
     const METRE_TO_MILE = 0.00062137119224;
     const METRE_TO_KM = 0.001;
     const METRE_TO_FOOT = 3.280;
     const TWENTY_FOUR_HOURS = 86400;
-    public function isConnected();
+    const RETRIES = 3;
+    protected $echoCallback;
 
-    public function getUserId();
+
+    abstract public function isConnected();
+
+    abstract public function getUserId();
 
     /*
      * Returns an array
@@ -29,9 +33,15 @@ interface trackerInterface
      *
      * Only distance is required for Eddington calculation.
      */
-    public function getRides($start_date, $end_date);
+    abstract public function getRides($start_date, $end_date);
 
-    public function getError();
+    abstract public function getError();
+
+
+    protected function output($msg) {
+        call_user_func($this->echoCallback, $msg);
+    }
+
 }
 
 ?>

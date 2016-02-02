@@ -8,7 +8,7 @@ use Iamstuartwilson;
 use JoanMcGalliard;
 
 
-class MyCyclingLog implements trackerInterface
+class MyCyclingLog extends trackerAbstract
 {
     const STRAVA_NOTE_PREFIX = "http://www.strava.com/activities/";
 
@@ -19,13 +19,13 @@ class MyCyclingLog implements trackerInterface
     protected $use_feet_for_elevation = false;
     private $user_id;
     private $api = null;
-
     /**
      * MyCyclingLogWrapper constructor.
      * @param null $api
      */
-    public function __construct($api = null)
+    public function __construct($echoCallback,$api = null)
     {
+        $this->echoCallback=$echoCallback;
         if ($api) {
             $this->api = $api;
         } else {
@@ -84,7 +84,7 @@ class MyCyclingLog implements trackerInterface
         $parameters['elevation'] = $ride['total_elevation_gain'] * ($this->use_feet_for_elevation ? self::METRE_TO_FOOT : 1);
 //        $parameters['tags'] = $ride[''];
         $parameters['bid'] = $ride['mcl_bid']; // bid. Optional. Bike ID as returned by New Bike API.
-        return $this->postPage("?method=ride.new", $parameters);
+        return $this->api->postPage("?method=ride.new", $parameters);
     }
 
 
@@ -103,13 +103,12 @@ class MyCyclingLog implements trackerInterface
 
     protected function getPageDom($url)
     {
-        $retries = 3;
-        for ($i = 0; $i < $retries; $i++) {
+        for ($i = 0; $i < self::RETRIES; $i++) {
             $xml = $this->api->getPage($url);
             if ($xml) break;
         }
         if (!$xml) {
-            echo "There is a problem with MyCyclingLog.  Please try again";
+            myEcho("There is a problem with MyCyclingLog.  Please try again");
             exit();
         }
         if ($xml == "You are not authorized.") {
@@ -126,6 +125,8 @@ class MyCyclingLog implements trackerInterface
 
     protected function removeCharactersInElement($element, $xml)
     {
+        // MyCyclingLog can create non-valid xml.  This removes any character except for a select list from the field
+        // "<$element>"
         $old = "";
         $new = $xml;
         while ($old <> $new) {
@@ -195,7 +196,7 @@ class MyCyclingLog implements trackerInterface
         foreach ($rides as $date => $ride_list) {
             foreach ($ride_list as $ride) {
                 if ($ride['strava_id'] <> null) {
-                    echo "Deleting " . $ride['mcl_id'] . " from " . $date . ", strava id " . $ride["strava_id"] . ".<br>";
+                    myEcho("Deleting " . $ride['mcl_id'] . " from " . $date . ", strava id " . $ride["strava_id"] . ".<br>");
                     flush();
                     $this->api->delete($ride['mcl_id']);
                     $count++;
@@ -266,16 +267,6 @@ class MyCyclingLog implements trackerInterface
     // MyCyclingLog can create non-valid xml.  This removes any character except for a select list from the field
     // "<$element>"
 
-    protected function sd($x)
-    {
-        echo "<pre>";
-        if (is_a($x, "DOMDocument")) {
-            echo htmlspecialchars($x->saveXML());
-        } else {
-            echo htmlspecialchars($x->ownerDocument->saveXML($x));
-        }
-        echo "</pre>";
-    }
 
 
     public function getError()

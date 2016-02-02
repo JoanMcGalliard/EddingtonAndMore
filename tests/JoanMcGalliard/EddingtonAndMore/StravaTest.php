@@ -4,19 +4,12 @@ namespace JoanMcGalliard\EddingtonAndMore;
 
 require_once "JoanMcGalliard/EddingtonAndMore/Strava.php";
 require_once 'mocks/StravaApiMock.php';
+require_once 'BaseTestClass.php';
 
-use PHPUnit_Framework_TestCase;
-use StravaApiMock;
+use JoanMcGalliard\EddingtonAndMore\mocks\StravaApiMock;
 
-class StravaTest extends PHPUnit_Framework_TestCase
+class StravaTest extends  BaseTestClass
 {
-    private $output;
-
-    public function myEcho($msg)
-    {
-        $this->output .= $msg;
-    }
-
     public function testGetRides()
     {
         $mock = new StravaApiMock();
@@ -24,17 +17,17 @@ class StravaTest extends PHPUnit_Framework_TestCase
         $mock->clearResponses("get", 'activities');
 
         // tests that a simple request for rides returns expect structure.
-        $mock->primeResponse('get', 'activities', include("data/apiResponses/example1.php"));
+        $mock->primeResponse('get', 'activities', include("data/apiResponses/stravaActivities1.php"));
         $this->output = "";
-        $this->assertEquals(include("data/expected/example1.php"), $stravaApi->getRides(null, null));
+        $this->assertEquals(include("data/expected/stravaActivities1.php"), $stravaApi->getRides(null, null));
         $this->assertEquals("", $stravaApi->getError());
         $this->assertEquals(".", $this->output);
 
 
         // if we get an error from strava, we should record an error.
-        $mock->primeResponse('get', 'activities', include("data/apiResponses/example1.php"));
+        $mock->primeResponse('get', 'activities', include("data/apiResponses/stravaActivities1.php"));
         $mock->primeResponse('get', 'activities', "Operation timed out after 0 milliseconds with 0 out of 0 bytes received");
-        $this->assertEquals(include("data/expected/example1.php"), $stravaApi->getRides(null, null, 2));
+        $this->assertEquals(include("data/expected/stravaActivities1.php"), $stravaApi->getRides(null, null, 2));
         $this->assertEquals("Operation timed out after 0 milliseconds with 0 out of 0 bytes received<br>",
             $stravaApi->getError());
 
@@ -69,7 +62,6 @@ class StravaTest extends PHPUnit_Framework_TestCase
     public function uploadGpx($file_path, $external_id, $external_msg, $name, $description)
     public function activityUrl($activityId)
     public function waitForPendingUploads()
-    public function getUserId()
     public function setSplitOvernightRides($getStravaSplitRides)
     public function authenticationUrl($redirect, $approvalPrompt, $scope, $state)
 

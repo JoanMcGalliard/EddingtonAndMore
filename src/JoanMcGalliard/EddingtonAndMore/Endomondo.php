@@ -16,7 +16,6 @@ class Endomondo extends trackerAbstract
     private $timezone;
     private $splitOvernightRides = false;
     private $api;
-    private $userId = "";
 
     public function __construct($deviceId, $googleApiKey, $tz, $echoCallback, $api = null)
     {
@@ -31,13 +30,6 @@ class Endomondo extends trackerAbstract
         }
     }
 
-    /**
-     * @return mixed
-     */
-    public function getUserId()
-    {
-        return $this->userId;
-    }
 
     public function setAuth($auth)
     {

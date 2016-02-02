@@ -542,6 +542,14 @@ if ($strava_connected || $mcl_connected || $endo_connected) {
                 </tr>
             <?php } ?>
         </table>
+        <?php
+
+        if (!$strava_connected || !$mcl_connected ||! $endo_connected) { ?>
+            <p>More options are available if you connect to <a href="#services">other services</a>.</p>
+        <?php
+        }
+        ?>
+
         <script>
             $("#datepicker_start").datepicker({changeMonth: true, changeYear: true, dateFormat: 'dd-mm-yy'});
             $("#datepicker_end").datepicker({changeMonth: true, changeYear: true, dateFormat: 'dd-mm-yy'});
@@ -672,7 +680,7 @@ if ($strava_connected || $mcl_connected || $endo_connected) {
 if (!$strava_connected || !$mcl_connected || !$endo_connected || !$strava->writeScope()) {
     ?>
     <hr>
-    <h3>Connect to services</h3>
+    <h3 id="services">Connect to services</h3>
     <p>Click the buttons below to authorise access to your strava account and/or mycyclinglog accounts.</p>
     <p><em>This website uses cookies. If you have a problem with that, there are millions of other sites out there
             &#9786; Oh,

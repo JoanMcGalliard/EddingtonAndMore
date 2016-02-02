@@ -12,8 +12,8 @@ $deviceId=$_SERVER['HTTP_HOST'];
 $stravaClientId = null;
 $stravaClientSecret = null;
 
-//Obtain from RideWithGPS, https://ridewithgps.com/api,
-$rideWithGpsApiKey = null;
+//Obtain from RideWithGPS, https://ridewithgps.com/api, email info@ridewithgps.com to request a key.
+$rideWithGpsApiKey = "";
 
 //obtained from Google https://console.developers.google.com/flows/enableapi?apiid=timezone_backend&keyType=SERVER_SIDE&reusekey=true
 

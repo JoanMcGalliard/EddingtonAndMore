@@ -17,7 +17,6 @@ class MyCyclingLog extends trackerAbstract
     protected $bikes = null;
     protected $strava_bike_match = [];
     protected $use_feet_for_elevation = false;
-    private $user_id;
     private $api = null;
 
     /**
@@ -34,13 +33,6 @@ class MyCyclingLog extends trackerAbstract
         }
     }
 
-    /**
-     * @return mixed
-     */
-    public function getUserId()
-    {
-        return $this->user_id;
-    }
 
     /**
      * @return boolean
@@ -109,7 +101,7 @@ class MyCyclingLog extends trackerAbstract
             if ($xml) break;
         }
         if (!$xml) {
-            myEcho("There is a problem with MyCyclingLog.  Please try again");
+            $this->output("There is a problem with MyCyclingLog.  Please try again");
             exit();
         }
         if ($xml == "You are not authorized.") {
@@ -197,7 +189,7 @@ class MyCyclingLog extends trackerAbstract
         foreach ($rides as $date => $ride_list) {
             foreach ($ride_list as $ride) {
                 if ($ride['strava_id'] <> null) {
-                    myEcho("Deleting " . $ride['mcl_id'] . " from " . $date . ", strava id " . $ride["strava_id"] . ".<br>");
+                    $this->output("Deleting " . $ride['mcl_id'] . " from " . $date . ", strava id " . $ride["strava_id"] . ".<br>");
                     flush();
                     $this->api->delete($ride['mcl_id']);
                     $count++;

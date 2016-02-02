@@ -11,10 +11,11 @@ abstract class trackerAbstract
     const RETRIES = 3;
     protected $echoCallback;
     protected $error;
+    protected $userId;
+
 
     abstract public function isConnected();
 
-    abstract public function getUserId();
 
     /*
      * Returns an array
@@ -44,6 +45,11 @@ abstract class trackerAbstract
     protected function output($msg)
     {
         call_user_func($this->echoCallback, $msg);
+    }
+
+    public function getUserId()
+    {
+        return $this->userId;
     }
 
 }

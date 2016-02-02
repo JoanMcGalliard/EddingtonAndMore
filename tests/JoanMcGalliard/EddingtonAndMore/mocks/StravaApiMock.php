@@ -1,40 +1,14 @@
 <?php
+namespace JoanMcGalliard\EddingtonAndMore\mocks;
 
 /**
  * A mock version of Iamstuartwilson\StravaApi
  */
-class StravaApiMock
+class StravaApiMock extends BaseMockClass
 {
 
 
-    public $lastRequest;
-    public $lastRequestData;
-    public $lastRequestInfo;
-    private $responses = [];
 
-
-    /**
-     * Sets up the class with the $clientId and $clientSecret
-     *
-     * @param int $clientId
-     * @param string $clientSecret
-     */
-    public function __construct($clientId = 1, $clientSecret = '')
-    {
-    }
-
-    /**
-     * Creates authentication URL for your app
-     *
-     * @param string $redirect
-     * @param string $approvalPrompt
-     * @param string $scope
-     * @param string $state
-     *
-     * @link http://strava.github.io/api/v3/oauth/#get-authorize
-     *
-     * @return string
-     */
     public function authenticationUrl($redirect, $approvalPrompt = 'auto', $scope = null, $state = null)
     {
         throw new Exception('authenticationUrl: Not implemented');
@@ -150,22 +124,6 @@ class StravaApiMock
      *
      * @return string
      */
-    public function get($request, $parameters = array())
-    {
-        if (isset($this->responses['get'][$request]) && sizeof($this->responses['get'][$request]) > 0) {
-            return $this->getResponse('get', $request, $parameters);
-        } else {
-
-            throw new Exception("get $request: no response available");
-        }
-
-    }
-
-    private function getResponse($type, $request, $params)
-    {
-        return array_shift($this->responses[$type][$request]);
-    }
-
     /**
      * Sends PUT request to specified API endpoint
      *
@@ -213,15 +171,6 @@ class StravaApiMock
         throw new Exception("delete $request: Not implemented");
     }
 
-    public function primeResponse($type, $request, $response)
-    {
-        $this->responses[$type][$request][] = $response;
-    }
-
-    public function clearResponses($type, $request)
-    {
-        unset($this->responses[$type][$request]);
-    }
 
 }
 

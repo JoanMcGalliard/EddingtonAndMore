@@ -9,12 +9,6 @@ class EndomondoApi
     const BASE_URL = "https://api.mobile.endomondo.com/mobile/";
     const COUNTRY = 'GB';
     protected $auth = null;
-    private $error = null;
-
-    public function getError()
-    {
-        return $this->error;
-    }
 
 
     public function getPage($url, $params = [])
@@ -35,16 +29,16 @@ class EndomondoApi
         curl_setopt($process, CURLOPT_RETURNTRANSFER, TRUE);
 
         $page = curl_exec($process);
-        $error = curl_error($process);
+        $this->error = curl_error($process);
         log_msg("endomondo " . $path);
         log_msg($page);
-        if ($error) log_msg("ERROR: " . $error);
+        if ($this->error) log_msg("ERROR: " . $this->error);
         log_msg("Total time: " . curl_getinfo($process)["total_time"]);
         curl_close($process);
         if ($page) {
             return $page;
         } else {
-            return $error;
+            return $this->error;
         }
     }
 

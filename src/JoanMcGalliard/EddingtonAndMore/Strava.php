@@ -15,7 +15,6 @@ class Strava extends trackerAbstract
     private $pending_uploads = [];
     private $fileUploadTimeout = 300;
     private $writeScope = false;
-    private $userId;
     private $api;
     private $overnightActivities = [];
     private $splitOvernight;
@@ -317,10 +316,6 @@ class Strava extends trackerAbstract
         return $results;
     }
 
-    public function getUserId()
-    {
-        return $this->userId;
-    }
 
     public function setSplitOvernightRides($splitRides)
     {

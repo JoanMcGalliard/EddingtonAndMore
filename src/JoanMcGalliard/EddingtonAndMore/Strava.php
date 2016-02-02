@@ -15,7 +15,6 @@ class Strava extends trackerAbstract
     protected $bikes = [];
     private $pending_uploads = [];
     private $fileUploadTimeout = 300;
-    private $error = null;
     private $writeScope = false;
     private $userId;
     private $api;
@@ -91,10 +90,6 @@ class Strava extends trackerAbstract
     /**
      * @return null
      */
-    public function getError()
-    {
-        return $this->error;
-    }
 
     public function getRides($start_date, $end_date, $activities_per_page = 200)
     {

@@ -9,13 +9,11 @@ class EndomondoApi
     const BASE_URL = "https://api.mobile.endomondo.com/mobile/";
     const COUNTRY = 'GB';
     protected $auth = null;
-    private $errorMessage = null;
+    private $error = null;
 
-
-
-    public function getErrorMessage()
+    public function getError()
     {
-        return $this->errorMessage;
+        return $this->error;
     }
 
 
@@ -81,7 +79,7 @@ class EndomondoApi
                 }
 
             }
-            $this->errorMessage = $page;
+            $this->error = $page;
 
             return null;
         }

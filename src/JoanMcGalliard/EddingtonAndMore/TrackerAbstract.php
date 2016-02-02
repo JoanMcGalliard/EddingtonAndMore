@@ -10,7 +10,7 @@ abstract class trackerAbstract
     const TWENTY_FOUR_HOURS = 86400;
     const RETRIES = 3;
     protected $echoCallback;
-
+    protected $error;
 
     abstract public function isConnected();
 
@@ -35,7 +35,10 @@ abstract class trackerAbstract
      */
     abstract public function getRides($start_date, $end_date);
 
-    abstract public function getError();
+    public function getError()
+    {
+        return $this->error;
+    }
 
 
     protected function output($msg) {

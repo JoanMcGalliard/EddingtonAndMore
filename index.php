@@ -77,7 +77,7 @@ if (array_key_exists("login_endo", $_POST)) {
     if ($endomondo->isConnected()) {
         $preferences->setEndoAuth($auth);
     } else {
-        $error_message = "There was a problem connecting to Endomondo, please try again.<br>(" . $endomondo->getErrorMessage() . ")";
+        $error_message = "There was a problem connecting to Endomondo, please try again.<br>(" . $endomondo->getError() . ")";
     }
 } else if ($preferences->getEndoAuth() != null) {
     $endomondo->setAuth($preferences->getEndoAuth());

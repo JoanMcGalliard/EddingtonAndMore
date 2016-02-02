@@ -269,10 +269,6 @@ class MyCyclingLog extends trackerAbstract
 
 
 
-    public function getError()
-    {
-        // TODO: Implement getError() method.
-    }
 }
 
 ?>

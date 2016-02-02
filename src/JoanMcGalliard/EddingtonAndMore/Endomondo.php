@@ -11,21 +11,19 @@ use JoanMcGalliard;
 class Endomondo extends trackerAbstract
 {
     protected $deviceId = "";
+    protected $connected = false;
     private $googleApiKey;
     private $timezone;
     private $splitOvernightRides = false;
     private $api;
-    protected $connected = false;
-
-    private $userId="";
-    private $error;
+    private $userId = "";
 
     public function __construct($deviceId, $googleApiKey, $tz, $echoCallback, $api = null)
     {
         $this->deviceId = $deviceId;
         $this->timezone = $tz;
         $this->googleApiKey = $googleApiKey;
-        $this->echoCallback=$echoCallback;
+        $this->echoCallback = $echoCallback;
         if ($api) {
             $this->api = $api;
         } else {
@@ -41,19 +39,10 @@ class Endomondo extends trackerAbstract
         return $this->userId;
     }
 
-    /**
-     * @return null
-     */
-    public function getErrorMessage()
-    {
-        return $this->api->getErrorMessage();
-    }
-
     public function setAuth($auth)
     {
         $this->api->setAuth($auth);
     }
-
 
     public function isConnected()
     {
@@ -65,7 +54,7 @@ class Endomondo extends trackerAbstract
                 $this->connected = true;
                 $this->userId = json_decode($page)->data->id;
             } else {
-                $this->connected=false;
+                $this->connected = false;
             }
         }
         return $this->connected;
@@ -78,7 +67,12 @@ class Endomondo extends trackerAbstract
 
     public function connect($username, $password)
     {
-        return $this->api->connect($username, $password, $this->deviceId);
+        $this->error = "";
+        $auth = $this->api->connect($username, $password, $this->deviceId);
+        if (!$auth) {
+            $this->error .= $this->api->getError();
+        }
+        return $auth;
     }
 
     /**
@@ -91,7 +85,7 @@ class Endomondo extends trackerAbstract
 
     public function getRides($start_date, $end_date)
     {
-        $this->error="";
+        $this->error = "";
         $records = [];
         if (!isset($end_date) || !is_int($end_date)) {
             $end_date = time();
@@ -113,7 +107,7 @@ class Endomondo extends trackerAbstract
             $params['before'] = $before;
             $params['maxResults'] = $maxResults;
             $params['fields'] = 'simple,basic';
-            for ($i=0; $i< self::RETRIES; $i++) {
+            for ($i = 0; $i < self::RETRIES; $i++) {
                 $page = $this->getPageWithDot("api/workouts", $params);
                 $json_decode = json_decode($page);
                 if ($json_decode) break;
@@ -121,8 +115,8 @@ class Endomondo extends trackerAbstract
             }
             if (!$json_decode) {
                 // three tries, and we data
-                $this->error.="$page<br>";
-                $done=true;
+                $this->error .= "$page<br>";
+                $done = true;
             } else {
                 foreach ($json_decode->data as $ride) {
                     $count++;
@@ -154,7 +148,7 @@ class Endomondo extends trackerAbstract
                     if ($this->splitOvernightRides && $this->isOverNightRide($ride)) {
                         $points = $this->getPoints($record['endo_id']);
                         if (!$points) {
-                            $this->error.="Could not split overnight ride on $ride->start_time due to errors.<br>";
+                            $this->error .= "Could not split overnight ride on $ride->start_time due to errors.<br>";
                             $records[$date][] = $record;
                         } else {
                             foreach ($points->getSplits() as $split_date => $split) {
@@ -204,7 +198,7 @@ class Endomondo extends trackerAbstract
     {
         $url = "api/workout/get";
         $params = ['fields' => 'points,simple', 'workoutId' => $workoutId];
-        for ($i=0; $i< self::RETRIES; $i++) {
+        for ($i = 0; $i < self::RETRIES; $i++) {
             $page = $this->getPageWithDot($url, $params);
             $json_decode = json_decode($page);
             if ($json_decode) break;
@@ -212,10 +206,10 @@ class Endomondo extends trackerAbstract
         }
         if (!$json_decode) {
             // three tries, and we can't get points
-            $this->error.="$page<br>";
+            $this->error .= "$page<br>";
             return null;
         }
-        $points = new Points($json_decode->start_time,$this->echoCallback);
+        $points = new Points($json_decode->start_time, $this->echoCallback);
         $points->setGenerateGPX(true);
         $points->setGoogleApiKey($this->googleApiKey);
         if (is_array($json_decode->points)) {
@@ -236,10 +230,6 @@ class Endomondo extends trackerAbstract
         $this->splitOvernightRides = $splitOvernightRides;
     }
 
-    public function getError()
-    {
-        return $this->error;
-    }
 }
 
 ?>

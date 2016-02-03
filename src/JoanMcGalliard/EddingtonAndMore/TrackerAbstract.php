@@ -24,13 +24,17 @@ abstract class trackerAbstract
      * each array of rides is all the rides on that day, they are associative arrays
      * ['distance' => float, // distance in metres
      *  'moving_time' => int, // seconds
+     *  'elapsed_time' => int, // seconds
+     *  'start_time' => string // date time
      *  'max_speed' => float // metres per second
      *  'name' => $activity->name
      *  'strava_id' => string
      *  'mcl_id' => string
      *  'endo_id' => string
+     *  'rwgps_id' => string
      *  'bike' => string //bike_id
      *  'total_elevation_gain' => float // metre
+     *
      *
      * Only distance is required for Eddington calculation.
      */

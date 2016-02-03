@@ -34,12 +34,12 @@ class RideWithGps extends TrackerAbstract
         $params = [];
         $params['email'] = $username;
         $params['password'] = $password;
-        $page = $this->api->get('/users/current.json', $username, $password);
+        $page = $this->api->get('/users/current.json', $params);
         $json = json_decode($page);
         if (!$json) {
             $this->error .= $page;
         }
-        $auth_token=null;
+        $auth_token = null;
         if (isset($json->user) && isset($json->user->auth_token)) {
             $auth_token = $json->user->auth_token;
             if (isset($json->user->id)) {
@@ -50,7 +50,7 @@ class RideWithGps extends TrackerAbstract
             if (isset ($json->error)) {
                 $this->error .= $json->error;
             } else {
-                $this->error .= $this->api->getError();
+                $this->error .= "Auth Token not found.";
             }
         } else {
             $this->api->setAuth($auth_token);
@@ -66,9 +66,64 @@ class RideWithGps extends TrackerAbstract
     }
 
 
-    public function getRides($start_date, $end_date)
+    public function getRides($start_date, $end_date, $limit = 100)
     {
-        // TODO: Implement getRides() method.
+        $rides = [];
+        $this->error = "";
+        $params = [];
+        $params['limit'] = $limit;
+
+        $offset = 0;
+        while (true) {
+            $params['offset'] = $offset;
+            $page = $this->api->get("/users/$this->userId/trips.json", $params);
+            $json = json_decode($page);
+            if (!$json) {
+                $this->error .= $page;
+                return $rides;
+            }
+            if (!isset($json->results) || !is_array($json->results)) {
+                if (isset ($json->error)) {
+                    $this->error .= $json->error;
+                } else {
+                    $this->error .= $this->api->getError();
+                }
+                return $rides;
+            }
+            foreach ($json->results as $ride) {
+                $next = [];
+                $next['rwgps_id'] = $ride->id;
+                $next['start_time'] = $ride->departed_at; //todo use timezone
+                $ride->time_zone;
+                $ride->first_lng;
+                $next['distance'] = $ride->distance;
+                $ride->first_lat;
+                $next['moving_time'] = $this->convertToSeconds($ride->moving_time);
+                $next['elapsed_time'] = $this->convertToSeconds($ride->duration);
+                $next['max_speed'] = $ride->max_speed;
+                $next['name'] = $ride->name;
+                $next['bike'] = $ride->gear_id;
+                $next['total_elevation_gain'] = $ride->elevation_gain;
+
+                $date = date("Y-m-d", strtotime($ride->departed_at));
+                $rides[$date][] = $next;
+            }
+            if (sizeof($json->results) < $limit) {
+                return $rides;
+            }
+            $offset++;
+        }
+    }
+
+    private function convertToSeconds($str)
+    {
+        $units = explode(":", $str);
+        $total = 0;
+        foreach ($units as $unit) {
+            $total *= 60;
+            $total += intval($unit);
+        }
+        return $total;
     }
 
     public function getAuth()

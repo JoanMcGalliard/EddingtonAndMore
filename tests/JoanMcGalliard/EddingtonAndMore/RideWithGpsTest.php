@@ -7,9 +7,46 @@ require_once 'BaseTestClass.php';
 require_once 'JoanMcGalliard/EddingtonAndMore/RideWithGps.php';
 
 use JoanMcGalliard\EddingtonAndMore\mocks\RideWithGpsMock;
+use ReflectionClass;
 
 class RideWithGpsTest extends BaseTestClass
 {
+    public function testGetRides() {
+
+        // set up.  We need a RideWithGps object with a valid user Id.  It's 99999
+        $mock = new RideWithGpsMock();
+        $rideWithGps = new RideWithGps("", array($this, 'myEcho'), $mock);
+        $mock->clearResponses("get", "/users/current.json");
+        $mock->primeResponse('get', '/users/current.json', include("data/apiResponses/rwgpsConnect1.php"));
+        $rideWithGps->connect("u", "p");
+
+        // User with one ride
+        $mock->primeResponse('get', '/users/99999/trips.json', include("data/apiResponses/rwgpsActivities1.php"));
+        $this->assertEquals(include("data/expected/rwgpsActivites1.php"), $rideWithGps->getRides(null, null));
+        $this->assertEquals("", $rideWithGps->getError());
+
+        // User with 3 rides, two on the same day.
+        $mock->primeResponse('get', '/users/99999/trips.json', include("data/apiResponses/rwgpsActivities2.php"));
+        $this->assertEquals(include("data/expected/rwgpsActivites2.php"), $rideWithGps->getRides(null, null));
+        $this->assertEquals("", $rideWithGps->getError());
+
+        // Something goes wrong with authentication.
+        $mock->primeResponse('get', '/users/99999/trips.json', '{"error":"Unable to authenticate, please provide a valid username/password, auth_token or a session"}');
+        $this->assertEquals([], $rideWithGps->getRides(null, null));
+        $this->assertEquals("Unable to authenticate, please provide a valid username/password, auth_token or a session", $rideWithGps->getError());
+
+        // Something goes very wrong.
+        $mock->primeResponse('get', '/users/99999/trips.json', 'PAGE NOT FOUND');
+        $this->assertEquals([], $rideWithGps->getRides(null, null));
+        $this->assertEquals("PAGE NOT FOUND", $rideWithGps->getError());
+
+
+
+
+
+
+
+    }
     public function testConnect()
     {
         $mock = new RideWithGpsMock();
@@ -34,12 +71,43 @@ class RideWithGpsTest extends BaseTestClass
         $this->assertEquals("", $rideWithGps->getUserId());
         $this->assertEquals("Unable to authenticate, please provide a valid username/password, auth_token or a session",
             $rideWithGps->getError());
-
         $this->assertEquals(".", $this->output);
 
-
+        // Good JSON, but no auth_token.
+        $mock = new RideWithGpsMock();
+        $rideWithGps = new RideWithGps("", array($this, 'myEcho'), $mock);
+        $mock->primeResponse('get', '/users/current.json', include("data/apiResponses/rwgpsConnect3.php"));
+        $this->output = "";
+        $this->assertEquals(null, $rideWithGps->connect("u", "p"));
+        $this->assertEquals(null, $rideWithGps->getAuth());
+        $this->assertEquals("", $rideWithGps->getUserId());
+        $this->assertEquals("Auth Token not found.",
+            $rideWithGps->getError());
+        $this->assertEquals(".", $this->output);
     }
 
+
+
+    protected static function getMethod($name) {
+        $class = new ReflectionClass('JoanMcGalliard\EddingtonAndMore\RideWithGps');
+        $method = $class->getMethod($name);
+        $method->setAccessible(true);
+        return $method;
+    }
+
+    public function testConvertToSeconds() {
+        $convertToSeconds = self::getMethod('convertToSeconds');
+        $obj = new RideWithGps("","");
+        $convertToSeconds->invokeArgs($obj, array("01:00:00"));
+        $this->assertEquals(1,$convertToSeconds->invokeArgs($obj, array("1")));
+        $this->assertEquals(4032,$convertToSeconds->invokeArgs($obj, array("4032")));
+        $this->assertEquals(70,$convertToSeconds->invokeArgs($obj, array("1:10")));
+        $this->assertEquals(70,$convertToSeconds->invokeArgs($obj, array("01:10")));
+        $this->assertEquals(362112,$convertToSeconds->invokeArgs($obj, array("100:35:12")));
+        $this->assertEquals(0,$convertToSeconds->invokeArgs($obj, array("00:00:00")));
+        $this->assertEquals(0,$convertToSeconds->invokeArgs($obj, array("random string")));
+        $this->assertEquals(728,$convertToSeconds->invokeArgs($obj, array("random string:12:08")));
+}
     protected function setUp()
     {
         parent::setUp();

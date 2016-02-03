@@ -9,16 +9,22 @@ class RideWithGpsApi
     const BASE_URL = "https://ridewithgps.com/";
     const VERSTION = 2;
     private $apikey = null;
-    private $auth_token="";
-    private $error;
+    private $auth_token = "";
+    private $error=null;
 
-    public function __construct($apikey,$auth_token="")
+    /**
+     * @return mixed
+     */
+    public function getError()
+    {
+        return $this->error;
+    }
+
+    public function __construct($apikey, $auth_token = "")
     {
         $this->apikey = $apikey;
         $this->auth_token = $auth_token;
     }
-
-
 
     public function get($url, $params = [])
     {
@@ -28,7 +34,6 @@ class RideWithGpsApi
         $params["authToken"] = $this->auth_token;
         $params['apikey'] = $this->apikey;
         $params['apikey'] = self::VERSTION;
-
 
         $path = self::BASE_URL . $url . "?" . http_build_query($params);
         $process = curl_init($path);
@@ -52,12 +57,8 @@ class RideWithGpsApi
     }
 
 
-
-
     public function setAuth($auth)
     {
         $this->auth_token = $auth;
     }
-
-
 }

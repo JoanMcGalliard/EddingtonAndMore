@@ -11,7 +11,6 @@ namespace JoanMcGalliard\EddingtonAndMore\mocks;
 require_once 'BaseMockClass.php';
 
 
-
 use StravaApiMock;
 
 class RideWithGpsMock extends BaseMockClass
@@ -41,5 +40,9 @@ class RideWithGpsMock extends BaseMockClass
         return $this->auth_token;
     }
 
+    public function getError()
+    {
+        return "error";
 
+    }
 }

@@ -14,6 +14,9 @@ abstract class trackerAbstract
     protected $userId;
 
 
+    /*
+     * Returns true if currently connected (ie can get data) from specific tracker.
+     */
     abstract public function isConnected();
 
 

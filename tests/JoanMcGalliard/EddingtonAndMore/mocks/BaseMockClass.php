@@ -9,6 +9,8 @@
 namespace JoanMcGalliard\EddingtonAndMore\mocks;
 
 
+use Exception;
+
 class BaseMockClass
 {
 
@@ -20,7 +22,7 @@ class BaseMockClass
             return $this->getResponse('get', $request, $parameters);
         } else {
 
-            throw new Exception("get $request: no response available");
+            throw new Exception("get $request: no more responses available");
         }
 
     }

@@ -94,10 +94,10 @@ class RideWithGps extends TrackerAbstract
                 $next = [];
                 $next['rwgps_id'] = $ride->id;
                 $next['start_time'] = $ride->departed_at; //todo use timezone
-                $ride->time_zone;
-                $ride->first_lng;
+//                $ride->time_zone;
+//                $ride->first_lng;
+//                $ride->first_lat;
                 $next['distance'] = $ride->distance;
-                $ride->first_lat;
                 $next['moving_time'] = $this->convertToSeconds($ride->moving_time);
                 $next['elapsed_time'] = $this->convertToSeconds($ride->duration);
                 $next['max_speed'] = $ride->max_speed;

@@ -2,10 +2,11 @@
 
 return '{
     "results": [
+
         {
-            "id": 6855927,
-            "departed_at": "2015-10-18T11:00:00Z",
-            "distance": 1000,
+            "id": 4838021,
+            "departed_at": "2015-10-18T12:14:00Z",
+            "distance": 2000,
             "moving_time": null,
             "duration": null,
             "max_speed": null,
@@ -13,10 +14,10 @@ return '{
             "gear_id": null,
             "elevation_gain": null
         },
-        {
-            "id": 4838021,
-            "departed_at": "2015-10-18T12:14:00Z",
-            "distance": 2000,
+         {
+            "id": 6855927,
+            "departed_at": "2015-10-18T06:00:00Z",
+            "distance": 1000,
             "moving_time": null,
             "duration": null,
             "max_speed": null,

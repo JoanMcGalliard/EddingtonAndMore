@@ -74,7 +74,6 @@ class RideWithGpsTest extends BaseTestClass
         $this->assertEquals(".", $this->output);
 
         // Getting more than one page of results, but second page is an error.
-        $mock->primeResponse('get', '/users/99999/trips.json', '{"results":[],"results_count":73}');
         $mock->clearResponses("get", '/users/99999/trips.json');
         $mock->primeResponse('get', '/users/99999/trips.json', include("data/apiResponses/rwgpsActivities3a.php"));
         $mock->primeResponse('get', '/users/99999/trips.json', '{"error":"Unable to authenticate, please provide a valid username/password, auth_token or a session"}');
@@ -83,6 +82,43 @@ class RideWithGpsTest extends BaseTestClass
         $this->assertEquals(include("data/expected/rwgpsActivites4.php"), $ride);
         $this->assertEquals("Unable to authenticate, please provide a valid username/password, auth_token or a session", $rideWithGps->getError());
         $this->assertEquals(".", $this->output);
+
+        // tests with date fields populated.
+
+        // both dates set, but all rides lie within them.
+        date_default_timezone_set("UTC");
+        $mock->clearResponses("get", '/users/99999/trips.json');
+        $mock->primeResponse('get', '/users/99999/trips.json', include("data/apiResponses/rwgpsActivities3a.php"));
+        $mock->primeResponse('get', '/users/99999/trips.json', include("data/apiResponses/rwgpsActivities3b.php"));
+        $mock->primeResponse('get', '/users/99999/trips.json', include("data/apiResponses/rwgpsActivities3c.php"));
+        $ride = $rideWithGps->getRides(strtotime("1 January 2012"), strtotime("now"), 3);
+        $this->assertEquals(include("data/expected/rwgpsActivites3.php"), $ride);
+        $this->assertEquals("", $rideWithGps->getError());
+        $this->assertEquals(".", $this->output);
+
+        // both dates set, some rides are before start_date.
+        date_default_timezone_set("UTC");
+        $mock->clearResponses("get", '/users/99999/trips.json');
+        $mock->primeResponse('get', '/users/99999/trips.json', include("data/apiResponses/rwgpsActivities3a.php"));
+        $mock->primeResponse('get', '/users/99999/trips.json', include("data/apiResponses/rwgpsActivities3b.php"));
+        $mock->primeResponse('get', '/users/99999/trips.json', include("data/apiResponses/rwgpsActivities3c.php"));
+        $ride = $rideWithGps->getRides(strtotime("2014-10-18T09:00:00Z"), strtotime("now"), 3);
+        $this->assertEquals(include("data/expected/rwgpsActivite5.php"), $ride);
+        $this->assertEquals("", $rideWithGps->getError());
+        $this->assertEquals(".", $this->output);
+
+        // both dates set, some rides are before start_date and some are after the end date.
+        date_default_timezone_set("UTC");
+        $mock->clearResponses("get", '/users/99999/trips.json');
+        $mock->primeResponse('get', '/users/99999/trips.json', include("data/apiResponses/rwgpsActivities3a.php"));
+        $mock->primeResponse('get', '/users/99999/trips.json', include("data/apiResponses/rwgpsActivities3b.php"));
+        $mock->primeResponse('get', '/users/99999/trips.json', include("data/apiResponses/rwgpsActivities3c.php"));
+        $ride = $rideWithGps->getRides(strtotime("2014-10-18T09:00:00Z"), strtotime("2015-10-18T12:00:00Z"), 3);
+        $this->assertEquals(include("data/expected/rwgpsActivite6.php"), $ride);
+        $this->assertEquals("", $rideWithGps->getError());
+        $this->assertEquals(".", $this->output);
+
+
 
     }
     public function testConnect()

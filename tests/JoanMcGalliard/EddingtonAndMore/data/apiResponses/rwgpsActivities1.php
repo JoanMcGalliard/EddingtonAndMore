@@ -8,7 +8,7 @@ return '{
         "created_at": "2015-10-18T17:51:14Z",
         "gear_id": null,
         "group_id": null,
-        "departed_at": "2015-10-18T11:00:00Z",
+        "departed_at": "2015-10-18T06:00:00Z",
         "duration": null,
         "distance": 14098.8,
         "elevation_gain": 116.023,

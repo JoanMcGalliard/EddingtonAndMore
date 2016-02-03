@@ -36,8 +36,11 @@ abstract class trackerAbstract
      *  'total_elevation_gain' => float // metre
      *
      *
-     * Only distance is required for Eddington calculation.
+     * Only distance and date are required for Eddington calculation.
+     *
+     * $start & $end_dates are seconds since epoch, or null.
      */
+
     abstract public function getRides($start_date, $end_date);
 
     public function getError()

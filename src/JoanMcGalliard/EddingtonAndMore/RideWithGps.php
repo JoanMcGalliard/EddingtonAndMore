@@ -91,6 +91,16 @@ class RideWithGps extends TrackerAbstract
                 return $rides;
             }
             foreach ($json->results as $ride) {
+                if ($end_date) {
+                    if (strtotime($ride->departed_at)> $end_date) {
+                        continue;
+                    }
+                }
+                if ($start_date) {
+                    if (strtotime($ride->departed_at)< $start_date) {
+                        return $rides;
+                    }
+                }
                 $next = [];
                 $next['rwgps_id'] = $ride->id;
                 $next['start_time'] = $ride->departed_at; //todo use timezone

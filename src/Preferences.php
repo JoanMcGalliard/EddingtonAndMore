@@ -9,7 +9,7 @@ class Preferences
 
     const COOKIE_NAME = "EDDINGTON_AND_MORE";
 
-    const VERSION = 1;
+    const VERSION = 2;
 
 
     private $preferences;
@@ -23,6 +23,11 @@ class Preferences
 
         if (array_key_exists(self::COOKIE_NAME, $_COOKIE)) {
             $this->preferences = json_decode($_COOKIE[self::COOKIE_NAME]);
+            if ($this->preferences->version == 1) {
+                $this->preferences->rwgps = new stdClass();
+                $this->preferences->version=self::VERSION;
+                $this->save();
+            }
         } else {
             $this->loadFromOldCookies();
             $this->save();
@@ -39,6 +44,7 @@ class Preferences
         $preferences->mcl = new stdClass();
         $preferences->endo = new stdClass();
         $preferences->strava = new stdClass();
+        $preferences->rwgps = new stdClass();
         $preferences->general = new stdClass();
         return $preferences;
     }
@@ -182,6 +188,17 @@ class Preferences
     public function getMclUsername()
     {
         return isset($this->preferences->mcl->username) ? $this->preferences->mcl->username : null;
+    }
+
+    public function getRwgpsAuth()
+    {
+        return isset($this->preferences->rwgps->auth) ? $this->preferences->rwgps->auth : null;
+    }
+
+    public function setRwgpsAuth($auth)
+    {
+        $this->preferences->rwgps->auth = $auth;
+        $this->save();
     }
 }
 

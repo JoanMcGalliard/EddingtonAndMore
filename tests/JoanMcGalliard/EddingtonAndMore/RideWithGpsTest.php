@@ -11,8 +11,33 @@ use ReflectionClass;
 
 class RideWithGpsTest extends BaseTestClass
 {
-    public function testGetRides() {
+public function testIsConnected()
+{
+    // set up.  We need a RideWithGps object with a valid user Id.  It's 99999
+    $mock = new RideWithGpsMock();
+    $rideWithGps = new RideWithGps("", array($this, 'myEcho'), $mock);
+    //  before we get auth token, it should fail.
+    $this->assertEquals(false,$rideWithGps->isConnected());
+    $this->assertEquals(null,$rideWithGps->getUserId());
 
+    //auth token set, but it's not correct
+    $rideWithGps->setAuth("AUTH TOKEN");
+    $mock->clearResponses("get", "/users/current.json");
+    $mock->primeResponse('get', '/users/current.json', '{"error":"Unable to authenticate, please provide a valid username/password, auth_token or a session"}');
+    $this->assertEquals(false,$rideWithGps->isConnected());
+    $this->assertEquals(null,$rideWithGps->getUserId());
+    $this->assertEquals("Unable to authenticate, please provide a valid username/password, auth_token or a session",$rideWithGps->getError());
+
+    //happy path, everything correct
+    $rideWithGps->setAuth("AUTH TOKEN");
+    $mock->clearResponses("get", "/users/current.json");
+    $mock->primeResponse('get', '/users/current.json', include("data/apiResponses/rwgpsCurrentUser.php"));
+    assert($rideWithGps->isConnected());
+    $this->assertEquals(99999,$rideWithGps->getUserId());
+    // it not need to check with
+    assert($rideWithGps->isConnected());
+}
+    public function testGetRides() {
         // set up.  We need a RideWithGps object with a valid user Id.  It's 99999
         $mock = new RideWithGpsMock();
         $rideWithGps = new RideWithGps("", array($this, 'myEcho'), $mock);

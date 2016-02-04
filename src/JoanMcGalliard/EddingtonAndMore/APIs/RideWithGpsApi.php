@@ -31,9 +31,9 @@ class RideWithGpsApi
         if (!$params) {
             $params = [];
         }
-        $params["authToken"] = $this->auth_token;
+        $params["auth_token"] = $this->auth_token;
         $params['apikey'] = $this->apikey;
-        $params['apikey'] = self::VERSTION;
+        $params['version'] = self::VERSTION;
 
         $path = self::BASE_URL . $url . "?" . http_build_query($params);
         $process = curl_init($path);
@@ -60,5 +60,9 @@ class RideWithGpsApi
     public function setAuth($auth)
     {
         $this->auth_token = $auth;
+    }
+    public function getAuth()
+    {
+        return $this->auth_token;
     }
 }

@@ -1,5 +1,6 @@
 <?php
 ob_implicit_flush();
+$no_echo=true;
 define("TWENTY_FOUR_HOURS", 60 * 60 * 24);
 set_include_path(get_include_path() . PATH_SEPARATOR . dirname(__FILE__) . DIRECTORY_SEPARATOR . "src" . PATH_SEPARATOR);
 
@@ -7,6 +8,7 @@ require_once 'local.php';
 require_once 'src/JoanMcGalliard/EddingtonAndMore/Strava.php';
 require_once 'src/JoanMcGalliard/EddingtonAndMore/MyCyclingLog.php';
 require_once 'src/JoanMcGalliard/EddingtonAndMore/Endomondo.php';
+require_once 'src/JoanMcGalliard/EddingtonAndMore/RideWithGps.php';
 require_once 'src/JoanMcGalliard/EddingtonAndMore/Points.php';
 require_once 'src/functions.php';
 require_once 'src/Preferences.php';
@@ -52,6 +54,7 @@ if (array_key_exists("clear_cookies", $_POST)) {
 $strava = new JoanMcGalliard\EddingtonAndMore\Strava($stravaClientId, $stravaClientSecret,'myEcho');
 $myCyclingLog = new JoanMcGalliard\EddingtonAndMore\MyCyclingLog('myEcho');
 $endomondo = new JoanMcGalliard\EddingtonAndMore\Endomondo($deviceId, $googleApiKey, $preferences->getTimezone(),'myEcho');
+$rideWithGps = new JoanMcGalliard\EddingtonAndMore\RideWithGps('5a1c53f3','myEcho');
 
 $myCyclingLog->setUseFeetForElevation($preferences->getMclUseFeet());
 $endomondo->setSplitOvernightRides($preferences->getEndoSplitRides());
@@ -84,6 +87,18 @@ if (array_key_exists("login_endo", $_POST)) {
 } else if ($preferences->getEndoAuth() != null) {
     $endomondo->setAuth($preferences->getEndoAuth());
 }
+if (array_key_exists("login_rwgps", $_POST)) {
+    $rwgps_username = $_POST['username'];
+    $rwgps_password = $_POST['password'];
+    $auth = $rideWithGps->connect($rwgps_username, $rwgps_password);
+    if ($rideWithGps->isConnected()) {
+        $preferences->setRwgpsAuth($auth);
+    } else {
+        $error_message = "There was a problem connecting to RideWithGps, please try again.<br>(" . $rideWithGps->getError() . ")";
+    }
+} else if ($preferences->getRwgpsAuth() != null) {
+    $rideWithGps->setAuth($preferences->getRwgpsAuth());
+}
 if (array_key_exists("state", $_GET)) {
     if (!array_key_exists("error", $_GET) && array_key_exists("code", $_GET)) {
         $code = $_GET["code"];
@@ -108,6 +123,7 @@ if (array_key_exists("state", $_GET)) {
 $strava_connected = $strava->isConnected();
 $mcl_connected = $myCyclingLog->isConnected();
 $endo_connected = $endomondo->isConnected();
+$rwgps_connected = $rideWithGps->isConnected();
 
 if ($strava_connected && array_key_exists("delete_files", $_POST)) {
     $files = scandir($scratchDirectory);
@@ -128,6 +144,8 @@ if ($strava_connected && array_key_exists("calculate_from_strava", $_POST)) {
     $state = "calculate_from_mcl";
 } else if ($endo_connected && array_key_exists("calculate_from_endo", $_POST)) {
     $state = "calculate_from_endo";
+} else if ($rwgps_connected && array_key_exists("calculate_from_rwgps", $_POST)) {
+    $state = "calculate_from_rwgps";
 } else if ($mcl_connected && $strava_connected && array_key_exists("copy_strava_to_mcl", $_POST)) {
     $state = "copy_strava_to_mcl";
     if (array_key_exists("elevation_units", $_POST)) {
@@ -152,7 +170,7 @@ if (isset($_POST['commentSend'])) {
         " Email: " . $_POST['commentEmail'] .
         " Comment: " . $_POST['commentComments'] . "";
 }
-
+unset($no_echo);
 ?>
 <html>
 <head>
@@ -196,7 +214,7 @@ myEcho("<hr>");
 myEcho("<p>The Eddington Number is a metric for long distance cyclists.  It's the largest value of E where you
     have cycled at least E miles on E days. So if you have
     cycled 35 miles or more on 35 days but have not cycled at 36 miles or more on 36 days, then your E-number is 35.</p>");
-if ($state == "calculate_from_strava" || $state == "calculate_from_mcl" || $state == "calculate_from_endo") {
+if ($state == "calculate_from_strava" || $state == "calculate_from_mcl" || $state == "calculate_from_endo"|| $state == "calculate_from_rwgps") {
     set_time_limit(300);
     myEcho("<H3>Calculating....</H3>");
     date_default_timezone_set($preferences->getTimezone());
@@ -232,7 +250,14 @@ if ($state == "calculate_from_strava" || $state == "calculate_from_mcl" || $stat
         $activities = $endomondo->getRides($start_date, $end_date);
         $error=$endomondo->getError();
         if ($error) {
-            myEcho("There was a problem getting data from Endomondo:<br>".$error);
+            myEcho("There was a problem getting data from $source:<br>".$error);
+        }
+    } else if ($state == "calculate_from_rwgps") {
+        $source = "RideWithGPS";
+        $activities = $rideWithGps->getRides($start_date, $end_date);
+        $error=$rideWithGps->getError();
+        if ($error) {
+            myEcho("There was a problem getting data from $source:<br>".$error);
         }
     }
     if (!$start_date) {
@@ -454,7 +479,7 @@ if ($state == "calculate_from_strava" || $state == "calculate_from_mcl" || $stat
     }
 }
 
-if ($strava_connected || $mcl_connected || $endo_connected) {
+if ($strava_connected || $mcl_connected || $endo_connected || $rwgps_connected) {
     ?>
 
     <form action="<?php echo $here;?>" method="post" name="main_form">
@@ -515,6 +540,9 @@ if ($strava_connected || $mcl_connected || $endo_connected) {
                     echo 'Split multiday rides?:
             <input type="checkbox" value="split" ' . ($preferences->getEndoSplitRides() ? "checked" : "") .
                         ' name="endo_split_rides"/></td></tr>';
+                }
+                if ($rwgps_connected) {
+                    myEcho('<tr><td colspan="3"><input type="submit" name="calculate_from_rwgps" value="Eddington Number from RideWithGPS"/><br> </td></tr>');
                 }
                 if ($strava_connected && $mcl_connected) {
                     myEcho('<tr><td colspan="3"><input type="submit" name="copy_strava_to_mcl" value="Copy ride data from Strava to MyCyclingLog"/>  <br>');
@@ -751,6 +779,32 @@ if (!$strava_connected || !$mcl_connected || !$endo_connected || !$strava->write
                     </form>
                 </td>
             <?php } ?>
+
+            <?php if (!$rwgps_connected) { ?>
+                <td>
+                    <form action="<?php echo $here;?>" method="post">
+                        <table>
+                            <tr>
+                                <td> RideWithGPS Username:</td>
+                                <td><input type="text" name="username"/></td>
+                            </tr>
+                            <tr>
+                                <td>RideWithGPS Password:</td>
+                                <td><input type="password" name="password"/>
+                                <td>
+                            </tr>
+                            <tr class="w3-centered">
+                                <td colspan="2" class="w3-centered"><input type="image" src="images/rwgps.png"
+                                                                           alt="Submit Form"/>
+                                <td>
+                            </tr>
+                        </table>
+                        <input type="hidden" name="login_rwgps"/>
+                    </form>
+                </td>
+            <?php } ?>
+
+
         </tr>
     </table>
 

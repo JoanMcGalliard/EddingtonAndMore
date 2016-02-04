@@ -18,6 +18,9 @@ class RideWithGps extends TrackerAbstract
 {
 
 
+    private $api;
+    private $connected;
+
     public function __construct($apikey, $echoCallback, $api = null)
     {
         $this->echoCallback = $echoCallback;
@@ -62,7 +65,22 @@ class RideWithGps extends TrackerAbstract
 
     public function isConnected()
     {
-        // TODO: Implement isConnected() method.
+        $this->error="";
+        if (!$this->api->getAuth()) {
+            $this->connected = false;
+        } else if (!$this->connected) {
+            $json = json_decode($this->api->get('/users/current.json'));
+            if (isset($json->user) && isset($json->user->id)) {
+                $this->userId = $json->user->id;
+                $this->connected = true;
+            } else {
+                if (isset($json->error)) {
+                    $this->error.= $json->error;
+                }
+                $this->api->setAuth(null);
+            }
+        }
+        return $this->connected;
     }
 
 
@@ -140,6 +158,10 @@ class RideWithGps extends TrackerAbstract
     {
         // only called in tests
         return $this->api->getAuth();
+    }
+    public function setAuth($auth)
+    {
+         $this->api->setAuth($auth);
     }
 
 }

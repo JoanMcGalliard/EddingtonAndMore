@@ -272,6 +272,10 @@ function processUploadedGpxFiles($userId, $scratchDirectory)
 
 function myEcho($msg)
 {
+    global $no_echo;
+    if (isset($no_echo)) {
+        return;
+    }
     echo $msg;
     echo str_pad('', 4096);
 }

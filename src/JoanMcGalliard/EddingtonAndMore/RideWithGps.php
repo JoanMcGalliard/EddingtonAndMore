@@ -10,7 +10,7 @@ namespace JoanMcGalliard\EddingtonAndMore;
 
 
 require_once 'TrackerAbstract.php';
-require_once 'JoanMcGalliard/RideWithGpsApi.php';
+require_once 'JoanMcGalliard/EddingtonAndMore/APIs/RideWithGpsApi.php';
 
 use JoanMcGalliard;
 

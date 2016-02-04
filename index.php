@@ -15,6 +15,8 @@ $info_message = "";
 $error_message = "";
 
 
+
+
 $here = "http://$_SERVER[HTTP_HOST]$_SERVER[SCRIPT_NAME]";
 $state = null;
 const METRE_TO_MILE = 0.00062137119224;
@@ -47,7 +49,7 @@ if (array_key_exists("clear_cookies", $_POST)) {
     unset($_GET["state"]);
 }
 
-$strava = new JoanMcGalliard\EddingtonAndMore\Strava($stravaClientId,'myEcho', $stravaClientSecret);
+$strava = new JoanMcGalliard\EddingtonAndMore\Strava($stravaClientId, $stravaClientSecret,'myEcho');
 $myCyclingLog = new JoanMcGalliard\EddingtonAndMore\MyCyclingLog('myEcho');
 $endomondo = new JoanMcGalliard\EddingtonAndMore\Endomondo($deviceId, $googleApiKey, $preferences->getTimezone(),'myEcho');
 

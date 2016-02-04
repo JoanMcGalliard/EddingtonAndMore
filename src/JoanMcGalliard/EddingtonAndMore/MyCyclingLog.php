@@ -1,7 +1,7 @@
 <?php
 namespace JoanMcGalliard\EddingtonAndMore;
 
-require_once 'JoanMcGalliard/MyCyclingLogApi.php';
+require_once 'JoanMcGalliard/EddingtonAndMore/APIs/MyCyclingLogApi.php';
 
 use DOMDocument;
 use Iamstuartwilson;

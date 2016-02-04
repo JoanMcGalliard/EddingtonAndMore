@@ -3,7 +3,7 @@ namespace JoanMcGalliard\EddingtonAndMore;
 
 require_once 'TrackerAbstract.php';
 require_once 'Points.php';
-require_once 'JoanMcGalliard/EndomondoApi.php';
+require_once 'JoanMcGalliard/EddingtonAndMore/APIs/EndomondoApi.php';
 use ArrayObject;
 use JoanMcGalliard;
 

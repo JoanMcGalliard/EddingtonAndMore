@@ -36,7 +36,10 @@ if (array_key_exists("tz", $_POST)) {
     $preferences->setTimezone($_POST["tz"]);
 }
 if (array_key_exists("calculate_from_endo", $_POST)) {
-    $preferences->setEndoSplitRides((array_key_exists("endo_split_rides", $_POST)));
+    $preferences->setEndoSplitRides(array_key_exists("endo_split_rides", $_POST));
+}
+if (array_key_exists("calculate_from_rwgps", $_POST)) {
+    $preferences->setRwgpsSplitRides(array_key_exists("rwgps_split_rides", $_POST));
 }
 if (array_key_exists("calculate_from_strava", $_POST) || array_key_exists("copy_strava_to_mcl", $_POST)) {
     $preferences->setStravaSplitRides((array_key_exists("strava_split_rides", $_POST)));
@@ -56,6 +59,7 @@ $rideWithGps = new JoanMcGalliard\EddingtonAndMore\RideWithGps('5a1c53f3', 'myEc
 
 $myCyclingLog->setUseFeetForElevation($preferences->getMclUseFeet());
 $endomondo->setSplitOvernightRides($preferences->getEndoSplitRides());
+$rideWithGps->setSplitOvernightRides($preferences->getRwgpsSplitRides());
 $strava->setSplitOvernightRides($preferences->getStravaSplitRides());
 $strava->setWriteScope($preferences->getStravaWriteScope());
 
@@ -414,12 +418,13 @@ if ($state == "calculate_from_strava" || $state == "calculate_from_mcl" || $stat
                     $duplicateStravaRide = isDuplicateRide($ride, $strava_rides, 'strava_id');
 
                     if ($duplicateStravaRide) {
-                        if (is_int($duplicateStravaRide)) {
-                            $message .= 'Duplicate with  <a target="_blank" href="' . $strava->activityUrl($duplicateStravaRide) .
-                                '">' . $duplicateStravaRide . '</a>, skipping. ';
-                        } else {
-                            $message .= "Duplicate, skipping. ";
-                        }
+                        $message=".";
+//                        if (is_int($duplicateStravaRide)) {
+//                            $message .= 'Duplicate with  <a target="_blank" href="' . $strava->activityUrl($duplicateStravaRide) .
+//                                '">' . $duplicateStravaRide . '</a>, skipping. ';
+//                        } else {
+//                            $message .= "Duplicate, skipping. ";
+//                        }
                     } else {
                         $path = $scratchDirectory . DIRECTORY_SEPARATOR . "endomondo+" . $ride['endo_id'] . ".gpx";
                         $points = $endomondo->getPoints($ride['endo_id']);
@@ -492,19 +497,20 @@ if ($state == "calculate_from_strava" || $state == "calculate_from_mcl" || $stat
             foreach ($ride_list as $ride) {
                 $distance = $ride['distance'];
                 $start_time = $ride['start_time'];
-                $message = 'Ride with id <a target="_blank" href="' . $endomondo->activityUrl($ride['endo_id']) . '">' . $ride['endo_id'] . '</a>' . " on $start_time, distance " . round($distance * METRE_TO_MILE, 1) . " miles/" . round($distance * METRE_TO_KM, 1) . " kms. ";
+                $message = '<br>Ride with id <a target="_blank" href="' . $endomondo->activityUrl($ride['endo_id']) . '">' . $ride['endo_id'] . '</a>' . " on $start_time, distance " . round($distance * METRE_TO_MILE, 1) . " miles/" . round($distance * METRE_TO_KM, 1) . " kms. ";
                 if (!$distance || $distance < 500) {
                     $message .= "Skipping, too short: $distance metres";
                 } else {
                     $duplicateRwgpsRide = isDuplicateRide($ride, $rwgps_rides, 'rwgps_id');
 
                     if ($duplicateRwgpsRide) {
-                        if (is_int($duplicateRwgpsRide)) {
-                            $message .= 'Duplicate with  <a target="_blank" href="' . $rideWithGps->activityUrl($duplicateRwgpsRide) .
-                                '">' . $duplicateRwgpsRide . '</a>, skipping. ';
-                        } else {
-                            $message .= "Duplicate, skipping. ";
-                        }
+                        $message=".";
+//                        if (is_int($duplicateRwgpsRide)) {
+//                            $message .= 'Duplicate with  <a target="_blank" href="' . $rideWithGps->activityUrl($duplicateRwgpsRide) .
+//                                '">' . $duplicateRwgpsRide . '</a>, skipping. ';
+//                        } else {
+//                            $message .= "Duplicate, skipping. ";
+//                        }
                     } else {
                         $path = $scratchDirectory . DIRECTORY_SEPARATOR . "endomondo+" . $ride['endo_id'] . ".gpx";
                         $points = $endomondo->getPoints($ride['endo_id']);
@@ -529,7 +535,7 @@ if ($state == "calculate_from_strava" || $state == "calculate_from_mcl" || $stat
                     }
 
                 }
-                myEcho("<br>$message ");
+                myEcho("$message ");
                 flush();
 
             }
@@ -627,7 +633,10 @@ if ($strava->isConnected() || $myCyclingLog->isConnected() || $endomondo->isConn
                         ' name="endo_split_rides"/></td></tr>';
                 }
                 if ($rideWithGps->isConnected()) {
-                    myEcho('<tr><td colspan="3"><input type="submit" name="calculate_from_rwgps" value="Eddington Number from RideWithGPS"/><br> </td></tr>');
+                    myEcho('<tr><td colspan="3"><input type="submit" name="calculate_from_rwgps" value="Eddington Number from RideWithGPS"/><br>');
+                    echo 'Split multiday rides?:
+            <input type="checkbox" value="split" ' . ($preferences->getRwgpsSplitRides() ? "checked" : "") .
+                        ' name="rwgps_split_rides"/></td></tr>';
                 }
                 if ($strava->isConnected() && $myCyclingLog->isConnected()) {
                     myEcho('<tr><td colspan="3"><input type="submit" name="copy_strava_to_mcl" value="Copy ride data from Strava to MyCyclingLog"/>  <br>');
@@ -653,14 +662,14 @@ if ($strava->isConnected() || $myCyclingLog->isConnected() || $endomondo->isConn
                 }
 
                 ?>
+            <?php } ?>
             <tr>
                 <td colspan="3"><input type="submit" name="clear_cookies" value="Delete Cookies"/></td>
             </tr>
             <?php if ($strava->isConnected()) { ?>
-                <tr>
-                    <td colspan="3"><input type="submit" name="delete_files" value="Delete temporary files"/></td>
-                </tr>
-            <?php } ?>
+            <tr>
+                <td colspan="3"><input type="submit" name="delete_files" value="Delete temporary files"/></td>
+            </tr>
         </table>
         <?php
 
@@ -759,7 +768,7 @@ if ($strava->isConnected() || $myCyclingLog->isConnected() || $endomondo->isConn
                     the
                     first day.</em></li>
 
-            <li><em>If you are using Endomondo, you can choose to split it into multiple days, to get the
+            <li><em>You can choose to split it into multiple days, to get the
                     mileage for each day midnight-midnight.</em></li>
             <li><em>As I can't get the GPS points directly from Strava, Strava rides can
                     only be split by you downloading them onto your machine, and then uploading

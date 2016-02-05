@@ -117,6 +117,15 @@ class Preferences
     {
         return isset($this->preferences->endo->splitRides) ? $this->preferences->endo->splitRides : null;
     }
+    public function setRwgpsSplitRides($bool)
+    {
+        $this->preferences->rwgps->splitRides = $bool;
+        $this->save();
+    }
+    public function getRwgpsSplitRides()
+    {
+        return isset($this->preferences->rwgps->splitRides) ? $this->preferences->rwgps->splitRides : null;
+    }
 
     public function getEndoAuth()
     {

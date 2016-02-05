@@ -14,6 +14,16 @@ abstract class trackerAbstract
     protected $userId;
     protected $pending_uploads = [];
     protected $fileUploadTimeout = 300;
+    protected $splitOvernightRides;
+    protected $api;
+
+    /**
+     * @param boolean $splitOvernightRides
+     */
+    public function setSplitOvernightRides($splitOvernightRides)
+    {
+        $this->splitOvernightRides = $splitOvernightRides;
+    }
 
     /**
      * @param int $fileUploadTimeout
@@ -22,7 +32,6 @@ abstract class trackerAbstract
     {
         $this->fileUploadTimeout = $fileUploadTimeout;
     }
-    protected $api;
 
 
 

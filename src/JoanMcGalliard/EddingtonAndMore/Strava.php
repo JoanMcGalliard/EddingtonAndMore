@@ -318,10 +318,6 @@ class Strava extends trackerAbstract
     }
 
 
-    public function setSplitOvernightRides($splitRides)
-    {
-        $this->splitOvernight = $splitRides;
-    }
 
     public function authenticationUrl($redirect, $approvalPrompt, $scope, $state)
     {

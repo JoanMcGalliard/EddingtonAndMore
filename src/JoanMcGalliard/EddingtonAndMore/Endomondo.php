@@ -14,7 +14,6 @@ class Endomondo extends trackerAbstract
     protected $connected = false;
     private $googleApiKey;
     private $timezone;
-    private $splitOvernightRides = false;
 
     public function __construct($deviceId, $googleApiKey, $tz, $echoCallback, $api = null)
     {
@@ -44,6 +43,7 @@ class Endomondo extends trackerAbstract
                 $this->userId = json_decode($page)->data->id;
             } else {
                 $this->api->setAuth(null);
+                $this->error=$page;
             }
         }
         return $this->connected;
@@ -215,14 +215,6 @@ class Endomondo extends trackerAbstract
             }
         }
         return $points;
-    }
-
-    /**
-     * @param boolean $splitOvernightRides
-     */
-    public function setSplitOvernightRides($splitOvernightRides)
-    {
-        $this->splitOvernightRides = $splitOvernightRides;
     }
 
     public function gpxDownload($endo_id)

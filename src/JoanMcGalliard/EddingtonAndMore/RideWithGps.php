@@ -40,7 +40,7 @@ class RideWithGps extends TrackerAbstract
             $this->error .= $page;
         }
         $auth_token = null;
-        if (isset($json->user) && isset($json->user->auth_token)) {
+        if (isset($json->user->auth_token)) {
             $auth_token = $json->user->auth_token;
             if (isset($json->user->id)) {
                 $this->userId = $json->user->id;
@@ -66,15 +66,23 @@ class RideWithGps extends TrackerAbstract
         if (!$this->api->getAuth()) {
             $this->connected = false;
         } else if (!$this->connected) {
-            $json = json_decode($this->api->get('/users/current.json'));
-            if (isset($json->user) && isset($json->user->id)) {
-                $this->userId = $json->user->id;
-                $this->connected = true;
-            } else {
+            $page = $this->api->get('/users/current.json');
+            $json = json_decode($page);
+            if (!isset($json->user->id)) {
+                $this->connected = false;
+                $this->api->setAuth(null);
                 if (isset($json->error)) {
                     $this->error .= $json->error;
+                } else if (!$json) {
+                    $this->error .= $page;
                 }
-                $this->api->setAuth(null);
+            } else {
+                $this->connected=true;
+                $this->userId = $json->user->id;
+            }
+            if (isset($json->user->id)) {
+                ;
+            } else {
             }
         }
         return $this->connected;
@@ -204,7 +212,7 @@ class RideWithGps extends TrackerAbstract
             $ids = join(',', array_keys($this->pending_uploads));
             $page = $this->api->get('/queued_tasks/status.json', ["ids" => $ids, "include_objects" => "true"]);
             $json = json_decode($page);
-            if ($json && isset($json->queued_tasks) && is_array($json->queued_tasks)) {
+            if (isset($json->queued_tasks) && is_array($json->queued_tasks)) {
                 //if are getting anything other than this in response, just loop until it times out
                 foreach ($json->queued_tasks as $queued_task) {
                     $id = $queued_task->id;

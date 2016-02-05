@@ -1,6 +1,6 @@
 <?php
 ob_implicit_flush();
-$no_echo=true;
+$no_echo = true;
 define("TWENTY_FOUR_HOURS", 60 * 60 * 24);
 set_include_path(get_include_path() . PATH_SEPARATOR . dirname(__FILE__) . DIRECTORY_SEPARATOR . "src" . PATH_SEPARATOR);
 
@@ -15,8 +15,6 @@ require_once 'src/Preferences.php';
 date_default_timezone_set("$timezone");
 $info_message = "";
 $error_message = "";
-
-
 
 
 $here = "http://$_SERVER[HTTP_HOST]$_SERVER[SCRIPT_NAME]";
@@ -51,14 +49,15 @@ if (array_key_exists("clear_cookies", $_POST)) {
     unset($_GET["state"]);
 }
 
-$strava = new JoanMcGalliard\EddingtonAndMore\Strava($stravaClientId, $stravaClientSecret,'myEcho');
+$strava = new JoanMcGalliard\EddingtonAndMore\Strava($stravaClientId, $stravaClientSecret, 'myEcho');
 $myCyclingLog = new JoanMcGalliard\EddingtonAndMore\MyCyclingLog('myEcho');
-$endomondo = new JoanMcGalliard\EddingtonAndMore\Endomondo($deviceId, $googleApiKey, $preferences->getTimezone(),'myEcho');
-$rideWithGps = new JoanMcGalliard\EddingtonAndMore\RideWithGps('5a1c53f3','myEcho');
+$endomondo = new JoanMcGalliard\EddingtonAndMore\Endomondo($deviceId, $googleApiKey, $preferences->getTimezone(), 'myEcho');
+$rideWithGps = new JoanMcGalliard\EddingtonAndMore\RideWithGps('5a1c53f3', 'myEcho');
 
 $myCyclingLog->setUseFeetForElevation($preferences->getMclUseFeet());
 $endomondo->setSplitOvernightRides($preferences->getEndoSplitRides());
 $strava->setSplitOvernightRides($preferences->getStravaSplitRides());
+$strava->setWriteScope($preferences->getStravaWriteScope());
 
 
 if (array_key_exists("login_mcl", $_POST)) {
@@ -105,6 +104,7 @@ if (array_key_exists("state", $_GET)) {
         $token = $strava->setAccessTokenFromCode($code);
         if ($strava->isConnected()) {
             $strava->setWriteScope(($_GET["state"] == "write"));
+            $preferences->setStravaWriteScope($strava->writeScope());
             $preferences->setStravaAccessToken($token);
         }
     } else {
@@ -158,6 +158,8 @@ if ($strava_connected && array_key_exists("calculate_from_strava", $_POST)) {
 
 } else if ($endo_connected && $strava_connected && array_key_exists("copy_endo_to_strava", $_POST)) {
     $state = "copy_endo_to_strava";
+} else if ($endo_connected && $rwgps_connected && array_key_exists("copy_endo_to_rwgps", $_POST)) {
+    $state = "copy_endo_to_rwgps";
 } else if ($mcl_connected && array_key_exists("delete_mcl_rides", $_POST)) {
     $state = "delete_mcl_rides";
 }
@@ -214,7 +216,7 @@ myEcho("<hr>");
 myEcho("<p>The Eddington Number is a metric for long distance cyclists.  It's the largest value of E where you
     have cycled at least E miles on E days. So if you have
     cycled 35 miles or more on 35 days but have not cycled at 36 miles or more on 36 days, then your E-number is 35.</p>");
-if ($state == "calculate_from_strava" || $state == "calculate_from_mcl" || $state == "calculate_from_endo"|| $state == "calculate_from_rwgps") {
+if ($state == "calculate_from_strava" || $state == "calculate_from_mcl" || $state == "calculate_from_endo" || $state == "calculate_from_rwgps") {
     set_time_limit(300);
     myEcho("<H3>Calculating....</H3>");
     date_default_timezone_set($preferences->getTimezone());
@@ -233,13 +235,13 @@ if ($state == "calculate_from_strava" || $state == "calculate_from_mcl" || $stat
         $activities = $strava->getRides($start_date, $end_date);
         if ($strava->getError()) {
             myEcho("<br><span style=\"color:red;\">There was a problem getting data from Strava.</span><br><em>"
-                .$strava->getError()
-                ."</em>");
+                . $strava->getError()
+                . "</em>");
         }
 
         $overnight_rides = $strava->getOvernightActivities();
         if ($preferences->getStravaSplitRides() && $overnight_rides) {
-            askForStravaGpx($overnight_rides, $maxKmFileUploads,"calculate_from_strava", "recalculate your E-Number");
+            askForStravaGpx($overnight_rides, $maxKmFileUploads, "calculate_from_strava", "recalculate your E-Number");
 
         }
     } else if ($state == "calculate_from_mcl") {
@@ -248,16 +250,16 @@ if ($state == "calculate_from_strava" || $state == "calculate_from_mcl" || $stat
     } else if ($state == "calculate_from_endo") {
         $source = "Endomondo";
         $activities = $endomondo->getRides($start_date, $end_date);
-        $error=$endomondo->getError();
+        $error = $endomondo->getError();
         if ($error) {
-            myEcho("There was a problem getting data from $source:<br>".$error);
+            myEcho("There was a problem getting data from $source:<br>" . $error);
         }
     } else if ($state == "calculate_from_rwgps") {
         $source = "RideWithGPS";
         $activities = $rideWithGps->getRides($start_date, $end_date);
-        $error=$rideWithGps->getError();
+        $error = $rideWithGps->getError();
         if ($error) {
-            myEcho("There was a problem getting data from $source:<br>".$error);
+            myEcho("There was a problem getting data from $source:<br>" . $error);
         }
     }
     if (!$start_date) {
@@ -267,7 +269,7 @@ if ($state == "calculate_from_strava" || $state == "calculate_from_mcl" || $stat
         $end_date = time();
     }
     $days = sumActivities($activities);
-    myEcho( "<p>According to $source, for the period from $start_text to $end_text, "
+    myEcho("<p>According to $source, for the period from $start_text to $end_text, "
         . round(($end_date - $start_date) / TWENTY_FOUR_HOURS)
         . " elapsed days</p>");
     uasort($days, function ($a, $b) {
@@ -328,71 +330,73 @@ if ($state == "calculate_from_strava" || $state == "calculate_from_mcl" || $stat
 
     $strava_rides_to_add = $strava->getRides($start_date, $end_date);
     if ($strava->getError()) {
-        myEcho("<br>There was a problem getting data from Strava.<br>".$strava->getError());
-    }
-    $count = 0;
-    $overnightRidesNeeded=[];  // these are unsplit overnight rides that haven't already been added to MCL
-    for ($i = 0; $i < 5; $i++) {
-        $rides_to_retry = [];
-        $mcl_rides = $myCyclingLog->getRides($start_date, $end_date);
-        $strava_ids_in_mcl_rides=extractStravaIds($mcl_rides);
-        $overnight_rides = $strava->getOvernightActivities();
-        foreach ($strava_rides_to_add as $date => $ride_list) {
-            $strava_day_total = sumDay($ride_list);
-            $mcl_day_total = isset($mcl_rides[$date]) ? sumDay($mcl_rides[$date]) : 0;
-            if (compareDistance($mcl_day_total, $strava_day_total) >= 0) {
-                continue; //there is at least this many miles for this day already in strava
-            }
-            foreach ($ride_list as $ride) {
-
+        myEcho("<br>There was a problem getting data from Strava.<br>" . $strava->getError());
+        myEcho("<br>Please try again");
+    } else {
+        $count = 0;
+        $overnightRidesNeeded = [];  // these are unsplit overnight rides that haven't already been added to MCL
+        for ($i = 0; $i < 5; $i++) {
+            $rides_to_retry = [];
+            $mcl_rides = $myCyclingLog->getRides($start_date, $end_date);
+            $strava_ids_in_mcl_rides = extractStravaIds($mcl_rides);
+            $overnight_rides = $strava->getOvernightActivities();
+            foreach ($strava_rides_to_add as $date => $ride_list) {
+                $strava_day_total = sumDay($ride_list);
+                $mcl_day_total = isset($mcl_rides[$date]) ? sumDay($mcl_rides[$date]) : 0;
                 if (compareDistance($mcl_day_total, $strava_day_total) >= 0) {
-                    break;
+                    continue; //there is at least this many miles for this day already in strava
                 }
+                foreach ($ride_list as $ride) {
 
-                $distance = $ride['distance'];
-                if (!in_array($ride['strava_id'],$strava_ids_in_mcl_rides)) { // not an already copied strava ride
-                    if ($preferences->getStravaSplitRides() && isset($overnight_rides[$ride['strava_id']])) {
-                        $overnightRidesNeeded[$ride['strava_id']]=$overnight_rides[$ride['strava_id']];
-                        continue; // this is an unsplit overnight ride
+                    if (compareDistance($mcl_day_total, $strava_day_total) >= 0) {
+                        break;
                     }
 
-                    if (compareDistance($mcl_day_total + $distance, $strava_day_total) >= 0) {
-                        //this ride will make our day total on MCL bigger than strava
-                        $distance = $strava_day_total - $mcl_day_total;
-                    }
-                    $message = "Ride with id " . $ride['strava_id'] . " on $date, distance " . round($distance * METRE_TO_MILE, 1) . " miles/" . round($distance * METRE_TO_KM, 1) . " kms. ";
-                    $bike = $strava->getBike($ride["bike"]);
-                    $mcl_bike_id = $myCyclingLog->bikeMatch($bike['brand'], $bike['model'], $ride['bike']);
-                    $ride['mcl_bid'] = $mcl_bike_id;
-                    $new_id = $myCyclingLog->addRide($date, $ride);
-                    if (strlen($new_id) == 0) {
-                        $message = $message . "Appears to be a problem. Queued to retry.";
-                        $rides_to_retry[$date][] = $ride;
+                    $distance = $ride['distance'];
+                    if (!in_array($ride['strava_id'], $strava_ids_in_mcl_rides)) { // not an already copied strava ride
+                        if ($preferences->getStravaSplitRides() && isset($overnight_rides[$ride['strava_id']])) {
+                            $overnightRidesNeeded[$ride['strava_id']] = $overnight_rides[$ride['strava_id']];
+                            continue; // this is an unsplit overnight ride
+                        }
+
+                        if (compareDistance($mcl_day_total + $distance, $strava_day_total) >= 0) {
+                            //this ride will make our day total on MCL bigger than strava
+                            $distance = $strava_day_total - $mcl_day_total;
+                        }
+                        $message = "Ride with id " . $ride['strava_id'] . " on $date, distance " . round($distance * METRE_TO_MILE, 1) . " miles/" . round($distance * METRE_TO_KM, 1) . " kms. ";
+                        $bike = $strava->getBike($ride["bike"]);
+                        $mcl_bike_id = $myCyclingLog->bikeMatch($bike['brand'], $bike['model'], $ride['bike']);
+                        $ride['mcl_bid'] = $mcl_bike_id;
+                        $new_id = $myCyclingLog->addRide($date, $ride);
+                        if (strlen($new_id) == 0) {
+                            $message = $message . "Appears to be a problem. Queued to retry.";
+                            $rides_to_retry[$date][] = $ride;
+                        } else {
+                            $message = $message . "Added new ride, id: $new_id";
+                            $mcl_rides[$date][] = $ride; // in case strava gives us duplicates, we won't post them twice
+                            $count++;
+                        }
+                        myEcho("$message <br>");
+                        flush();
                     } else {
-                        $message = $message . "Added new ride, id: $new_id";
-                        $mcl_rides[$date][] = $ride; // in case strava gives us duplicates, we won't post them twice
-                        $count++;
+                        myEcho('.');
                     }
-                    myEcho("$message <br>");
-                    flush();
-                } else {
-                    myEcho('.');
+
                 }
-
             }
+            if (sizeof($rides_to_retry) == 0) {
+                break;
+            }
+            $strava_rides_to_add = $rides_to_retry;
+            $rides_to_retry = [];
         }
-        if (sizeof($rides_to_retry) == 0) {
-            break;
+        myEcho("<br>$count rides added.<br>");
+        if (sizeof($rides_to_retry) != 0) {
+            myEcho("Some rides failed to be added.  See above.<br>");
         }
-        $strava_rides_to_add = $rides_to_retry;
-        $rides_to_retry = [];
-    }
-    myEcho("<br>$count rides added.<br>");
-    if (sizeof($rides_to_retry) != 0) {
-        myEcho("Some rides failed to be added.  See above.<br>");
-    }
 
-    askForStravaGpx($overnightRidesNeeded,$maxKmFileUploads,"copy_strava_to_mcl", "add to MyCyclingLog");
+        askForStravaGpx($overnightRidesNeeded, $maxKmFileUploads, "copy_strava_to_mcl", "add to MyCyclingLog");
+    }
 } else if ($state == "copy_endo_to_strava") {
     myEcho("<H3>Copying rides from Endomondo to Strava...</H3>");
     set_time_limit(300);
@@ -400,76 +404,161 @@ if ($state == "calculate_from_strava" || $state == "calculate_from_mcl" || $stat
     $endo_rides_to_add = $endomondo->getRides($start_date, $end_date);
     $strava_rides = $strava->getRides($start_date, $end_date);
     if ($strava->getError()) {
-        myEcho("<br>There was a problem getting data from Strava.<br>".$strava->getError());
-    }
-
-
-    foreach ($endo_rides_to_add as $date => $ride_list) {
-        foreach ($ride_list as $ride) {
-            $distance = $ride['distance'];
-            $start_time = $ride['start_time'];
-            $message = 'Ride with id <a target="_blank" href="' . $endomondo->activityUrl($ride['endo_id']) . '">' . $ride['endo_id'] . '</a>' . " on $start_time, distance " . round($distance * METRE_TO_MILE, 1) . " miles/" . round($distance * METRE_TO_KM, 1) . " kms. ";
-            if ($distance || $distance < 500) {
-                $message .= "Skipping, too short: $distance metres";
-            } else {
-                $duplicateStravaRide = isDuplicateStravaRide($ride, $strava_rides);
-
-                if ($duplicateStravaRide) {
-                    if (is_int($duplicateStravaRide)) {
-                        $message .= 'Duplicate with  <a target="_blank" href="' . $strava->activityUrl($duplicateStravaRide) .
-                            '">' . $duplicateStravaRide . '</a>, skipping. ';
-                    } else {
-                        $message .= "Duplicate, skipping. ";
-                    }
+        myEcho("<br>There was a problem getting data from Strava.<br>" . $strava->getError());
+        myEcho("<br>Please try again");
+    } else {
+        foreach ($endo_rides_to_add as $date => $ride_list) {
+            foreach ($ride_list as $ride) {
+                $distance = $ride['distance'];
+                $start_time = $ride['start_time'];
+                $message = 'Ride with id <a target="_blank" href="' . $endomondo->activityUrl($ride['endo_id']) . '">' . $ride['endo_id'] . '</a>' . " on $start_time, distance " . round($distance * METRE_TO_MILE, 1) . " miles/" . round($distance * METRE_TO_KM, 1) . " kms. ";
+                if (!$distance || $distance < 500) {
+                    $message .= "Skipping, too short: $distance metres";
                 } else {
-                    $path = $scratchDirectory . DIRECTORY_SEPARATOR . "endomondo+" . $ride['endo_id'] . ".gpx";
-                    $points = $endomondo->getPoints($ride['endo_id']);
-                    if ($points->gpxBad()) {
-                        $message .= '<span style="color:red;">' . $points->gpxBad() . '</span>';
-                        $message .= 'To add manually, try going downloading GPX from  <a href="'
-                            . $endomondo->activityUrl($ride['endo_id']) . '" target="_blank">Endomondo</a>'
-                            . ' then uploading it to <a href="' . $strava->uploadUrl() . '" target="_blank">Strava</a>.';
+                    $duplicateStravaRide = isDuplicateRide($ride, $strava_rides, 'strava_id');
 
-                    } else {
-                        file_put_contents($path, $points->gpx());
-                        $error = $strava->uploadGpx($path, $ride['endo_id'], $message,
-                            $ride['name'], $endomondo->activityUrl($ride['endo_id']));
-                        if ($error) {
-                            $message = $message . '<span style="color:red;">Failed: </span>' . $error;
+                    if ($duplicateStravaRide) {
+                        if (is_int($duplicateStravaRide)) {
+                            $message .= 'Duplicate with  <a target="_blank" href="' . $strava->activityUrl($duplicateStravaRide) .
+                                '">' . $duplicateStravaRide . '</a>, skipping. ';
                         } else {
-                            $message = $message . 'Queued for upload.';
+                            $message .= "Duplicate, skipping. ";
                         }
-                        unlink($path);
+                    } else {
+                        $path = $scratchDirectory . DIRECTORY_SEPARATOR . "endomondo+" . $ride['endo_id'] . ".gpx";
+                        $points = $endomondo->getPoints($ride['endo_id']);
+                        if ($points->gpxBad()) {
+                            $message .= '<span style="color:red;">' . $points->gpxBad() . '</span>';
+                            $message .= 'To add manually, try going downloading GPX from  <a href="'
+                                . $endomondo->gpxDownloadUrl($ride['endo_id']) . '" target="_blank">Endomondo</a>'
+                                . ' then uploading it to <a href="' . $strava->uploadUrl() . '" target="_blank">Strava</a>.';
+
+                        } else {
+                            file_put_contents($path, $points->gpx());
+                            $error = $strava->uploadGpx($path, $ride['endo_id'], $message,
+                                $ride['name'], $endomondo->activityUrl($ride['endo_id']));
+                            if ($error) {
+                                $message = $message . '<span style="color:red;">Failed: </span>' . $error;
+                            } else {
+                                $message = $message . 'Queued for upload.';
+                            }
+                            unlink($path);
+                        }
+                        $points = null;
                     }
-                    $points = null;
+
                 }
+                myEcho("<br>$message ");
+                flush();
 
             }
-            myEcho("<br>$message ");
+
+
+        }
+        $results = $strava->waitForPendingUploads();
+        $count = 0;
+
+        foreach ($results as $endo_id => $result) {
+            if (isset($result->strava_id)) {
+                $message = $result->message . ' Uploaded successfully, id: <a target="_blank" href="' . $strava->activityUrl($result->strava_id) .
+                    '">' . $result->strava_id . '</a>.';
+                $count++;
+            } else {
+                $message = $result->message . '<span style="color:red;"> There was a problem. </span>' . $result->error;
+
+            }
+            myEcho("<br>$message");
             flush();
 
-        }
-
-
-    }
-    $results = $strava->waitForPendingUploads();
-    $count = 0;
-
-    foreach ($results as $endo_id => $result) {
-        if (isset($result->strava_id)) {
-            $message = $result->message . ' Uploaded successfully, id: <a target="_blank" href="' . $strava->activityUrl($result->strava_id) .
-                '">' . $result->strava_id . '</a>.';
-            $count++;
-        } else {
-            $message = $result->message . '<span style="color:red;"> There was a problem. </span>' . $result->error;
 
         }
-        myEcho("<br>$message");
-        flush();
-
-
+        myEcho("<br>$count rides added.<br>");
     }
-    myEcho("<br>$count rides added.<br>");
+} else if ($state == 'delete_mcl_rides') {
+    $result = $myCyclingLog->deleteRides($start_date, $end_date, $_POST['mcl_username'], $_POST['mcl_password']);
+    if (is_int($result)) {
+        myEcho("Deleted $result activities from MyCyclingLog");
+    } else {
+        myEcho("<p style=\"color:red;\"><b>Problem connecting to MyCyclingLog: $result</b></p>");
+    }
+} else if ($state == "copy_endo_to_rwgps") {
+    myEcho("<H3>Copying rides from Endomondo to RideWithGPS...</H3>");
+    set_time_limit(300);
+
+    $endo_rides_to_add = $endomondo->getRides($start_date, $end_date);
+    $rwgps_rides = $rideWithGps->getRides($start_date, $end_date);
+    if ($rideWithGps->getError()) {
+        myEcho("<br>There was a problem getting data from RideWithGPS.<br>" . $rideWithGps->getError());
+        myEcho("<br>Please try again");
+    } else {
+
+        foreach ($endo_rides_to_add as $date => $ride_list) {
+            foreach ($ride_list as $ride) {
+                $distance = $ride['distance'];
+                $start_time = $ride['start_time'];
+                $message = 'Ride with id <a target="_blank" href="' . $endomondo->activityUrl($ride['endo_id']) . '">' . $ride['endo_id'] . '</a>' . " on $start_time, distance " . round($distance * METRE_TO_MILE, 1) . " miles/" . round($distance * METRE_TO_KM, 1) . " kms. ";
+                if (!$distance || $distance < 500) {
+                    $message .= "Skipping, too short: $distance metres";
+                } else {
+                    $duplicateRwgpsRide = isDuplicateRide($ride, $rwgps_rides, 'rwgps_id');
+
+                    if ($duplicateRwgpsRide) {
+                        if (is_int($duplicateRwgpsRide)) {
+                            $message .= 'Duplicate with  <a target="_blank" href="' . $rideWithGps->activityUrl($duplicateRwgpsRide) .
+                                '">' . $duplicateRwgpsRide . '</a>, skipping. ';
+                        } else {
+                            $message .= "Duplicate, skipping. ";
+                        }
+                    } else {
+                        $path = $scratchDirectory . DIRECTORY_SEPARATOR . "endomondo+" . $ride['endo_id'] . ".gpx";
+                        $points = $endomondo->getPoints($ride['endo_id']);
+                        if ($points->gpxBad()) {
+                            $message .= '<span style="color:red;">' . $points->gpxBad() . '</span>';
+                            $message .= 'To add manually, try going downloading GPX from  <a href="'
+                                . $endomondo->gpxDownloadUrl($ride['endo_id']) . '" target="_blank">Endomondo</a>'
+                                . ' then uploading it to <a href="' . $rideWithGps->uploadUrl() . '" target="_blank">RideWithGPS</a>.';
+
+                        } else {
+                            file_put_contents($path, $points->gpx());
+                            $success = $rideWithGps->uploadGpx($path, $ride['endo_id'], $message,
+                                $ride['name'], $endomondo->activityUrl($ride['endo_id']));
+                            if (!$success) {
+                                $message = $message . '<span style="color:red;">Failed: </span>' . $rideWithGps->getError();
+                            } else {
+                                $message = $message . 'Queued for upload.';
+                            }
+                            unlink($path);
+                        }
+                        $points = null;
+                    }
+
+                }
+                myEcho("<br>$message ");
+                flush();
+
+            }
+
+
+        }
+        $results = $rideWithGps->waitForPendingUploads();
+        $count = 0;
+
+        foreach ($results as $endo_id => $result) {
+            if (isset($result->rwgps_id)) {
+                $message = $result->message . ' Uploaded successfully, id: <a target="_blank" href="' . $rideWithGps->activityUrl($result->rwgps_id) .
+                    '">' . $result->rwgps_id . '</a>.';
+                $count++;
+            } else {
+                $message = $result->message . '<span style="color:red;"> There was a problem. </span>' . $result->error;
+
+            }
+            myEcho("<br>$message");
+            flush();
+
+
+        }
+        myEcho("<br>$count rides added.<br>");
+    }
 } else if ($state == 'delete_mcl_rides') {
     $result = $myCyclingLog->deleteRides($start_date, $end_date, $_POST['mcl_username'], $_POST['mcl_password']);
     if (is_int($result)) {
@@ -482,7 +571,7 @@ if ($state == "calculate_from_strava" || $state == "calculate_from_mcl" || $stat
 if ($strava_connected || $mcl_connected || $endo_connected || $rwgps_connected) {
     ?>
 
-    <form action="<?php echo $here;?>" method="post" name="main_form">
+    <form action="<?php echo $here; ?>" method="post" name="main_form">
         <hr>
 
         <script> function populateDates(start, end) {
@@ -557,6 +646,11 @@ if ($strava_connected || $mcl_connected || $endo_connected || $rwgps_connected) 
                     myEcho('<tr><td colspan="3"><input type="submit" name="copy_endo_to_strava" value="Copy rides and routes from Endomondo to Strava"/>  <br>');
                     myEcho("</td></tr>");
                 }
+                if ($rwgps_connected && $endo_connected) {
+                    myEcho('<tr><td colspan="3"><input type="submit" name="copy_endo_to_rwgps" value="Copy rides and routes from Endomondo to RideWithGPS"/>  <br>');
+                    myEcho("</td></tr>");
+                }
+
                 if ($mcl_connected) {
                     myEcho('<tr><td colspan="3"><input onclick="confirm_mcl_deletes()" type="button" name="delete_mcl_rides" value="Delete MyCyclingLog rides"/>');
                     myEcho("</td></tr>");
@@ -574,9 +668,9 @@ if ($strava_connected || $mcl_connected || $endo_connected || $rwgps_connected) 
         </table>
         <?php
 
-        if (!$strava_connected || !$mcl_connected ||! $endo_connected) { ?>
+        if (!$strava_connected || !$mcl_connected || !$endo_connected) { ?>
             <p>More options are available if you connect to <a href="#services">other services</a>.</p>
-        <?php
+            <?php
         }
         ?>
 
@@ -672,11 +766,12 @@ if ($strava_connected || $mcl_connected || $endo_connected || $rwgps_connected) 
             <li><em>If you are using Endomondo, you can choose to split it into multiple days, to get the
                     mileage for each day midnight-midnight.</em></li>
             <li><em>As I can't get the GPS points directly from Strava, Strava rides can
-                only be split by you downloading them onto your machine, and then uploading
-                them here.</em></li>
+                    only be split by you downloading them onto your machine, and then uploading
+                    them here.</em></li>
             <li><em>As splitting Strava rides is such a faff, it's probably easiest to use the copy feature above to
-                copy them to MyCyclingLog, then calculate your E-number from that.  Then you will only need download/upload them
-                once.</em></li>
+                    copy them to MyCyclingLog, then calculate your E-number from that. Then you will only need
+                    download/upload them
+                    once.</em></li>
             <li><em>It might take a minute or two to come back with an answer</em></li>
             <li><em>It's much slower if you split the rides.</em></li>
             <li><em>Rides of less than 500m are not copied between systems.</em></li>
@@ -734,7 +829,7 @@ if (!$strava_connected || !$mcl_connected || !$endo_connected || !$strava->write
             ?>
             <?php if (!$mcl_connected) { ?>
                 <td>
-                    <form action="<?php echo $here;?>" method="post">
+                    <form action="<?php echo $here; ?>" method="post">
                         <table>
                             <tr>
                                 <td> MyCyclingLog Username:</td>
@@ -758,7 +853,7 @@ if (!$strava_connected || !$mcl_connected || !$endo_connected || !$strava->write
             <?php } ?>
             <?php if (!$endo_connected) { ?>
                 <td>
-                    <form action="<?php echo $here;?>" method="post">
+                    <form action="<?php echo $here; ?>" method="post">
                         <table>
                             <tr>
                                 <td> Endomondo Username:</td>
@@ -782,7 +877,7 @@ if (!$strava_connected || !$mcl_connected || !$endo_connected || !$strava->write
 
             <?php if (!$rwgps_connected) { ?>
                 <td>
-                    <form action="<?php echo $here;?>" method="post">
+                    <form action="<?php echo $here; ?>" method="post">
                         <table>
                             <tr>
                                 <td> RideWithGPS Username:</td>

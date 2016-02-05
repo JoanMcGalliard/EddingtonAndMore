@@ -48,23 +48,23 @@ function number_of_days_to_goal($goal, $days, $factor)
 }
 
 //returns true if endo id matches or a ride overlaps this ride.
-function isDuplicateStravaRide($endo_ride, $strava_rides)
+function isDuplicateRide($endo_ride, $rides, $id_key)
 {
 
-    if (!$strava_rides) {
+    if (!$rides) {
         return false;
     }
-    foreach ($strava_rides as $date => $ride_list) {
+    foreach ($rides as $date => $ride_list) {
 
-        foreach ($ride_list as $strava_ride) {
+        foreach ($ride_list as $ride) {
 
-            if ($strava_ride['endo_id'] == $endo_ride['endo_id']) {
-                return $strava_ride['strava_id'];
+            if ($ride['endo_id'] == $endo_ride['endo_id']) {
+                return $ride[$id_key];
             }
             $endo_start = strtotime($endo_ride['start_time']);
             $endo_end = $endo_start + $endo_ride['elapsed_time'];
-            $strava_start = strtotime($strava_ride['start_time']);
-            $strava_end = $strava_start + $strava_ride['elapsed_time'];
+            $strava_start = strtotime($ride['start_time']);
+            $strava_end = $strava_start + $ride['elapsed_time'];
             if ($endo_start >= $strava_start && $endo_start <= $strava_end) {
                 return true;
             }

@@ -11,13 +11,10 @@ use JoanMcGalliard;
 class MyCyclingLog extends trackerAbstract
 {
     const STRAVA_NOTE_PREFIX = "http://www.strava.com/activities/";
-
-
     protected $connected = false;
     protected $bikes = null;
     protected $strava_bike_match = [];
     protected $use_feet_for_elevation = false;
-    private $api = null;
 
     /**
      * MyCyclingLogWrapper constructor.

@@ -15,7 +15,6 @@ class Endomondo extends trackerAbstract
     private $googleApiKey;
     private $timezone;
     private $splitOvernightRides = false;
-    private $api;
 
     public function __construct($deviceId, $googleApiKey, $tz, $echoCallback, $api = null)
     {
@@ -56,6 +55,12 @@ class Endomondo extends trackerAbstract
     {
         return "https://www.endomondo.com/users/{$this->userId}/workouts/$workoutId";
     }
+
+    public function gpxDownloadUrl($workoutId)
+    {
+        return "https://www.endomondo.com/rest/v1/users/{$this->userId}/workouts/$workoutId/export?format=GPX";
+    }
+
 
     public function connect($username, $password)
     {
@@ -220,6 +225,11 @@ class Endomondo extends trackerAbstract
     public function setSplitOvernightRides($splitOvernightRides)
     {
         $this->splitOvernightRides = $splitOvernightRides;
+    }
+
+    public function gpxDownload($endo_id)
+    {
+        https://www.endomondo.com/rest/v1/users/2859253/workouts/655334427/export?format=GPX
     }
 
 }

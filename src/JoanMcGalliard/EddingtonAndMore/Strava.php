@@ -4,6 +4,7 @@ namespace JoanMcGalliard\EddingtonAndMore;
 require_once "Iamstuartwilson/StravaApi.php";
 require_once 'TrackerAbstract.php';
 require_once 'Points.php';
+use CURLFile;
 use Iamstuartwilson;
 
 
@@ -12,10 +13,7 @@ class Strava extends trackerAbstract
     const GPX_SUFFIX = "\.gpx";
     protected $connected = true;
     protected $bikes = [];
-    private $pending_uploads = [];
-    private $fileUploadTimeout = 300;
     private $writeScope = false;
-    private $api;
     private $overnightActivities = [];
     private $splitOvernight;
 
@@ -264,7 +262,8 @@ class Strava extends trackerAbstract
 
     public function uploadGpx($file_path, $external_id, $external_msg, $name, $description)
     {
-        $params = ["activity_type" => "ride", "file" => "@" . $file_path,
+        $cfile = new CURLFile($file_path,'text', $name);
+        $params = ["activity_type" => "ride", "file" => $cfile,
             "data_type" => "gpx", "external_id" => $external_id,
             "name" => $name, "description" => $description];
         $result = $this->api->post("uploads", $params);

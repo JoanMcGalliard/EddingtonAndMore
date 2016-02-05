@@ -12,7 +12,8 @@ return
                     'name' => null,
                     'rwgps_id' => 4838021,
                     'bike' => null,
-                    'total_elevation_gain' => null
+                    'total_elevation_gain' => null,
+                    'endo_id' => null
                 ),
                 array('distance' => 1000,
                     'moving_time' => 0,
@@ -22,7 +23,8 @@ return
                     'name' => null,
                     'rwgps_id' => 6855927,
                     'bike' => null,
-                    'total_elevation_gain' => null)
+                    'total_elevation_gain' => null,
+                    'endo_id' => null)
             ),
         "2015-07-11" =>
             array(
@@ -35,7 +37,8 @@ return
                     'name' => null,
                     'rwgps_id' => 5680752,
                     'bike' => null,
-                    'total_elevation_gain' => null
+                    'total_elevation_gain' => null,
+                    'endo_id' => null
                 )
             ),
 
@@ -50,7 +53,8 @@ return
                     'name' => null,
                     'rwgps_id' => 4838021,
                     'bike' => null,
-                    'total_elevation_gain' => null
+                    'total_elevation_gain' => null,
+                    'endo_id' => null
                 )
             )
     );

@@ -3,6 +3,8 @@
 namespace JoanMcGalliard;
 
 
+use CURLFile;
+
 class RideWithGpsApi
 {
 
@@ -10,7 +12,13 @@ class RideWithGpsApi
     const VERSTION = 2;
     private $apikey = null;
     private $auth_token = "";
-    private $error=null;
+    private $error = null;
+
+    public function __construct($apikey, $auth_token = "")
+    {
+        $this->apikey = $apikey;
+        $this->auth_token = $auth_token;
+    }
 
     /**
      * @return mixed
@@ -20,17 +28,45 @@ class RideWithGpsApi
         return $this->error;
     }
 
-    public function __construct($apikey, $auth_token = "")
+    public function upload($url, $file, $name, $params) {
+        $this->error="";
+        $cfile = new CURLFile($file, 'text', $name);
+        $params["file"]=$cfile;
+        return $this->post($url,$params);
+    }
+
+    public function post($url, $params = [])
     {
-        $this->apikey = $apikey;
-        $this->auth_token = $auth_token;
+        $params["auth_token"] = $this->auth_token;
+        $params['apikey'] = $this->apikey;
+        $params['version'] = self::VERSTION;
+        $curl = curl_init(self::BASE_URL . $url);
+        $curlOptions = array(
+            CURLOPT_SSL_VERIFYPEER => false,
+            CURLOPT_FOLLOWLOCATION => true,
+            CURLOPT_REFERER => $url,
+            CURLOPT_RETURNTRANSFER => true,
+        );
+
+        $curlOptions[CURLOPT_POST] = true;
+        $curlOptions[CURLOPT_POSTFIELDS] = $params;
+        curl_setopt_array($curl, $curlOptions);
+        $response = curl_exec($curl);
+        $this->error = curl_error($curl);
+        log_msg("URL rwgps: " . $url);
+        log_msg($params);
+        log_msg($response);
+        if ($this->error) log_msg("ERROR: " . $this->error);
+        log_msg("Total time: " . curl_getinfo($curl)["total_time"]);
+
+        $this->lastRequestInfo = curl_getinfo($curl);
+
+        curl_close($curl);
+        return $response;
     }
 
     public function get($url, $params = [])
     {
-        if (!$params) {
-            $params = [];
-        }
         $params["auth_token"] = $this->auth_token;
         $params['apikey'] = $this->apikey;
         $params['version'] = self::VERSTION;
@@ -61,6 +97,7 @@ class RideWithGpsApi
     {
         $this->auth_token = $auth;
     }
+
     public function getAuth()
     {
         return $this->auth_token;

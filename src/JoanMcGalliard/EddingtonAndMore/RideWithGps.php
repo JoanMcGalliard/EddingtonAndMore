@@ -16,9 +16,6 @@ use JoanMcGalliard;
 
 class RideWithGps extends TrackerAbstract
 {
-
-
-    private $api;
     private $connected;
 
     public function __construct($apikey, $echoCallback, $api = null)
@@ -65,7 +62,7 @@ class RideWithGps extends TrackerAbstract
 
     public function isConnected()
     {
-        $this->error="";
+        $this->error = "";
         if (!$this->api->getAuth()) {
             $this->connected = false;
         } else if (!$this->connected) {
@@ -75,7 +72,7 @@ class RideWithGps extends TrackerAbstract
                 $this->connected = true;
             } else {
                 if (isset($json->error)) {
-                    $this->error.= $json->error;
+                    $this->error .= $json->error;
                 }
                 $this->api->setAuth(null);
             }
@@ -110,12 +107,12 @@ class RideWithGps extends TrackerAbstract
             }
             foreach ($json->results as $ride) {
                 if ($end_date) {
-                    if (strtotime($ride->departed_at)> $end_date) {
+                    if (strtotime($ride->departed_at) > $end_date) {
                         continue;
                     }
                 }
                 if ($start_date) {
-                    if (strtotime($ride->departed_at)< $start_date) {
+                    if (strtotime($ride->departed_at) < $start_date) {
                         return $rides;
                     }
                 }
@@ -132,6 +129,14 @@ class RideWithGps extends TrackerAbstract
                 $next['name'] = $ride->name;
                 $next['bike'] = $ride->gear_id;
                 $next['total_elevation_gain'] = $ride->elevation_gain;
+                $next['endo_id']=null;
+
+                if (isset($ride->description)) {
+                    $pattern = "/https+:\/\/www.endomondo.com\/users\/.*\/workouts\/([0-9]*)/";
+                    if (preg_match($pattern, $ride->description, $matches) > 0) {
+                        $next['endo_id'] = $matches[1];
+                    }
+                }
 
                 $date = date("Y-m-d", strtotime($ride->departed_at));
                 $rides[$date][] = $next;
@@ -159,9 +164,88 @@ class RideWithGps extends TrackerAbstract
         // only called in tests
         return $this->api->getAuth();
     }
+
     public function setAuth($auth)
     {
-         $this->api->setAuth($auth);
+        $this->api->setAuth($auth);
     }
+
+    public function uploadGpx($file_path, $external_id, $external_msg, $name, $description)
+    {
+        $this->error="";
+        $params = ["trip[name]" => $name, "trip[description]" => $description];
+        $page = $this->api->upload("/trips.json",$file_path,$name, $params);
+        if ($this->api->getError()) {
+            $this->error.=$this->api->getError();
+        }
+        $json=json_decode($page);
+        if (!$json) {
+            $this->error.=$page;
+        } else if (isset($json->error)) {
+            $this->error .= $json->error;
+        } else if (isset($json->success) && ($json->success < 1)) {
+            $this->error.="Unexpected status on uploaded file ".$file_path;
+        } else {
+            $queued = new \stdClass();
+            $queued->message = $external_msg;
+            $queued->external_id = $external_id;
+            $queued->file = $file_path;
+            $this->pending_uploads[$json->task_id] = $queued;
+            return true;
+        }
+        return false;
+    }
+
+    public function waitForPendingUploads()
+    {
+        $timestamp = time();
+        $results = [];
+        while ((time() - $timestamp < $this->fileUploadTimeout) && $this->pending_uploads) {
+            $ids = join(',', array_keys($this->pending_uploads));
+            $page = $this->api->get('/queued_tasks/status.json', ["ids" => $ids, "include_objects" => "true"]);
+            $json = json_decode($page);
+            if ($json && isset($json->queued_tasks) && is_array($json->queued_tasks)) {
+                //if are getting anything other than this in response, just loop until it times out
+                foreach ($json->queued_tasks as $queued_task) {
+                    $id = $queued_task->id;
+                    if ($id && isset($this->pending_uploads[$id])) {
+                        $task = $this->pending_uploads[$id];
+                        $status = $queued_task->status;
+                        // 0 is being processed, 1 is ok, -1 is error.
+                        if ($status == 1) {
+                            $newId = isset($queued_task->associated_objects[0]->trip->id) ? $queued_task->associated_objects[0]->trip->id : "unknown";
+                            $task->rwgps_id = $newId;
+                            $results[$task->external_id] = $task;
+                            unset($this->pending_uploads[$id]);
+                        } else if ($status == -1) {
+                            $task->error = $queued_task->message;
+                            $results[$task->external_id] = $task;
+                            unset($this->pending_uploads[$id]);
+                        }
+                    }
+
+                }
+            }
+            $this->output('.');
+            sleep(1);
+        }
+        foreach ($this->pending_uploads as $pending_id => $queued) {
+            $queued->error = "Timed out waiting for confirmation of upload after $this->fileUploadTimeout seconds";
+            $results[$queued->external_id] = $queued;
+            unset($this->pending_uploads[$pending_id]);
+        }
+        return $results;
+    }
+
+    public function activityUrl($id)
+    {
+        return "http://ridewithgps.com/trips/$id";
+    }
+
+    public function uploadUrl()
+    {
+        return "https://ridewithgps.com/log";
+    }
+
 
 }

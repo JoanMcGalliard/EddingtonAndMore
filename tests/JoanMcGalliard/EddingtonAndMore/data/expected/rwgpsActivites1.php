@@ -9,6 +9,7 @@ return
             'name' => 'test thing',
             'rwgps_id' => 6855927,
             'bike' => null,
-            'total_elevation_gain' => 116.023))
+            'total_elevation_gain' => 116.023,
+            'endo_id' => null))
     );
 ?>

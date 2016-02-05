@@ -42,7 +42,7 @@ class RideWithGpsMock extends BaseMockClass
 
     public function getError()
     {
-        return "error";
+        return "";
 
     }
 }

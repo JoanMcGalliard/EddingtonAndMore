@@ -12,6 +12,19 @@ abstract class trackerAbstract
     protected $echoCallback;
     protected $error;
     protected $userId;
+    protected $pending_uploads = [];
+    protected $fileUploadTimeout = 300;
+
+    /**
+     * @param int $fileUploadTimeout
+     */
+    public function setFileUploadTimeout($fileUploadTimeout)
+    {
+        $this->fileUploadTimeout = $fileUploadTimeout;
+    }
+    protected $api;
+
+
 
 
     /*

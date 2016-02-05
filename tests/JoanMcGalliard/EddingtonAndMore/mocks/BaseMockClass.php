@@ -16,24 +16,38 @@ class BaseMockClass
 
     protected $responses = [];
 
+
     public function get($request, $parameters = array())
     {
-        if (isset($this->responses['get'][$request]) && sizeof($this->responses['get'][$request]) > 0) {
-            return $this->getResponse('get', $request, $parameters);
+        return $this->respond("get",$request,$parameters);
+    }
+    public function upload($url, $file, $name, $params)
+    {
+        return $this->respond("upload",$url,$params);
+    }
+    protected function respond($type, $request,$parameters)
+    {
+        if (isset($this->responses[$type][$request]->queued_messages) && sizeof($this->responses[$type][$request]->queued_messages) > 0) {
+            $response = array_shift($this->responses[$type][$request]->queued_messages);
+            if (isset ($this->responses[$type][$request]->repeat) && $this->responses[$type][$request]->repeat==true) {
+                //push last response back on queue
+                $this->primeResponse($type, $request,$response);
+            }
+            return $response;
         } else {
-
-            throw new Exception("get $request: no more responses available");
+            throw new Exception("$type $request: no more responses available");
         }
 
     }
 
-    protected function getResponse($type, $request, $params)
-    {
-        return array_shift($this->responses[$type][$request]);
-    }
     public function primeResponse($type, $request, $response)
     {
-        $this->responses[$type][$request][] = $response;
+        $this->responses[$type][$request]->queued_messages[] = $response;
+    }
+    public function primeRepeat($type, $request)
+        // from now on this will keep sending same message over and over
+    {
+        $this->responses[$type][$request]->repeat=true;
     }
 
     public function clearResponses($type, $request)

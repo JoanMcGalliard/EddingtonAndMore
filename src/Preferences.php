@@ -200,6 +200,16 @@ class Preferences
         $this->preferences->rwgps->auth = $auth;
         $this->save();
     }
+
+    public function setStravaWriteScope($writeScope)
+    {
+        $this->preferences->strava->writeScope=$writeScope;
+        $this->save();
+    }
+    public function getStravaWriteScope()
+    {
+        return isset($this->preferences->strava->writeScope) ? $this->preferences->strava->writeScope : false;
+    }
 }
 
 ?>

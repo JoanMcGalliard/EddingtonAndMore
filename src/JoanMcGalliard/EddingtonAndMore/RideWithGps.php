@@ -144,7 +144,7 @@ class RideWithGps extends TrackerAbstract
             if (sizeof($json->results) < $limit) {
                 return $rides;
             }
-            $offset++;
+            $offset+=$limit;
         }
     }
 

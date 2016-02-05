@@ -37,15 +37,13 @@ class Endomondo extends trackerAbstract
 
     public function isConnected()
     {
-        if (!$this->api->getAuth()) {
-            $this->connected = false;
-        } else if (!$this->connected) {
+        if (!$this->connected && $this->api->getAuth()) {
             $page = $this->api->getPage('api/profile/account/get');
             if (isset(json_decode($page)->data->id)) {
                 $this->connected = true;
                 $this->userId = json_decode($page)->data->id;
             } else {
-                $this->connected = false;
+                $this->api->setAuth(null);
             }
         }
         return $this->connected;

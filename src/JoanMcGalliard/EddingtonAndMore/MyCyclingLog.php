@@ -16,6 +16,7 @@ class MyCyclingLog extends trackerAbstract
     protected $strava_bike_match = [];
     protected $use_feet_for_elevation = false;
 
+
     /**
      * MyCyclingLogWrapper constructor.
      * @param null $api
@@ -80,15 +81,18 @@ class MyCyclingLog extends trackerAbstract
 
     public function isConnected()
     {
+        if ($this->connected) return true;
         if ($this->api->getAuth() != null) {
             $rides = $this->getPageDom("?method=ride.list&limit=0&offset=0");
             if ($rides != null && preg_match('/^[0-9][0-9]*$/',
                     $rides->childNodes->item(0)->childNodes->item(0)->getAttribute('total_size'))
             ) {
-                return true;
+                $this->connected=true;
+            } else {
+                $this->api->setAuth(null);
             }
         }
-        return false;
+        return $this->connected;
     }
 
     protected function getPageDom($url)
@@ -201,12 +205,11 @@ class MyCyclingLog extends trackerAbstract
     public function getRides($start_date, $end_date)
     {
         $records = [];
-        $eventCount = $this->getEventCount();
         $offset = 0;
-        $limit = 500;
+        $limit = 800;
         $done = false;
 
-        while ($offset < $eventCount && !$done) {
+        while (!$done) {
             $doc = $this->getPageDom("?method=ride.list&limit=$limit&offset=$offset");
             $rides = $doc->childNodes->item(0)->childNodes->item(0)->childNodes;
             foreach ($rides as $ride) {
@@ -245,17 +248,10 @@ class MyCyclingLog extends trackerAbstract
                 $records[$date][] = $record;
             }
             $offset = $offset + $limit;
+            if ($rides->length<$limit) {$done=true;}
         }
         return $records;
     }
-
-    protected function getEventCount()
-    {
-        $doc = $this->getPageDom("?method=ride.list&limit=0&offset=0");
-        return intval($doc->childNodes->item(0)->childNodes->item(0)->getAttribute("total_size"));
-    }
-    // MyCyclingLog can create non-valid xml.  This removes any character except for a select list from the field
-    // "<$element>"
 
 
 }

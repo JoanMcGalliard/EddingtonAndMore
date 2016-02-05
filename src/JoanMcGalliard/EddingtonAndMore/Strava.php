@@ -11,11 +11,12 @@ use Iamstuartwilson;
 class Strava extends trackerAbstract
 {
     const GPX_SUFFIX = "\.gpx";
-    protected $connected = true;
+    protected $connected = false;
     protected $bikes = [];
     private $writeScope = false;
     private $overnightActivities = [];
     private $splitOvernight;
+    private $accessTokenIsSet=false;
 
     public function __construct($clientId, $clientSecret, $echoCallback, $api = null)
     {
@@ -57,7 +58,7 @@ class Strava extends trackerAbstract
 
     public function setAccessToken($token)
     {
-        $this->connected = true;
+        $this->accessTokenIsSet = true;
         $this->api->setAccessToken($token);
     }
 
@@ -68,17 +69,18 @@ class Strava extends trackerAbstract
 
     public function isConnected()
     {
-        if (!$this->connected) return false;
-        $this->error = null;
+        $this->error = "";
+        if ($this->connected) return true;
+        if (!$this->accessTokenIsSet) return false;
         $athlete = $this->api->get('athlete');
         if (isset($athlete->id)) {
             $this->connected = true;
             $this->userId = $athlete->id;
         } else {
-            $this->connected = false;
+            $this->accessTokenIsSet = false;
         }
         if (isset($athlete->errors)) {
-            $this->error = $athlete->message;
+            $this->error = $athlete->errors;
         }
         return $this->connected;
     }

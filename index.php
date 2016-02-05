@@ -120,12 +120,8 @@ if (array_key_exists("state", $_GET)) {
 } else if ($preferences->getStravaAccessToken() != null) {
     $strava->setAccessToken($preferences->getStravaAccessToken());
 }
-$strava_connected = $strava->isConnected();
-$mcl_connected = $myCyclingLog->isConnected();
-$endo_connected = $endomondo->isConnected();
-$rwgps_connected = $rideWithGps->isConnected();
 
-if ($strava_connected && array_key_exists("delete_files", $_POST)) {
+if (array_key_exists("delete_files", $_POST) && $strava->isConnected()) {
     $files = scandir($scratchDirectory);
     $pattern = '/^' . $strava->getUserId() . "-.*\.gpx$/";
     $count = 0;
@@ -138,15 +134,15 @@ if ($strava_connected && array_key_exists("delete_files", $_POST)) {
     myEcho("Deleted $count files.<br>");
 }
 
-if ($strava_connected && array_key_exists("calculate_from_strava", $_POST)) {
+if (array_key_exists("calculate_from_strava", $_POST) && $strava->isConnected()) {
     $state = "calculate_from_strava";
-} else if ($mcl_connected && array_key_exists("calculate_from_mcl", $_POST)) {
+} else if (array_key_exists("calculate_from_mcl", $_POST) && $myCyclingLog->isConnected()) {
     $state = "calculate_from_mcl";
-} else if ($endo_connected && array_key_exists("calculate_from_endo", $_POST)) {
+} else if (array_key_exists("calculate_from_endo", $_POST) && $endomondo->isConnected()) {
     $state = "calculate_from_endo";
-} else if ($rwgps_connected && array_key_exists("calculate_from_rwgps", $_POST)) {
+} else if (array_key_exists("calculate_from_rwgps", $_POST) && $rideWithGps->isConnected()) {
     $state = "calculate_from_rwgps";
-} else if ($mcl_connected && $strava_connected && array_key_exists("copy_strava_to_mcl", $_POST)) {
+} else if (array_key_exists("copy_strava_to_mcl", $_POST) && $myCyclingLog->isConnected() && $strava->isConnected()) {
     $state = "copy_strava_to_mcl";
     if (array_key_exists("elevation_units", $_POST)) {
         $preferences->setMclUseFeet(true);
@@ -156,11 +152,11 @@ if ($strava_connected && array_key_exists("calculate_from_strava", $_POST)) {
         $myCyclingLog->setUseFeetForElevation(false);
     }
 
-} else if ($endo_connected && $strava_connected && array_key_exists("copy_endo_to_strava", $_POST)) {
+} else if (array_key_exists("copy_endo_to_strava", $_POST) && $endomondo->isConnected() && $strava->isConnected()) {
     $state = "copy_endo_to_strava";
-} else if ($endo_connected && $rwgps_connected && array_key_exists("copy_endo_to_rwgps", $_POST)) {
+} else if (array_key_exists("copy_endo_to_rwgps", $_POST) && $endomondo->isConnected() && $rideWithGps->isConnected()) {
     $state = "copy_endo_to_rwgps";
-} else if ($mcl_connected && array_key_exists("delete_mcl_rides", $_POST)) {
+} else if (array_key_exists("delete_mcl_rides", $_POST) && $myCyclingLog->isConnected()) {
     $state = "delete_mcl_rides";
 }
 if (isset($_POST['commentSend'])) {
@@ -568,7 +564,7 @@ if ($state == "calculate_from_strava" || $state == "calculate_from_mcl" || $stat
     }
 }
 
-if ($strava_connected || $mcl_connected || $endo_connected || $rwgps_connected) {
+if ($strava->isConnected() || $myCyclingLog->isConnected() || $endomondo->isConnected() || $rideWithGps->isConnected()) {
     ?>
 
     <form action="<?php echo $here; ?>" method="post" name="main_form">
@@ -613,27 +609,27 @@ if ($strava_connected || $mcl_connected || $endo_connected || $rwgps_connected) 
             </tr>
             <tr>
                 <?php
-                if ($strava_connected) {
+                if ($strava->isConnected()) {
                     myEcho('<tr><td colspan="3"><input type="submit" name="calculate_from_strava" value="Eddington Number from Strava"/><br>');
                     echo 'Split multiday rides?:
             <input type="checkbox" value="split" ' . ($preferences->getStravaSplitRides() ? "checked" : "") .
                         ' id="strava_split_1" name="strava_split_rides"/>';
                     myEcho('</td></tr>');
                 }
-                if ($mcl_connected) {
+                if ($myCyclingLog->isConnected()) {
 
                     myEcho('<tr><td colspan="3"><input type="submit" name="calculate_from_mcl" value="Eddington Number from MyCyclingLog"/></td></tr>');
                 }
-                if ($endo_connected) {
+                if ($endomondo->isConnected()) {
                     myEcho('<tr><td colspan="3"><input type="submit" name="calculate_from_endo" value="Eddington Number from Endomondo"/><br>');
                     echo 'Split multiday rides?:
             <input type="checkbox" value="split" ' . ($preferences->getEndoSplitRides() ? "checked" : "") .
                         ' name="endo_split_rides"/></td></tr>';
                 }
-                if ($rwgps_connected) {
+                if ($rideWithGps->isConnected()) {
                     myEcho('<tr><td colspan="3"><input type="submit" name="calculate_from_rwgps" value="Eddington Number from RideWithGPS"/><br> </td></tr>');
                 }
-                if ($strava_connected && $mcl_connected) {
+                if ($strava->isConnected() && $myCyclingLog->isConnected()) {
                     myEcho('<tr><td colspan="3"><input type="submit" name="copy_strava_to_mcl" value="Copy ride data from Strava to MyCyclingLog"/>  <br>');
                     echo 'Save elevation as feet: <input type="checkbox" name="elevation_units" value="feet" ' .
                         ($preferences->getMclUseFeet() ? "checked" : "") . "/>";
@@ -642,16 +638,16 @@ if ($strava_connected || $mcl_connected || $endo_connected || $rwgps_connected) 
                         ' id="strava_split_2" name="strava_split_rides"/>';
                     myEcho("</td></tr>");
                 }
-                if ($strava_connected && $endo_connected && $strava->writeScope()) {
+                if ($strava->isConnected() && $endomondo->isConnected() && $strava->writeScope()) {
                     myEcho('<tr><td colspan="3"><input type="submit" name="copy_endo_to_strava" value="Copy rides and routes from Endomondo to Strava"/>  <br>');
                     myEcho("</td></tr>");
                 }
-                if ($rwgps_connected && $endo_connected) {
+                if ($rideWithGps->isConnected() && $endomondo->isConnected()) {
                     myEcho('<tr><td colspan="3"><input type="submit" name="copy_endo_to_rwgps" value="Copy rides and routes from Endomondo to RideWithGPS"/>  <br>');
                     myEcho("</td></tr>");
                 }
 
-                if ($mcl_connected) {
+                if ($myCyclingLog->isConnected()) {
                     myEcho('<tr><td colspan="3"><input onclick="confirm_mcl_deletes()" type="button" name="delete_mcl_rides" value="Delete MyCyclingLog rides"/>');
                     myEcho("</td></tr>");
                 }
@@ -660,7 +656,7 @@ if ($strava_connected || $mcl_connected || $endo_connected || $rwgps_connected) 
             <tr>
                 <td colspan="3"><input type="submit" name="clear_cookies" value="Delete Cookies"/></td>
             </tr>
-            <?php if ($strava_connected) { ?>
+            <?php if ($strava->isConnected()) { ?>
                 <tr>
                     <td colspan="3"><input type="submit" name="delete_files" value="Delete temporary files"/></td>
                 </tr>
@@ -668,7 +664,7 @@ if ($strava_connected || $mcl_connected || $endo_connected || $rwgps_connected) 
         </table>
         <?php
 
-        if (!$strava_connected || !$mcl_connected || !$endo_connected) { ?>
+        if (!$strava->isConnected() || !$myCyclingLog->isConnected() || !$endomondo->isConnected()) { ?>
             <p>More options are available if you connect to <a href="#services">other services</a>.</p>
             <?php
         }
@@ -802,7 +798,7 @@ if ($strava_connected || $mcl_connected || $endo_connected || $rwgps_connected) 
     </div>
     <?php
 }
-if (!$strava_connected || !$mcl_connected || !$endo_connected || !$strava->writeScope()) {
+if (!$strava->isConnected() || !$myCyclingLog->isConnected() || !$endomondo->isConnected() || !$strava->writeScope()) {
     ?>
     <hr>
     <h3 id="services">Connect to services</h3>
@@ -812,9 +808,9 @@ if (!$strava_connected || !$mcl_connected || !$endo_connected || !$strava->write
             and there is a button to delete the cookies when you are done. </em></p>
     <table>
         <tr>
-            <?php if (!$strava_connected || !$strava->writeScope()) {
+            <?php if (!$strava->isConnected() || !$strava->writeScope()) {
                 myEcho("<td>");
-                if (!$strava_connected) {
+                if (!$strava->isConnected()) {
                     echo "Read acccess (You need this to calculate E-number from Strava):<br>";
                     echo '<a href="' .
                         $strava->authenticationUrl($here, 'auto', null, "read_only") .
@@ -827,7 +823,7 @@ if (!$strava_connected || !$mcl_connected || !$endo_connected || !$strava->write
                 myEcho("</td>");
             }
             ?>
-            <?php if (!$mcl_connected) { ?>
+            <?php if (!$myCyclingLog->isConnected()) { ?>
                 <td>
                     <form action="<?php echo $here; ?>" method="post">
                         <table>
@@ -851,7 +847,7 @@ if (!$strava_connected || !$mcl_connected || !$endo_connected || !$strava->write
                     </form>
                 </td>
             <?php } ?>
-            <?php if (!$endo_connected) { ?>
+            <?php if (!$endomondo->isConnected()) { ?>
                 <td>
                     <form action="<?php echo $here; ?>" method="post">
                         <table>
@@ -875,7 +871,7 @@ if (!$strava_connected || !$mcl_connected || !$endo_connected || !$strava->write
                 </td>
             <?php } ?>
 
-            <?php if (!$rwgps_connected) { ?>
+            <?php if (!$rideWithGps->isConnected()) { ?>
                 <td>
                     <form action="<?php echo $here; ?>" method="post">
                         <table>

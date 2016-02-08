@@ -172,10 +172,10 @@ if (isset($_POST['commentSend'])) {
         " Email: " . $_POST['commentEmail'] .
         " Comment: " . $_POST['commentComments'] . "";
 }
-$isConnected=$myCyclingLog->isConnected() || $strava->isConnected() || $rideWithGps->isConnected() || $endomondo->isConnected();
+$isConnected = $myCyclingLog->isConnected() || $strava->isConnected() || $rideWithGps->isConnected() || $endomondo->isConnected();
 $isNotConnectedToAll = !$strava->isConnected() || !$myCyclingLog->isConnected() || !$endomondo->isConnected() || !$strava->writeScope();
 
-unset($no_echo);?>
+unset($no_echo); ?>
 <!DOCTYPE html>
 <html>
 <head>
@@ -421,13 +421,7 @@ if ($state == "calculate_from_strava" || $state == "calculate_from_mcl" || $stat
                     $duplicateStravaRide = isDuplicateRide($ride, $strava_rides, 'strava_id');
 
                     if ($duplicateStravaRide) {
-                        $message=".";
-//                        if (is_int($duplicateStravaRide)) {
-//                            $message .= 'Duplicate with  <a target="_blank" href="' . $strava->activityUrl($duplicateStravaRide) .
-//                                '">' . $duplicateStravaRide . '</a>, skipping. ';
-//                        } else {
-//                            $message .= "Duplicate, skipping. ";
-//                        }
+                        $message = ".";
                     } else {
                         $path = $scratchDirectory . DIRECTORY_SEPARATOR . "endomondo+" . $ride['endo_id'] . ".gpx";
                         $points = $endomondo->getPoints($ride['endo_id']);
@@ -507,13 +501,7 @@ if ($state == "calculate_from_strava" || $state == "calculate_from_mcl" || $stat
                     $duplicateRwgpsRide = isDuplicateRide($ride, $rwgps_rides, 'rwgps_id');
 
                     if ($duplicateRwgpsRide) {
-                        $message=".";
-//                        if (is_int($duplicateRwgpsRide)) {
-//                            $message .= 'Duplicate with  <a target="_blank" href="' . $rideWithGps->activityUrl($duplicateRwgpsRide) .
-//                                '">' . $duplicateRwgpsRide . '</a>, skipping. ';
-//                        } else {
-//                            $message .= "Duplicate, skipping. ";
-//                        }
+                        $message = ".";
                     } else {
                         $path = $scratchDirectory . DIRECTORY_SEPARATOR . "endomondo+" . $ride['endo_id'] . ".gpx";
                         $points = $endomondo->getPoints($ride['endo_id']);
@@ -572,20 +560,18 @@ if ($state == "calculate_from_strava" || $state == "calculate_from_mcl" || $stat
         myEcho("<p style=\"color:red;\"><b>Problem connecting to MyCyclingLog: $result</b></p>");
     }
 }
+?>
+<form action="<?php echo $here; ?>" method="post" name="main_form">
+    <hr>
 
-    ?>
+    <script> function populateDates(start, end) {
 
-    <form action="<?php echo $here; ?>" method="post" name="main_form">
-        <hr>
-
-        <script> function populateDates(start, end) {
-
-                document.getElementById("datepicker_start").value = start;
-                document.getElementById("datepicker_end").value = end;
-            }
-        </script>
-        <?php
-        if ($isConnected) {
+            document.getElementById("datepicker_start").value = start;
+            document.getElementById("datepicker_end").value = end;
+        }
+    </script>
+    <?php
+    if ($isConnected) {
         date_default_timezone_set($preferences->getTimezone());
         $today = date("d-m-Y", time());
         $yesterday = date("d-m-Y", time() - (TWENTY_FOUR_HOURS));
@@ -609,212 +595,214 @@ if ($state == "calculate_from_strava" || $state == "calculate_from_mcl" || $stat
         <span class="roundbutton" onclick="populateDates('','')">reset</span>
         <br>
         <br>
-        <?php } ?>
-        <table class="w3-table-all">
-        	<?php if ($isConnected) { ?>
+    <?php } ?>
+    <table class="w3-table-all">
+        <?php if ($isConnected) { ?>
             <tr>
                 <td>Start Date <input type="text" name="start_date" id="datepicker_start"/></td>
                 <td> End Date <input type="text" name="end_date" id="datepicker_end"/></td>
                 <td><select name="tz" id="tz"> </select></td>
             </tr>
-                    <?php } ?>
+        <?php } ?>
 
-                <?php
-                if ($isConnected) {
-                    $colSpan=' colspan="3"';
-                } else {
-                    $colSpan='';
-                }
-                if ($strava->isConnected()) {
-                    myEcho('<tr><td'.$colSpan.'><input type="submit" name="calculate_from_strava" value="Eddington Number from Strava"/><br>');
-                    echo 'Split multiday rides?:
-            <input type="checkbox" value="split" ' . ($preferences->getStravaSplitRides() ? "checked" : "") .
-                        ' id="strava_split_1" name="strava_split_rides"/>';
-                    myEcho('</td></tr>');
-                }
-                if ($myCyclingLog->isConnected()) {
-
-                    myEcho('<tr><td'.$colSpan.'><input type="submit" name="calculate_from_mcl" value="Eddington Number from MyCyclingLog"/></td></tr>');
-                }
-                if ($endomondo->isConnected()) {
-                    myEcho('<tr><td'.$colSpan.'><input type="submit" name="calculate_from_endo" value="Eddington Number from Endomondo"/><br>');
-                    echo 'Split multiday rides?:
-            <input type="checkbox" value="split" ' . ($preferences->getEndoSplitRides() ? "checked" : "") .
-                        ' name="endo_split_rides"/></td></tr>';
-                }
-                if ($rideWithGps->isConnected()) {
-                    myEcho('<tr><td'.$colSpan.'><input type="submit" name="calculate_from_rwgps" value="Eddington Number from RideWithGPS"/><br>');
-                    echo 'Split multiday rides?:
-            <input type="checkbox" value="split" ' . ($preferences->getRwgpsSplitRides() ? "checked" : "") .
-                        ' name="rwgps_split_rides"/></td></tr>';
-                }
-                if ($strava->isConnected() && $myCyclingLog->isConnected()) {
-                    myEcho('<tr><td'.$colSpan.'><input type="submit" name="copy_strava_to_mcl" value="Copy ride data from Strava to MyCyclingLog"/>  <br>');
-                    echo 'Save elevation as feet: <input type="checkbox" name="elevation_units" value="feet" ' .
-                        ($preferences->getMclUseFeet() ? "checked" : "") . "/>";
-                    echo '<br>Split multiday rides?:
-            <input type="checkbox" value="split" ' . ($preferences->getStravaSplitRides() ? "checked" : "") .
-                        ' id="strava_split_2" name="strava_split_rides"/>';
-                    myEcho("</td></tr>");
-                }
-                if ($strava->isConnected() && $endomondo->isConnected() && $strava->writeScope()) {
-                    myEcho('<tr><td'.$colSpan.'><input type="submit" name="copy_endo_to_strava" value="Copy rides and routes from Endomondo to Strava"/>  <br>');
-                    myEcho("</td></tr>");
-                }
-                if ($rideWithGps->isConnected() && $endomondo->isConnected()) {
-                    myEcho('<tr><td'.$colSpan.'><input type="submit" name="copy_endo_to_rwgps" value="Copy rides and routes from Endomondo to RideWithGPS"/>  <br>');
-                    myEcho("</td></tr>");
-                }
-
-                if ($myCyclingLog->isConnected()) {
-                    myEcho('<tr><td'.$colSpan.'><input onclick="confirm_mcl_deletes()" type="button" name="delete_mcl_rides" value="Delete MyCyclingLog rides"/>');
-                    myEcho("</td></tr>");
-                }
-
-                ?>
-            <tr>
-                <td<?php myEcho($colSpan)?> ><input type="submit" name="clear_cookies" value="Delete Cookies"/></td>
-            </tr>
-            <tr>
-                <td <?php myEcho($colSpan)?> ><input type="submit" name="delete_files" value="Delete temporary files"/></td>
-            </tr>
-        </table>
         <?php
-
-        if ($isNotConnectedToAll) { ?>
-            <p>More options are available if you connect to <a href="#services">other services</a>.</p>
-            <?php
+        if ($isConnected) {
+            $colSpan = ' colspan="3"';
+        } else {
+            $colSpan = '';
         }
+        if ($strava->isConnected()) {
+            myEcho('<tr><td' . $colSpan . '><input type="submit" name="calculate_from_strava" value="Eddington Number from Strava"/><br>');
+            echo 'Split multiday rides?:
+            <input type="checkbox" value="split" ' . ($preferences->getStravaSplitRides() ? "checked" : "") .
+                ' id="strava_split_1" name="strava_split_rides"/>';
+            myEcho('</td></tr>');
+        }
+        if ($myCyclingLog->isConnected()) {
+
+            myEcho('<tr><td' . $colSpan . '><input type="submit" name="calculate_from_mcl" value="Eddington Number from MyCyclingLog"/></td></tr>');
+        }
+        if ($endomondo->isConnected()) {
+            myEcho('<tr><td' . $colSpan . '><input type="submit" name="calculate_from_endo" value="Eddington Number from Endomondo"/><br>');
+            echo 'Split multiday rides?:
+            <input type="checkbox" value="split" ' . ($preferences->getEndoSplitRides() ? "checked" : "") .
+                ' name="endo_split_rides"/></td></tr>';
+        }
+        if ($rideWithGps->isConnected()) {
+            myEcho('<tr><td' . $colSpan . '><input type="submit" name="calculate_from_rwgps" value="Eddington Number from RideWithGPS"/><br>');
+            echo 'Split multiday rides?:
+            <input type="checkbox" value="split" ' . ($preferences->getRwgpsSplitRides() ? "checked" : "") .
+                ' name="rwgps_split_rides"/></td></tr>';
+        }
+        if ($strava->isConnected() && $myCyclingLog->isConnected()) {
+            myEcho('<tr><td' . $colSpan . '><input type="submit" name="copy_strava_to_mcl" value="Copy ride data from Strava to MyCyclingLog"/>  <br>');
+            echo 'Save elevation as feet: <input type="checkbox" name="elevation_units" value="feet" ' .
+                ($preferences->getMclUseFeet() ? "checked" : "") . "/>";
+            echo '<br>Split multiday rides?:
+            <input type="checkbox" value="split" ' . ($preferences->getStravaSplitRides() ? "checked" : "") .
+                ' id="strava_split_2" name="strava_split_rides"/>';
+            myEcho("</td></tr>");
+        }
+        if ($strava->isConnected() && $endomondo->isConnected() && $strava->writeScope()) {
+            myEcho('<tr><td' . $colSpan . '><input type="submit" name="copy_endo_to_strava" value="Copy rides and routes from Endomondo to Strava"/>  <br>');
+            myEcho("</td></tr>");
+        }
+        if ($rideWithGps->isConnected() && $endomondo->isConnected()) {
+            myEcho('<tr><td' . $colSpan . '><input type="submit" name="copy_endo_to_rwgps" value="Copy rides and routes from Endomondo to RideWithGPS"/>  <br>');
+            myEcho("</td></tr>");
+        }
+
+        if ($myCyclingLog->isConnected()) {
+            myEcho('<tr><td' . $colSpan . '><input onclick="confirm_mcl_deletes()" type="button" name="delete_mcl_rides" value="Delete MyCyclingLog rides"/>');
+            myEcho("</td></tr>");
+        }
+
         ?>
-
-        <script>
-            $("#datepicker_start").datepicker({changeMonth: true, changeYear: true, dateFormat: 'dd-mm-yy'});
-            $("#datepicker_end").datepicker({changeMonth: true, changeYear: true, dateFormat: 'dd-mm-yy'});
-            $("#tz").timezones();
-            $("#tz").val('<?php echo($preferences->getTimezone()); ?>');
-
-            function confirm_mcl_deletes() {
-                var start = document.forms["main_form"]["start_date"].value;
-                var end_date = document.forms["main_form"]["end_date"].value;
-                if (start == "") {
-                    start = "the beginning"
-                }
-                if (end_date == "") {
-                    end_date = "today"
-                }
-                var password_warning = "Are you sure you want to do this?  This will remove all activities from " +
-                    "MyCyclingLog between " + start + " and " + end_date + " that have a Strava ride in the notes. " +
-                    "If you are sure, enter your MCL password here.";
-
-                <?php
-                if (!$preferences->getMclUsername()) {
-                    echo('var username = prompt("Please enter your MyCyclingLog username");');
-                } else {
-                    echo("var username = '" . $preferences->getMclUsername() . "';");
-                }
-                ?>
-                var password = prompt(password_warning);
-                if (password != null) {
-                    document.forms["main_form"]["start_date"].value;
-
-                    submit_field = document.createElement('input');
-                    submit_field.setAttribute('name', 'delete_mcl_rides');
-                    submit_field.setAttribute('type', 'hidden');
-                    submit_field.setAttribute('value', 'Delete MyCyclingLog rides');
-                    document.forms["main_form"].appendChild(submit_field);
-
-
-                    username_field = document.createElement('input');
-                    username_field.setAttribute('name', 'mcl_username');
-                    username_field.setAttribute('type', 'hidden');
-                    username_field.setAttribute('value', username);
-                    document.forms["main_form"].appendChild(username_field);
-
-                    password_field = document.createElement('input');
-                    password_field.setAttribute('name', 'mcl_password');
-                    password_field.setAttribute('type', 'hidden');
-                    password_field.setAttribute('value', password);
-                    document.forms["main_form"].appendChild(password_field);
-
-                    ;
-
-                    document.forms["main_form"].submit("hello");
-                }
-                else
-                    return false;
-            }
-
-            $("#strava_split_1").click(function () {
-                $("#strava_split_2").prop('checked', $("#strava_split_1").prop('checked'));
-            });
-            $("#strava_split_2").click(function () {
-                $("#strava_split_1").prop('checked', $("#strava_split_2").prop('checked'));
-            });
-
-        </script>
-    </form>
-
-
-    <div id="notes">
-        <hr>
-        <p>Notes:</p>
-        <ol>
-            <li><em>date format is dd-mm-yyyy</em></li>
-            <li><em>You can set either or both dates, or leave them both blank your lifetime
-                    E-number.</em></li>
-            <li><em>the timezone is used to determine midnight for the date range</em></li>
-            <li><em>If you upload files, they will be kept on a scratch directory with your Strava User Id,
-                    so you won't have to reupload them every time. You can remove the files from the server
-                    by pressing the appropriate button above.</em></li>
-            <li><em>when using Strava,
-                    each
-                    ride's date is the local time saved by Strava</em></li>
-            <li><em>Timezone set here will be used with Endomondo to determine the start of the new day</em></li>
-            <li><em>You can set either or both dates, or leave them both
-                    blank for your lifetime E-number.</em></li>
-            <li><em>By default, all the miles during a ride (even if it takes several days) count towards the total of
-                    the
-                    first day.</em></li>
-
-            <li><em>You can choose to split it into multiple days, to get the
-                    mileage for each day midnight-midnight.</em></li>
-            <li><em>As I can't get the GPS points directly from Strava, Strava rides can
-                    only be split by you downloading them onto your machine, and then uploading
-                    them here.</em></li>
-            <li><em>As splitting Strava rides is such a faff, it's probably easiest to use the copy feature above to
-                    copy them to MyCyclingLog, then calculate your E-number from that. Then you will only need
-                    download/upload them
-                    once.</em></li>
-            <li><em>It might take a minute or two to come back with an answer</em></li>
-            <li><em>It's much slower if you split the rides.</em></li>
-            <li><em>Rides of less than 500m are not copied between systems.</em></li>
-            <li><em>Rides copied from endomondo are considered duplicates if there is already a ride on strava that
-                    overlaps it.
-                </em>
-            </li>
-            <li><em>MyCyclingLog stores elevation as a number without units. By default, copy will leave the
-                    elevation
-                    in metres, but if you check the box, it will multiply elevation by 3.2, converting it to feet.</em>
-            </li>
-
-            <li><em>If you want your bike information to be included you must make sure you have bikes with <strong>exactly</strong>
-                    matching make/model in both accounts. To test, select start and end dates close together, then check
-                    MyCyclingLog to see if you like the result. </em></li>
-            <li><em>It should not make duplicates if the ride has already been copied using this
-                    page, or if the total distance for the day on MCL is within
-                    2% or greater than the distance recorded in Strava.</em></li>
-            <li><em>This is open source, you can download the source from <a
-                        href="http://github.com/JoanMcGalliard/EddingtonAndMore">
-                        http://github.com/JoanMcGalliard/EddingtonAndMore</a>. This is
-                    revision <?php echo $eddingtonAndMoreVersion ?>.
-                    </em></li>
-
-        </ol>
-
-
-    </div>
+        <tr>
+            <td<?php myEcho($colSpan) ?> ><input type="submit" name="clear_cookies" value="Delete Cookies"/></td>
+        </tr>
+        <tr>
+            <td <?php myEcho($colSpan) ?> ><input type="submit" name="delete_files" value="Delete temporary files"/>
+            </td>
+        </tr>
+    </table>
     <?php
-    if ($isNotConnectedToAll) {
+
+    if ($isNotConnectedToAll) { ?>
+        <p>More options are available if you connect to <a href="#services">other services</a>.</p>
+        <?php
+    }
+    ?>
+
+    <script>
+        $("#datepicker_start").datepicker({changeMonth: true, changeYear: true, dateFormat: 'dd-mm-yy'});
+        $("#datepicker_end").datepicker({changeMonth: true, changeYear: true, dateFormat: 'dd-mm-yy'});
+        $("#tz").timezones();
+        $("#tz").val('<?php echo($preferences->getTimezone()); ?>');
+
+        function confirm_mcl_deletes() {
+            var start = document.forms["main_form"]["start_date"].value;
+            var end_date = document.forms["main_form"]["end_date"].value;
+            if (start == "") {
+                start = "the beginning"
+            }
+            if (end_date == "") {
+                end_date = "today"
+            }
+            var password_warning = "Are you sure you want to do this?  This will remove all activities from " +
+                "MyCyclingLog between " + start + " and " + end_date + " that have a Strava ride in the notes. " +
+                "If you are sure, enter your MCL password here.";
+
+            <?php
+            if (!$preferences->getMclUsername()) {
+                echo('var username = prompt("Please enter your MyCyclingLog username");');
+            } else {
+                echo("var username = '" . $preferences->getMclUsername() . "';");
+            }
+            ?>
+            var password = prompt(password_warning);
+            if (password != null) {
+                document.forms["main_form"]["start_date"].value;
+
+                submit_field = document.createElement('input');
+                submit_field.setAttribute('name', 'delete_mcl_rides');
+                submit_field.setAttribute('type', 'hidden');
+                submit_field.setAttribute('value', 'Delete MyCyclingLog rides');
+                document.forms["main_form"].appendChild(submit_field);
+
+
+                username_field = document.createElement('input');
+                username_field.setAttribute('name', 'mcl_username');
+                username_field.setAttribute('type', 'hidden');
+                username_field.setAttribute('value', username);
+                document.forms["main_form"].appendChild(username_field);
+
+                password_field = document.createElement('input');
+                password_field.setAttribute('name', 'mcl_password');
+                password_field.setAttribute('type', 'hidden');
+                password_field.setAttribute('value', password);
+                document.forms["main_form"].appendChild(password_field);
+
+                ;
+
+                document.forms["main_form"].submit("hello");
+            }
+            else
+                return false;
+        }
+
+        $("#strava_split_1").click(function () {
+            $("#strava_split_2").prop('checked', $("#strava_split_1").prop('checked'));
+        });
+        $("#strava_split_2").click(function () {
+            $("#strava_split_1").prop('checked', $("#strava_split_2").prop('checked'));
+        });
+
+    </script>
+</form>
+
+
+<div id="notes">
+    <hr>
+    <p>Notes:</p>
+    <ol>
+        <li><em>date format is dd-mm-yyyy</em></li>
+        <li><em>You can set either or both dates, or leave them both blank your lifetime
+                E-number.</em></li>
+        <li><em>the timezone is used to determine midnight for the date range</em></li>
+        <li><em>If you upload files, they will be kept on a scratch directory with your Strava User Id,
+                so you won't have to reupload them every time. You can remove the files from the server
+                by pressing the appropriate button above.</em></li>
+        <li><em>when using Strava,
+                each
+                ride's date is the local time saved by Strava</em></li>
+        <li><em>Timezone set here will be used with Endomondo to determine the start of the new day</em></li>
+        <li><em>You can set either or both dates, or leave them both
+                blank for your lifetime E-number.</em></li>
+        <li><em>By default, all the miles during a ride (even if it takes several days) count towards the total of
+                the
+                first day.</em></li>
+
+        <li><em>You can choose to split it into multiple days, to get the
+                mileage for each day midnight-midnight.</em></li>
+        <li><em>As I can't get the GPS points directly from Strava, Strava rides can
+                only be split by you downloading them onto your machine, and then uploading
+                them here.</em></li>
+        <li><em>As splitting Strava rides is such a faff, it's probably easiest to use the copy feature above to
+                copy them to MyCyclingLog, then calculate your E-number from that. Then you will only need
+                download/upload them
+                once.</em></li>
+        <li><em>It might take a minute or two to come back with an answer</em></li>
+        <li><em>It's much slower if you split the rides.</em></li>
+        <li><em>Rides of less than 500m are not copied between systems.</em></li>
+        <li><em>Rides copied from endomondo are considered duplicates if there is already a ride on strava that
+                overlaps it.
+            </em>
+        </li>
+        <li><em>MyCyclingLog stores elevation as a number without units. By default, copy will leave the
+                elevation
+                in metres, but if you check the box, it will multiply elevation by 3.2, converting it to feet.</em>
+        </li>
+
+        <li><em>If you want your bike information to be included you must make sure you have bikes with
+                <strong>exactly</strong>
+                matching make/model in both accounts. To test, select start and end dates close together, then check
+                MyCyclingLog to see if you like the result. </em></li>
+        <li><em>It should not make duplicates if the ride has already been copied using this
+                page, or if the total distance for the day on MCL is within
+                2% or greater than the distance recorded in Strava.</em></li>
+        <li><em>This is open source, you can download the source from <a
+                    href="http://github.com/JoanMcGalliard/EddingtonAndMore">
+                    http://github.com/JoanMcGalliard/EddingtonAndMore</a>. This is
+                revision <?php echo $eddingtonAndMoreVersion ?>.
+            </em></li>
+
+    </ol>
+
+
+</div>
+<?php
+if ($isNotConnectedToAll) {
     ?>
     <hr>
     <h3 id="services">Connect to services</h3>
@@ -833,7 +821,7 @@ if ($state == "calculate_from_strava" || $state == "calculate_from_mcl" || $stat
                         '"> <img src="images/ConnectWithStrava@2x.png" alt="Connect with Strava"></a><br><br>';
                 }
                 myEcho("Read/write acccess (only click this if you want to upload rides from Endomondo to Strava): <br>");
-                myEcho( '<a href="' .
+                myEcho('<a href="' .
                     $strava->authenticationUrl($here, 'auto', "write", "write") .
                     '"> <img src="images/ConnectWithStrava@2x.png" alt="Connect with Strava"></a>');
                 myEcho("</td>");
@@ -854,7 +842,7 @@ if ($state == "calculate_from_strava" || $state == "calculate_from_mcl" || $stat
 
                             <tr class="w3-centered">
                                 <td colspan="2" class="w3-centered"><input type="image" src="images/mcl_logo.png"
-                                                                           alt="Connect with MCL"/> </td>
+                                                                           alt="Connect with MCL"/></td>
                             </tr>
                         </table>
                         <input type="hidden" name="login_mcl"/>

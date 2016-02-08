@@ -7,7 +7,6 @@ require_once 'src/JoanMcGalliard/EddingtonAndMore/MyCyclingLog.php';
 require_once 'src/JoanMcGalliard/EddingtonAndMore/Endomondo.php';
 require_once 'src/JoanMcGalliard/EddingtonAndMore/RideWithGps.php';
 require_once 'src/JoanMcGalliard/EddingtonAndMore/Points.php';
-require_once 'src/functions.php';
 require_once 'src/Preferences.php';
 
 class MainPage

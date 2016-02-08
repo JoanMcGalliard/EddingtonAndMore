@@ -207,7 +207,7 @@ class Endomondo extends trackerAbstract
         $points = new Points($json_decode->start_time, $this->echoCallback);
         $points->setGenerateGPX(true);
         $points->setGoogleApiKey($this->googleApiKey);
-        if (is_array($json_decode->points)) {
+        if (isset($json_decode->points) && is_array($json_decode->points)) {
             foreach ($json_decode->points as $point) {
                 if (isset($point->lat) && isset($point->lng) && isset($point->time)) {
                     $points->add($point->lat, $point->lng, $point->time);

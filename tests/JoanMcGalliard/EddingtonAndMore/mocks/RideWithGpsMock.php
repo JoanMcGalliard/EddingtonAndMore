@@ -1,10 +1,4 @@
 <?php
-/**
- * Created by PhpStorm.
- * User: jem
- * Date: 02/02/2016
- * Time: 16:56
- */
 
 namespace JoanMcGalliard\EddingtonAndMore\mocks;
 

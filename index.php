@@ -172,17 +172,20 @@ if (isset($_POST['commentSend'])) {
         " Email: " . $_POST['commentEmail'] .
         " Comment: " . $_POST['commentComments'] . "";
 }
-unset($no_echo);
-?>
+$isConnected=$myCyclingLog->isConnected() || $strava->isConnected() || $rideWithGps->isConnected() || $endomondo->isConnected();
+$isNotConnectedToAll = !$strava->isConnected() || !$myCyclingLog->isConnected() || !$endomondo->isConnected() || !$strava->writeScope();
+
+unset($no_echo);?>
+<!DOCTYPE html>
 <html>
 <head>
     <title>Eddington &amp; More</title>
     <link rel="stylesheet" href="css/w3.css">
+    <link rel="stylesheet" href="src/js/jquery/jquery-ui.css">
     <link
         href="data:image/x-icon;base64,AAABAAEAEBAAAAAAAABoBQAAFgAAACgAAAAQAAAAIAAAAAEACAAAAAAAAAEAAAAAAAAAAAAAAAEAAAAAAAAAAAAA3+DdALu7ugDFxsQAu766AEJBPwDS09EAvL6yAHZ3dACKjYgAzc/MAMHBugBLSkcA3uDeAGBgWwBGRkIAs7SuAN7c2QCsr6wA8PHwAFNTTwCMjYkAv8C+ADY1MQBpaGYAwsS7AKippQDk5+QA6+vpAGhnYQBlZmQAY2NcAN3f2gBzcW4ALi4tAJ6dlgCbnJkAz8/OANna2ABiZGIA6+vqAKCimQDW2NYAlJaSANLU0QCHh4MAp6ihADg5OADu7e0ArKupADU1MwCJioMAZWVgAI2NiwB9fnwAk5SQALW2qwB6encAj5CLAKOiogCjpaIAV1hUAMjJyACRko4AaWpjAHV1bQCNjokAr7CkALCyrwBaWlcAvL25AM/MyADS0tAAamtpALi4twCQkIwAk5SJAPHy8QCNjIcAY2NfAJaWlABJSUYAoKGeANPU0wDp6ucAsrOtAJiZlABKS0kAvL26APDw7wC4ubUA0tLRAGdoYgDEw8IAzs7MAOLk4AC/v70AY2NgALu7uACChH4As7SrAL3JugBJST8Aent3AN3e2QBHR0UA4eHhAOvs6wBzcG0AWFlUAMbHwABXWFcA0dLKAMC/vgBtbmsAXV9cADc3MQC2t7QA6urpAOTm5ADb29oA5ebkANbX1QDi4t8AycjGAGtsaQBERD4AUlJQALS1sgCrqqgA2NnYAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABgBWlbAAAAAAAAAAAAAAAlIhZKMmoAAAAAAAJIAABHf3oAAABhAAAAADZFfmIAOwwAAAAADgAAGlNPAABtADtJAAQ8DWcSP3hQXU0AJHw7cgArdC5BZkIAOXYbdwZsOxQARGNGfTpVAAgwPXWCbEdRawAmKQ8KZQA1XjN5A2wAgScAADdAARxuPlxWAAl4AAAYL28XTBMAZABXLSw0AAAAAHExAFo4VGhfEB0fKAAAAAAAAB5zAAcgGRVZAAAAAAAAAAARToAAcEMjAAAAAAAAAAAAAAAAAAALewAAAAAAAAAAAAAAAABYS1IqAAAAAAAAAAAAACEhAAAAACEhAMP/AACB8wAAHeEAAD2NAAAgBAAAIEAAACBAAAAQQAAAmAQAAMChAADkAQAA+QcAAPiPAAD/zwAA/4cAAP55AAA="
         rel="icon" type="image/x-icon"/>
 
-    <link rel="stylesheet" href="src/js/jquery/jquery-ui.css"/>
 
     <style>
         .roundbutton {
@@ -570,7 +573,6 @@ if ($state == "calculate_from_strava" || $state == "calculate_from_mcl" || $stat
     }
 }
 
-if ($strava->isConnected() || $myCyclingLog->isConnected() || $endomondo->isConnected() || $rideWithGps->isConnected()) {
     ?>
 
     <form action="<?php echo $here; ?>" method="post" name="main_form">
@@ -583,6 +585,7 @@ if ($strava->isConnected() || $myCyclingLog->isConnected() || $endomondo->isConn
             }
         </script>
         <?php
+        if ($isConnected) {
         date_default_timezone_set($preferences->getTimezone());
         $today = date("d-m-Y", time());
         $yesterday = date("d-m-Y", time() - (TWENTY_FOUR_HOURS));
@@ -593,7 +596,6 @@ if ($strava->isConnected() || $myCyclingLog->isConnected() || $endomondo->isConn
         $end_of_last_year = "31-12-" . (intval(date("Y", time())) - 1);
 
         ?>
-
         Fill in dates:
 
 
@@ -607,16 +609,24 @@ if ($strava->isConnected() || $myCyclingLog->isConnected() || $endomondo->isConn
         <span class="roundbutton" onclick="populateDates('','')">reset</span>
         <br>
         <br>
+        <?php } ?>
         <table class="w3-table-all">
+        	<?php if ($isConnected) { ?>
             <tr>
                 <td>Start Date <input type="text" name="start_date" id="datepicker_start"/></td>
                 <td> End Date <input type="text" name="end_date" id="datepicker_end"/></td>
-                <td><select name="tz" value="<?php echo $preferences->getTimezone(); ?>" id="tz"> </select></td>
+                <td><select name="tz" id="tz"> </select></td>
             </tr>
-            <tr>
+                    <?php } ?>
+
                 <?php
+                if ($isConnected) {
+                    $colSpan=' colspan="3"';
+                } else {
+                    $colSpan='';
+                }
                 if ($strava->isConnected()) {
-                    myEcho('<tr><td colspan="3"><input type="submit" name="calculate_from_strava" value="Eddington Number from Strava"/><br>');
+                    myEcho('<tr><td'.$colSpan.'><input type="submit" name="calculate_from_strava" value="Eddington Number from Strava"/><br>');
                     echo 'Split multiday rides?:
             <input type="checkbox" value="split" ' . ($preferences->getStravaSplitRides() ? "checked" : "") .
                         ' id="strava_split_1" name="strava_split_rides"/>';
@@ -624,22 +634,22 @@ if ($strava->isConnected() || $myCyclingLog->isConnected() || $endomondo->isConn
                 }
                 if ($myCyclingLog->isConnected()) {
 
-                    myEcho('<tr><td colspan="3"><input type="submit" name="calculate_from_mcl" value="Eddington Number from MyCyclingLog"/></td></tr>');
+                    myEcho('<tr><td'.$colSpan.'><input type="submit" name="calculate_from_mcl" value="Eddington Number from MyCyclingLog"/></td></tr>');
                 }
                 if ($endomondo->isConnected()) {
-                    myEcho('<tr><td colspan="3"><input type="submit" name="calculate_from_endo" value="Eddington Number from Endomondo"/><br>');
+                    myEcho('<tr><td'.$colSpan.'><input type="submit" name="calculate_from_endo" value="Eddington Number from Endomondo"/><br>');
                     echo 'Split multiday rides?:
             <input type="checkbox" value="split" ' . ($preferences->getEndoSplitRides() ? "checked" : "") .
                         ' name="endo_split_rides"/></td></tr>';
                 }
                 if ($rideWithGps->isConnected()) {
-                    myEcho('<tr><td colspan="3"><input type="submit" name="calculate_from_rwgps" value="Eddington Number from RideWithGPS"/><br>');
+                    myEcho('<tr><td'.$colSpan.'><input type="submit" name="calculate_from_rwgps" value="Eddington Number from RideWithGPS"/><br>');
                     echo 'Split multiday rides?:
             <input type="checkbox" value="split" ' . ($preferences->getRwgpsSplitRides() ? "checked" : "") .
                         ' name="rwgps_split_rides"/></td></tr>';
                 }
                 if ($strava->isConnected() && $myCyclingLog->isConnected()) {
-                    myEcho('<tr><td colspan="3"><input type="submit" name="copy_strava_to_mcl" value="Copy ride data from Strava to MyCyclingLog"/>  <br>');
+                    myEcho('<tr><td'.$colSpan.'><input type="submit" name="copy_strava_to_mcl" value="Copy ride data from Strava to MyCyclingLog"/>  <br>');
                     echo 'Save elevation as feet: <input type="checkbox" name="elevation_units" value="feet" ' .
                         ($preferences->getMclUseFeet() ? "checked" : "") . "/>";
                     echo '<br>Split multiday rides?:
@@ -648,32 +658,30 @@ if ($strava->isConnected() || $myCyclingLog->isConnected() || $endomondo->isConn
                     myEcho("</td></tr>");
                 }
                 if ($strava->isConnected() && $endomondo->isConnected() && $strava->writeScope()) {
-                    myEcho('<tr><td colspan="3"><input type="submit" name="copy_endo_to_strava" value="Copy rides and routes from Endomondo to Strava"/>  <br>');
+                    myEcho('<tr><td'.$colSpan.'><input type="submit" name="copy_endo_to_strava" value="Copy rides and routes from Endomondo to Strava"/>  <br>');
                     myEcho("</td></tr>");
                 }
                 if ($rideWithGps->isConnected() && $endomondo->isConnected()) {
-                    myEcho('<tr><td colspan="3"><input type="submit" name="copy_endo_to_rwgps" value="Copy rides and routes from Endomondo to RideWithGPS"/>  <br>');
+                    myEcho('<tr><td'.$colSpan.'><input type="submit" name="copy_endo_to_rwgps" value="Copy rides and routes from Endomondo to RideWithGPS"/>  <br>');
                     myEcho("</td></tr>");
                 }
 
                 if ($myCyclingLog->isConnected()) {
-                    myEcho('<tr><td colspan="3"><input onclick="confirm_mcl_deletes()" type="button" name="delete_mcl_rides" value="Delete MyCyclingLog rides"/>');
+                    myEcho('<tr><td'.$colSpan.'><input onclick="confirm_mcl_deletes()" type="button" name="delete_mcl_rides" value="Delete MyCyclingLog rides"/>');
                     myEcho("</td></tr>");
                 }
 
                 ?>
-            <?php } ?>
             <tr>
-                <td colspan="3"><input type="submit" name="clear_cookies" value="Delete Cookies"/></td>
+                <td<?php myEcho($colSpan)?> ><input type="submit" name="clear_cookies" value="Delete Cookies"/></td>
             </tr>
-            <?php if ($strava->isConnected()) { ?>
             <tr>
-                <td colspan="3"><input type="submit" name="delete_files" value="Delete temporary files"/></td>
+                <td <?php myEcho($colSpan)?> ><input type="submit" name="delete_files" value="Delete temporary files"/></td>
             </tr>
         </table>
         <?php
 
-        if (!$strava->isConnected() || !$myCyclingLog->isConnected() || !$endomondo->isConnected()) { ?>
+        if ($isNotConnectedToAll) { ?>
             <p>More options are available if you connect to <a href="#services">other services</a>.</p>
             <?php
         }
@@ -799,15 +807,14 @@ if ($strava->isConnected() || $myCyclingLog->isConnected() || $endomondo->isConn
                         href="http://github.com/JoanMcGalliard/EddingtonAndMore">
                         http://github.com/JoanMcGalliard/EddingtonAndMore</a>. This is
                     revision <?php echo $eddingtonAndMoreVersion ?>.
-                    </a></em></li>
+                    </em></li>
 
         </ol>
 
 
     </div>
     <?php
-}
-if (!$strava->isConnected() || !$myCyclingLog->isConnected() || !$endomondo->isConnected() || !$strava->writeScope()) {
+    if ($isNotConnectedToAll) {
     ?>
     <hr>
     <h3 id="services">Connect to services</h3>
@@ -823,12 +830,12 @@ if (!$strava->isConnected() || !$myCyclingLog->isConnected() || !$endomondo->isC
                     echo "Read acccess (You need this to calculate E-number from Strava):<br>";
                     echo '<a href="' .
                         $strava->authenticationUrl($here, 'auto', null, "read_only") .
-                        '"> <img src="images/ConnectWithStrava@2x.png"></a><br><br>';
+                        '"> <img src="images/ConnectWithStrava@2x.png" alt="Connect with Strava"></a><br><br>';
                 }
                 myEcho("Read/write acccess (only click this if you want to upload rides from Endomondo to Strava): <br>");
-                echo '<a href="' .
+                myEcho( '<a href="' .
                     $strava->authenticationUrl($here, 'auto', "write", "write") .
-                    '"> <img src="images/ConnectWithStrava@2x.png"></a>';
+                    '"> <img src="images/ConnectWithStrava@2x.png" alt="Connect with Strava"></a>');
                 myEcho("</td>");
             }
             ?>
@@ -842,14 +849,12 @@ if (!$strava->isConnected() || !$myCyclingLog->isConnected() || !$endomondo->isC
                             </tr>
                             <tr>
                                 <td>MyCyclingLog Password:</td>
-                                <td><input type="password" name="password"/>
-                                <td>
+                                <td><input type="password" name="password"/></td>
                             </tr>
 
                             <tr class="w3-centered">
                                 <td colspan="2" class="w3-centered"><input type="image" src="images/mcl_logo.png"
-                                                                           alt="Submit Form"/>
-                                <td>
+                                                                           alt="Connect with MCL"/> </td>
                             </tr>
                         </table>
                         <input type="hidden" name="login_mcl"/>
@@ -867,12 +872,12 @@ if (!$strava->isConnected() || !$myCyclingLog->isConnected() || !$endomondo->isC
                             <tr>
                                 <td>Endomondo Password:</td>
                                 <td><input type="password" name="password"/>
-                                <td>
+                                </td>
                             </tr>
                             <tr class="w3-centered">
                                 <td colspan="2" class="w3-centered"><input type="image" src="images/endomondo.svg"
-                                                                           alt="Submit Form"/>
-                                <td>
+                                                                           alt="Connect with Endomondo"/>
+                                </td>
                             </tr>
                         </table>
                         <input type="hidden" name="login_endo"/>
@@ -891,12 +896,12 @@ if (!$strava->isConnected() || !$myCyclingLog->isConnected() || !$endomondo->isC
                             <tr>
                                 <td>RideWithGPS Password:</td>
                                 <td><input type="password" name="password"/>
-                                <td>
+                                </td>
                             </tr>
                             <tr class="w3-centered">
                                 <td colspan="2" class="w3-centered"><input type="image" src="images/rwgps.png"
-                                                                           alt="Submit Form"/>
-                                <td>
+                                                                           alt="Connect with RideWithGPS"/>
+                                </td>
                             </tr>
                         </table>
                         <input type="hidden" name="login_rwgps"/>

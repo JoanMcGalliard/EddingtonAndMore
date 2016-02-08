@@ -1,10 +1,4 @@
 <?php
-/**
- * Created by PhpStorm.
- * User: jem
- * Date: 02/02/2016
- * Time: 15:52
- */
 
 namespace JoanMcGalliard\EddingtonAndMore;
 

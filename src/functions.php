@@ -276,7 +276,7 @@ function myEcho($msg)
     if (isset($no_echo)) {
         return;
     }
-    echo $msg;
+    echo "$msg\r\n";
     echo str_pad('', 4096);
 }
 

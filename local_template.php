@@ -1,5 +1,4 @@
 <?php
-$timezone = "UTC";
 $workingEmailAddress="email@example.com";
 $scratchDirectory="/tmp";
 $eddingtonAndMoreVersion=exec("git rev-parse HEAD");

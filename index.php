@@ -1,10 +1,10 @@
 <?php
 ob_implicit_flush();
-$no_echo = true;
 define("TWENTY_FOUR_HOURS", 60 * 60 * 24);
 set_include_path(get_include_path() . PATH_SEPARATOR . dirname(__FILE__) . DIRECTORY_SEPARATOR . "src" . PATH_SEPARATOR);
 
 require_once 'local.php';
+require_once 'MainPage.php';
 require_once 'src/JoanMcGalliard/EddingtonAndMore/Strava.php';
 require_once 'src/JoanMcGalliard/EddingtonAndMore/MyCyclingLog.php';
 require_once 'src/JoanMcGalliard/EddingtonAndMore/Endomondo.php';
@@ -12,7 +12,7 @@ require_once 'src/JoanMcGalliard/EddingtonAndMore/RideWithGps.php';
 require_once 'src/JoanMcGalliard/EddingtonAndMore/Points.php';
 require_once 'src/functions.php';
 require_once 'src/Preferences.php';
-date_default_timezone_set("$timezone");
+date_default_timezone_set("UTC");
 $info_message = "";
 $error_message = "";
 
@@ -175,16 +175,21 @@ if (isset($_POST['commentSend'])) {
 $isConnected = $myCyclingLog->isConnected() || $strava->isConnected() || $rideWithGps->isConnected() || $endomondo->isConnected();
 $isNotConnectedToAll = !$strava->isConnected() || !$myCyclingLog->isConnected() || !$endomondo->isConnected() || !$strava->writeScope();
 
-unset($no_echo); ?>
+unset($no_echo);
+
+//$page=new MainPage('myEcho');
+//$page->render();
+
+myEcho("
 <!DOCTYPE html>
 <html>
 <head>
     <title>Eddington &amp; More</title>
-    <link rel="stylesheet" href="css/w3.css">
-    <link rel="stylesheet" href="src/js/jquery/jquery-ui.css">
+    <link rel=\"stylesheet\" href=\"css/w3.css\">
+    <link rel=\"stylesheet\" href=\"src/js/jquery/jquery-ui.css\">
     <link
-        href="data:image/x-icon;base64,AAABAAEAEBAAAAAAAABoBQAAFgAAACgAAAAQAAAAIAAAAAEACAAAAAAAAAEAAAAAAAAAAAAAAAEAAAAAAAAAAAAA3+DdALu7ugDFxsQAu766AEJBPwDS09EAvL6yAHZ3dACKjYgAzc/MAMHBugBLSkcA3uDeAGBgWwBGRkIAs7SuAN7c2QCsr6wA8PHwAFNTTwCMjYkAv8C+ADY1MQBpaGYAwsS7AKippQDk5+QA6+vpAGhnYQBlZmQAY2NcAN3f2gBzcW4ALi4tAJ6dlgCbnJkAz8/OANna2ABiZGIA6+vqAKCimQDW2NYAlJaSANLU0QCHh4MAp6ihADg5OADu7e0ArKupADU1MwCJioMAZWVgAI2NiwB9fnwAk5SQALW2qwB6encAj5CLAKOiogCjpaIAV1hUAMjJyACRko4AaWpjAHV1bQCNjokAr7CkALCyrwBaWlcAvL25AM/MyADS0tAAamtpALi4twCQkIwAk5SJAPHy8QCNjIcAY2NfAJaWlABJSUYAoKGeANPU0wDp6ucAsrOtAJiZlABKS0kAvL26APDw7wC4ubUA0tLRAGdoYgDEw8IAzs7MAOLk4AC/v70AY2NgALu7uACChH4As7SrAL3JugBJST8Aent3AN3e2QBHR0UA4eHhAOvs6wBzcG0AWFlUAMbHwABXWFcA0dLKAMC/vgBtbmsAXV9cADc3MQC2t7QA6urpAOTm5ADb29oA5ebkANbX1QDi4t8AycjGAGtsaQBERD4AUlJQALS1sgCrqqgA2NnYAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABgBWlbAAAAAAAAAAAAAAAlIhZKMmoAAAAAAAJIAABHf3oAAABhAAAAADZFfmIAOwwAAAAADgAAGlNPAABtADtJAAQ8DWcSP3hQXU0AJHw7cgArdC5BZkIAOXYbdwZsOxQARGNGfTpVAAgwPXWCbEdRawAmKQ8KZQA1XjN5A2wAgScAADdAARxuPlxWAAl4AAAYL28XTBMAZABXLSw0AAAAAHExAFo4VGhfEB0fKAAAAAAAAB5zAAcgGRVZAAAAAAAAAAARToAAcEMjAAAAAAAAAAAAAAAAAAALewAAAAAAAAAAAAAAAABYS1IqAAAAAAAAAAAAACEhAAAAACEhAMP/AACB8wAAHeEAAD2NAAAgBAAAIEAAACBAAAAQQAAAmAQAAMChAADkAQAA+QcAAPiPAAD/zwAA/4cAAP55AAA="
-        rel="icon" type="image/x-icon"/>
+        href=\"data:image/x-icon;base64,AAABAAEAEBAAAAAAAABoBQAAFgAAACgAAAAQAAAAIAAAAAEACAAAAAAAAAEAAAAAAAAAAAAAAAEAAAAAAAAAAAAA3+DdALu7ugDFxsQAu766AEJBPwDS09EAvL6yAHZ3dACKjYgAzc/MAMHBugBLSkcA3uDeAGBgWwBGRkIAs7SuAN7c2QCsr6wA8PHwAFNTTwCMjYkAv8C+ADY1MQBpaGYAwsS7AKippQDk5+QA6+vpAGhnYQBlZmQAY2NcAN3f2gBzcW4ALi4tAJ6dlgCbnJkAz8/OANna2ABiZGIA6+vqAKCimQDW2NYAlJaSANLU0QCHh4MAp6ihADg5OADu7e0ArKupADU1MwCJioMAZWVgAI2NiwB9fnwAk5SQALW2qwB6encAj5CLAKOiogCjpaIAV1hUAMjJyACRko4AaWpjAHV1bQCNjokAr7CkALCyrwBaWlcAvL25AM/MyADS0tAAamtpALi4twCQkIwAk5SJAPHy8QCNjIcAY2NfAJaWlABJSUYAoKGeANPU0wDp6ucAsrOtAJiZlABKS0kAvL26APDw7wC4ubUA0tLRAGdoYgDEw8IAzs7MAOLk4AC/v70AY2NgALu7uACChH4As7SrAL3JugBJST8Aent3AN3e2QBHR0UA4eHhAOvs6wBzcG0AWFlUAMbHwABXWFcA0dLKAMC/vgBtbmsAXV9cADc3MQC2t7QA6urpAOTm5ADb29oA5ebkANbX1QDi4t8AycjGAGtsaQBERD4AUlJQALS1sgCrqqgA2NnYAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABgBWlbAAAAAAAAAAAAAAAlIhZKMmoAAAAAAAJIAABHf3oAAABhAAAAADZFfmIAOwwAAAAADgAAGlNPAABtADtJAAQ8DWcSP3hQXU0AJHw7cgArdC5BZkIAOXYbdwZsOxQARGNGfTpVAAgwPXWCbEdRawAmKQ8KZQA1XjN5A2wAgScAADdAARxuPlxWAAl4AAAYL28XTBMAZABXLSw0AAAAAHExAFo4VGhfEB0fKAAAAAAAAB5zAAcgGRVZAAAAAAAAAAARToAAcEMjAAAAAAAAAAAAAAAAAAALewAAAAAAAAAAAAAAAABYS1IqAAAAAAAAAAAAACEhAAAAACEhAMP/AACB8wAAHeEAAD2NAAAgBAAAIEAAACBAAAAQQAAAmAQAAMChAADkAQAA+QcAAPiPAAD/zwAA/4cAAP55AAA=\"
+        rel=\"icon\" type=\"image/x-icon\"/>
 
 
     <style>
@@ -202,19 +207,20 @@ unset($no_echo); ?>
     </style>
 
 
-    <script src="src/js/jquery/jquery-1.9.1.js"></script>
-    <script src="src/js/jquery/jquery-1.11.1.min.js"></script>
-    <script src="src/js/jquery/jquery-ui.js"></script>
-    <script src="src/js/tz/timezones.full.js"></script>
+    <script src=\"src/js/jquery/jquery-1.9.1.js\"></script>
+    <script src=\"src/js/jquery/jquery-1.11.1.min.js\"></script>
+    <script src=\"src/js/jquery/jquery-ui.js\"></script>
+    <script src=\"src/js/tz/timezones.full.js\"></script>
 </head>
 <body>
 <h2>Eddington &amp; More</h2>
-<?php
+");
 myEcho("<p style=\"color:red;\"><b>$error_message</b></p>");
 myEcho("<p style=\"color:blueviolet;\"><em>$info_message</em></p>");
-myEcho("<p>On this page you can calculate your Eddington Number from your Strava, Endomondo or MyCyclingLog accounts, or
+myEcho("<p>On this page you can calculate your Eddington Number from your Strava, Endomondo, MyCyclingLog or RideWithGPS
+ accounts, or
     transfer rides from Strava
-    to MyCyclingLog or from Endomondo to Strava.</p>");
+    to MyCyclingLog, from Endomondo to Strava or from Endomondo to RideWithGPS</p>");
 myEcho("<hr>");
 myEcho("<p>The Eddington Number is a metric for long distance cyclists.  It's the largest value of E where you
     have cycled at least E miles on E days. So if you have
@@ -560,8 +566,8 @@ if ($state == "calculate_from_strava" || $state == "calculate_from_mcl" || $stat
         myEcho("<p style=\"color:red;\"><b>Problem connecting to MyCyclingLog: $result</b></p>");
     }
 }
-?>
-<form action="<?php echo $here; ?>" method="post" name="main_form">
+myEcho("<form action=\"$here\" method=\"post\" name=\"main_form\">");
+myEcho('
     <hr>
 
     <script> function populateDates(start, end) {
@@ -570,7 +576,7 @@ if ($state == "calculate_from_strava" || $state == "calculate_from_mcl" || $stat
             document.getElementById("datepicker_end").value = end;
         }
     </script>
-    <?php
+ ');
     if ($isConnected) {
         date_default_timezone_set($preferences->getTimezone());
         $today = date("d-m-Y", time());
@@ -580,32 +586,30 @@ if ($state == "calculate_from_strava" || $state == "calculate_from_mcl" || $stat
         $start_of_year = date("01-01-Y", time());
         $start_of_last_year = "01-01-" . (intval(date("Y", time())) - 1);
         $end_of_last_year = "31-12-" . (intval(date("Y", time())) - 1);
-
-        ?>
-        Fill in dates:
+myEcho("        Fill in dates:
 
 
-        <span class="roundbutton" onclick="populateDates('<?php echo $today ?>','')">today</span>
-        <span class="roundbutton" onclick="populateDates('<?php echo $yesterday ?>','')">since yesterday</span>
-        <span class="roundbutton" onclick="populateDates('<?php echo $seven_days_ago ?>','')">last 7 days</span>
-        <span class="roundbutton" onclick="populateDates('<?php echo $start_of_month ?>','')">this month</span>
-        <span class="roundbutton" onclick="populateDates('<?php echo $start_of_year ?>','')">this year</span>
-        <span class="roundbutton"
-              onclick="populateDates('<?php echo $start_of_last_year ?>','<?php echo $end_of_last_year ?>')">last year</span>
-        <span class="roundbutton" onclick="populateDates('','')">reset</span>
+        <span class=\"roundbutton\" onclick=\"populateDates('$today','')\">today</span>
+        <span class=\"roundbutton\" onclick=\"populateDates('$yesterday','')\">since yesterday</span>
+        <span class=\"roundbutton\" onclick=\"populateDates('$seven_days_ago','')\">last 7 days</span>
+        <span class=\"roundbutton\" onclick=\"populateDates('$start_of_month','')\">this month</span>
+        <span class=\"roundbutton\" onclick=\"populateDates('$start_of_year','')\">this year</span>
+        <span class=\"roundbutton\"
+              onclick=\"populateDates('$start_of_last_year','$end_of_last_year')\">last year</span>
+        <span class=\"roundbutton\" onclick=\"populateDates('','')\">reset</span>
         <br>
         <br>
-    <?php } ?>
-    <table class="w3-table-all">
-        <?php if ($isConnected) { ?>
-            <tr>
-                <td>Start Date <input type="text" name="start_date" id="datepicker_start"/></td>
-                <td> End Date <input type="text" name="end_date" id="datepicker_end"/></td>
-                <td><select name="tz" id="tz"> </select></td>
-            </tr>
-        <?php } ?>
+");
+        }
 
-        <?php
+myEcho("    <table class=\"w3-table-all\">");
+         if ($isConnected) {
+             myEcho("<tr>
+                <td>Start Date <input type=\"text\" name=\"start_date\" id=\"datepicker_start\"/></td>
+                <td> End Date <input type=\"text\" name=\"end_date\" id=\"datepicker_end\"/></td>
+                <td><select name=\"tz\" id=\"tz\"> </select></td>
+            </tr>");
+         }
         if ($isConnected) {
             $colSpan = ' colspan="3"';
         } else {
@@ -656,93 +660,87 @@ if ($state == "calculate_from_strava" || $state == "calculate_from_mcl" || $stat
             myEcho('<tr><td' . $colSpan . '><input onclick="confirm_mcl_deletes()" type="button" name="delete_mcl_rides" value="Delete MyCyclingLog rides"/>');
             myEcho("</td></tr>");
         }
-
-        ?>
-        <tr>
-            <td<?php myEcho($colSpan) ?> ><input type="submit" name="clear_cookies" value="Delete Cookies"/></td>
+        myEcho(" <tr>
+            <td $colSpan><input type=\"submit\" name=\"clear_cookies\" value=\"Delete Cookies\"/></td>
         </tr>
         <tr>
-            <td <?php myEcho($colSpan) ?> ><input type="submit" name="delete_files" value="Delete temporary files"/>
+            <td $colSpan><input type=\"submit\" name=\"delete_files\" value=\"Delete temporary files\"/>
             </td>
         </tr>
-    </table>
-    <?php
+    </table>");
 
-    if ($isNotConnectedToAll) { ?>
-        <p>More options are available if you connect to <a href="#services">other services</a>.</p>
-        <?php
+    if ($isNotConnectedToAll) {
+        myEcho('<p>More options are available if you connect to <a href="#services">other services</a>.</p>');
     }
-    ?>
-
-    <script>
-        $("#datepicker_start").datepicker({changeMonth: true, changeYear: true, dateFormat: 'dd-mm-yy'});
-        $("#datepicker_end").datepicker({changeMonth: true, changeYear: true, dateFormat: 'dd-mm-yy'});
-        $("#tz").timezones();
-        $("#tz").val('<?php echo($preferences->getTimezone()); ?>');
+        myEcho("    <script>
+        $(\"#datepicker_start\").datepicker({changeMonth: true, changeYear: true, dateFormat: 'dd-mm-yy'});
+        $(\"#datepicker_end\").datepicker({changeMonth: true, changeYear: true, dateFormat: 'dd-mm-yy'});
+        $(\"#tz\").timezones();
+        $(\"#tz\").val('".$preferences->getTimezone()."');
 
         function confirm_mcl_deletes() {
-            var start = document.forms["main_form"]["start_date"].value;
-            var end_date = document.forms["main_form"]["end_date"].value;
-            if (start == "") {
-                start = "the beginning"
+            var start = document.forms[\"main_form\"][\"start_date\"].value;
+            var end_date = document.forms[\"main_form\"][\"end_date\"].value;
+            if (start == \"\") {
+                start = \"the beginning\"
             }
-            if (end_date == "") {
-                end_date = "today"
+            if (end_date == \"\") {
+                end_date = \"today\"
             }
-            var password_warning = "Are you sure you want to do this?  This will remove all activities from " +
-                "MyCyclingLog between " + start + " and " + end_date + " that have a Strava ride in the notes. " +
-                "If you are sure, enter your MCL password here.";
+            var password_warning = \"Are you sure you want to do this?  This will remove all activities from \" +
+                \"MyCyclingLog between \" + start + \" and \" + end_date + \" that have a Strava ride in the notes. \" +
+                \"If you are sure, enter your MCL password here.\";
 
-            <?php
+");
+
             if (!$preferences->getMclUsername()) {
                 echo('var username = prompt("Please enter your MyCyclingLog username");');
             } else {
                 echo("var username = '" . $preferences->getMclUsername() . "';");
             }
-            ?>
-            var password = prompt(password_warning);
+        myEcho("            var password = prompt(password_warning);
             if (password != null) {
-                document.forms["main_form"]["start_date"].value;
+                document.forms[\"main_form\"][\"start_date\"].value;
 
                 submit_field = document.createElement('input');
                 submit_field.setAttribute('name', 'delete_mcl_rides');
                 submit_field.setAttribute('type', 'hidden');
                 submit_field.setAttribute('value', 'Delete MyCyclingLog rides');
-                document.forms["main_form"].appendChild(submit_field);
+                document.forms[\"main_form\"].appendChild(submit_field);
 
 
                 username_field = document.createElement('input');
                 username_field.setAttribute('name', 'mcl_username');
                 username_field.setAttribute('type', 'hidden');
                 username_field.setAttribute('value', username);
-                document.forms["main_form"].appendChild(username_field);
+                document.forms[\"main_form\"].appendChild(username_field);
 
                 password_field = document.createElement('input');
                 password_field.setAttribute('name', 'mcl_password');
                 password_field.setAttribute('type', 'hidden');
                 password_field.setAttribute('value', password);
-                document.forms["main_form"].appendChild(password_field);
+                document.forms[\"main_form\"].appendChild(password_field);
 
                 ;
 
-                document.forms["main_form"].submit("hello");
+                document.forms[\"main_form\"].submit(\"hello\");
             }
             else
                 return false;
         }
 
-        $("#strava_split_1").click(function () {
-            $("#strava_split_2").prop('checked', $("#strava_split_1").prop('checked'));
+        $(\"#strava_split_1\").click(function () {
+            $(\"#strava_split_2\").prop('checked', $(\"#strava_split_1\").prop('checked'));
         });
-        $("#strava_split_2").click(function () {
-            $("#strava_split_1").prop('checked', $("#strava_split_2").prop('checked'));
+        $(\"#strava_split_2\").click(function () {
+            $(\"#strava_split_1\").prop('checked', $(\"#strava_split_2\").prop('checked'));
         });
 
     </script>
 </form>
 
-
-<div id="notes">
+");
+myEcho("<div id=\"notes\">
     <hr>
     <p>Notes:</p>
     <ol>
@@ -792,27 +790,27 @@ if ($state == "calculate_from_strava" || $state == "calculate_from_mcl" || $stat
                 page, or if the total distance for the day on MCL is within
                 2% or greater than the distance recorded in Strava.</em></li>
         <li><em>This is open source, you can download the source from <a
-                    href="http://github.com/JoanMcGalliard/EddingtonAndMore">
+                    href=\"http://github.com/JoanMcGalliard/EddingtonAndMore\">
                     http://github.com/JoanMcGalliard/EddingtonAndMore</a>. This is
-                revision <?php echo $eddingtonAndMoreVersion ?>.
+                revision $eddingtonAndMoreVersion.
             </em></li>
 
     </ol>
 
 
 </div>
-<?php
+");
 if ($isNotConnectedToAll) {
-    ?>
-    <hr>
-    <h3 id="services">Connect to services</h3>
+myEcho("    <hr>
+    <h3 id=\"services\">Connect to services</h3>
     <p>Click the buttons below to authorise access to your strava account and/or mycyclinglog accounts.</p>
     <p><em>This website uses cookies. If you have a problem with that, there are millions of other sites out there
             &#9786; Oh,
             and there is a button to delete the cookies when you are done. </em></p>
     <table>
         <tr>
-            <?php if (!$strava->isConnected() || !$strava->writeScope()) {
+");
+    if (!$strava->isConnected() || !$strava->writeScope()) {
                 myEcho("<td>");
                 if (!$strava->isConnected()) {
                     echo "Read acccess (You need this to calculate E-number from Strava):<br>";
@@ -826,103 +824,105 @@ if ($isNotConnectedToAll) {
                     '"> <img src="images/ConnectWithStrava@2x.png" alt="Connect with Strava"></a>');
                 myEcho("</td>");
             }
-            ?>
-            <?php if (!$myCyclingLog->isConnected()) { ?>
-                <td>
-                    <form action="<?php echo $here; ?>" method="post">
+            if (!$myCyclingLog->isConnected()) {
+                myEcho(" <td>
+                    <form action=\"$here\" method=\"post\">
                         <table>
                             <tr>
                                 <td> MyCyclingLog Username:</td>
-                                <td><input type="text" name="username"/></td>
+                                <td><input type=\"text\" name=\"username\"/></td>
                             </tr>
                             <tr>
                                 <td>MyCyclingLog Password:</td>
-                                <td><input type="password" name="password"/></td>
+                                <td><input type=\"password\" name=\"password\"/></td>
                             </tr>
 
-                            <tr class="w3-centered">
-                                <td colspan="2" class="w3-centered"><input type="image" src="images/mcl_logo.png"
-                                                                           alt="Connect with MCL"/></td>
+                            <tr class=\"w3-centered\">
+                                <td colspan=\"2\" class=\"w3-centered\"><input type=\"image\" src=\"images/mcl_logo.png\"
+                                                                           alt=\"Connect with MCL\"/></td>
                             </tr>
                         </table>
-                        <input type="hidden" name="login_mcl"/>
+                        <input type=\"hidden\" name=\"login_mcl\"/>
                     </form>
-                </td>
-            <?php } ?>
-            <?php if (!$endomondo->isConnected()) { ?>
-                <td>
-                    <form action="<?php echo $here; ?>" method="post">
+                </td>");
+            }
+             if (!$endomondo->isConnected()) {
+                 myEcho("<td>
+                    <form action=\"$here\" method=\"post\">
                         <table>
                             <tr>
                                 <td> Endomondo Username:</td>
-                                <td><input type="text" name="username"/></td>
+                                <td><input type=\"text\" name=\"username\"/></td>
                             </tr>
                             <tr>
                                 <td>Endomondo Password:</td>
-                                <td><input type="password" name="password"/>
+                                <td><input type=\"password\" name=\"password\"/>
                                 </td>
                             </tr>
-                            <tr class="w3-centered">
-                                <td colspan="2" class="w3-centered"><input type="image" src="images/endomondo.svg"
-                                                                           alt="Connect with Endomondo"/>
+                            <tr class=\"w3-centered\">
+                                <td colspan=\"2\" class=\"w3-centered\"><input type=\"image\" src=\"images/endomondo.svg\"
+                                                                           alt=\"Connect with Endomondo\"/>
                                 </td>
                             </tr>
                         </table>
-                        <input type="hidden" name="login_endo"/>
+                        <input type=\"hidden\" name=\"login_endo\"/>
                     </form>
-                </td>
-            <?php } ?>
+                </td>");
 
-            <?php if (!$rideWithGps->isConnected()) { ?>
-                <td>
-                    <form action="<?php echo $here; ?>" method="post">
+
+             }
+
+             if (!$rideWithGps->isConnected()) {
+                 myEcho("<td>
+                    <form action=\"$here\" method=\"post\">
                         <table>
                             <tr>
                                 <td> RideWithGPS Username:</td>
-                                <td><input type="text" name="username"/></td>
+                                <td><input type=\"text\" name=\"username\"/></td>
                             </tr>
                             <tr>
                                 <td>RideWithGPS Password:</td>
-                                <td><input type="password" name="password"/>
+                                <td><input type=\"password\" name=\"password\"/>
                                 </td>
                             </tr>
-                            <tr class="w3-centered">
-                                <td colspan="2" class="w3-centered"><input type="image" src="images/rwgps.png"
-                                                                           alt="Connect with RideWithGPS"/>
+                            <tr class=\"w3-centered\">
+                                <td colspan=\"2\" class=\"w3-centered\"><input type=\"image\" src=\"images/rwgps.png\"
+                                                                           alt=\"Connect with RideWithGPS\"/>
                                 </td>
                             </tr>
                         </table>
-                        <input type="hidden" name="login_rwgps"/>
+                        <input type=\"hidden\" name=\"login_rwgps\"/>
                     </form>
-                </td>
-            <?php } ?>
+                </td>");
+             }
 
-
-        </tr>
+        myEcho("</tr>
     </table>
+");
 
-
-    <?php
 }
-?>
-
-<hr>
+myEcho("<hr>
 <p>Bug reports, feature requests, thanks? Please use this form. <em>Note this will only stay here until the spam bots
         find it.</em></p>
-<FORM METHOD="POST">
-    <INPUT TYPE=HIDDEN NAME="subject" VALUE="Eddington"/>
-    <input type=hidden name="env_report" value="REMOTE_ADDR, HTTP_USER_AGENT"/>
+<FORM METHOD=\"POST\">
+    <INPUT TYPE=HIDDEN NAME=\"subject\" VALUE=\"Eddington\"/>
+    <input type=hidden name=\"env_report\" value=\"REMOTE_ADDR, HTTP_USER_AGENT\"/>
 
-    <p><strong>Your Name:</strong> <INPUT TYPE=TEXT NAME="commentRealname"/>
-        <strong>Email Address:</strong> <INPUT TYPE=TEXT NAME="commentEmail"/>
+    <p><strong>Your Name:</strong> <INPUT TYPE=TEXT NAME=\"commentRealname\"/>
+        <strong>Email Address:</strong> <INPUT TYPE=TEXT NAME=\"commentEmail\"/>
     <p><strong>Comments:</strong>
-        <TEXTAREA NAME="commentComments"></textarea></p>
+        <TEXTAREA NAME=\"commentComments\"></textarea></p>
 
-    <p><INPUT TYPE="SUBMIT" name="commentSend" VALUE="Send"/>
-        <INPUT TYPE="RESET" VALUE="Clear"/>
+    <p><INPUT TYPE=\"SUBMIT\" name=\"commentSend\" VALUE=\"Send\"/>
+        <INPUT TYPE=\"RESET\" VALUE=\"Clear\"/>
 </FORM>
 
-<?php
+");
+
+myEcho("</body>
+</html>
+");
+
 function eb($x)
 {
     global $debug;
@@ -966,8 +966,3 @@ function log_msg($message)
     fclose($file);
     date_default_timezone_set($tz);
 }
-
-
-?>
-</body>
-</html>

@@ -604,8 +604,7 @@ class MainPage
 
     private function topOfPage()
     {
-        $str = "
-<!DOCTYPE html>
+        $str = "<!DOCTYPE html>
 <html>
 <head>
     <title>Eddington &amp; More</title>
@@ -648,7 +647,7 @@ class MainPage
         $str .= "<hr>\r\n";
         $str .= "<p>The Eddington Number is a metric for long distance cyclists.  It's the largest value of E where you
     have cycled at least E miles on E days. So if you have
-    cycled 35 miles or more on 35 days but have not cycled at 36 miles or more on 36 days, then your E-number is 35.</p>\r\n";
+    cycled 35 miles or more on 35 days but have not cycled at 36 miles or more on 36 days, then your E-number is 35.</p>";
         return $str;
     }
 

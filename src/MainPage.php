@@ -52,6 +52,7 @@ class MainPage
         $this->output($this->topOfPage());
         $this->output($this->execute($state));
         $this->output($this->mainForm());
+        $this->output("<hr>\n");
         $this->output($this->notes());
         $this->output($this->connections());
         $this->output($this->email());
@@ -224,7 +225,7 @@ class MainPage
         if (isset($_POST['commentSend'])) {
             mail("$workingEmailAddress", "eddington enquiry",
                 $_POST['commentComments'], "From: " . $_POST['commentRealName'] . "<"
-                . $_POST['commentEmail'] . ">\r\n");
+                . $_POST['commentEmail'] . ">\n");
             $this->info_message = "Thanks.  Email sent.  " .
                 " Name: " . $_POST['commentRealName'] .
                 " Email: " . $_POST['commentEmail'] .
@@ -307,7 +308,7 @@ class MainPage
             $days = $this->sumActivities($activities);
             $str .= "<p>According to $source, for the period from $start_text to $end_text, "
                 . round(($this->end_date - $this->start_date) / self::TWENTY_FOUR_HOURS)
-                . " elapsed days</p>\r\n";
+                . " elapsed days</p>\n";
             uasort($days, function ($a, $b) {
                 if ($a == $b) return 0; else return ($a > $b) ? -1 : 1;
             });
@@ -321,12 +322,12 @@ class MainPage
                 $table_imperial .= "<tr><td> $i </td><td> $day</td><td class=\"w3-right-align\">$actual_distance miles</td></tr>";
             }
             $table_imperial .= "</table>";
-            $str .= "<br><a href=\"#imperial\">Your imperial Eddington Number</a> is <strong>$eddington_imperial</strong>.<br>\r\n";
+            $str .= "<br><a href=\"#imperial\">Your imperial Eddington Number</a> is <strong>$eddington_imperial</strong>.<br>\n";
             if ($end_text == "today") {
                 $goals = $this->next_goals($eddington_imperial);
                 foreach ($goals as $goal) {
                     $num = $this->number_of_days_to_goal($goal, $days, self::METRE_TO_MILE);
-                    $str .= "You need to do $num ride(s) of at least $goal to increase it to $goal.<br>\r\n";
+                    $str .= "You need to do $num ride(s) of at least $goal to increase it to $goal.<br>\n";
                 }
             }
             $eddington_metric = $this->calculateEddington($days, $result, self::METRE_TO_KM);
@@ -339,17 +340,17 @@ class MainPage
             }
 
             $table_metric .= "</table>";
-            $str .= "<br><a href=\"#metric\">Your metric Eddington Number</a> is <strong>$eddington_metric</strong><br>\r\n";
+            $str .= "<br><a href=\"#metric\">Your metric Eddington Number</a> is <strong>$eddington_metric</strong><br>\n";
             if ($end_text == "today") {
                 $goals = $this->next_goals($eddington_metric);
                 foreach ($goals as $goal) {
                     $num = $this->number_of_days_to_goal($goal, $days, self::METRE_TO_KM);
-                    $str .= "You need to do $num ride(s) of at least $goal to increase it to $goal.<br>\r\n";
+                    $str .= "You need to do $num ride(s) of at least $goal to increase it to $goal.<br>\n";
                 }
             }
 
             $str .= '<br><a href="#eddington_chart">See a chart of how your Eddington number has grown over the years.</a><br>';
-            $str .= "<p><em>Run time " . (time() - $timestamp) . " seconds.</em></p>\r\n";
+            $str .= "<p><em>Run time " . (time() - $timestamp) . " seconds.</em></p>\n";
 
             $str .= $table_imperial;
             $str .= $table_metric;
@@ -367,7 +368,7 @@ class MainPage
             $strava_rides_to_add = $strava->getRides($this->start_date, $this->end_date);
             if ($strava->getError()) {
                 return ("<br>There was a problem getting data from Strava.<br>" . $strava->getError() .
-                    "\r\n<br>Please try again\r\n");
+                    "\n<br>Please try again\n");
             } else {
                 $count = 0;
                 $overnightRidesNeeded = [];  // these are unsplit overnight rides that haven't already been added to MCL
@@ -426,9 +427,9 @@ class MainPage
                     $strava_rides_to_add = $rides_to_retry;
                     $rides_to_retry = [];
                 }
-                $str .= "<br>$count rides added.<br>\r\n";
+                $str .= "<br>$count rides added.<br>\n";
                 if (sizeof($rides_to_retry) != 0) {
-                    $str .= "Some rides failed to be added.  See above.<br>\r\n";
+                    $str .= "Some rides failed to be added.  See above.<br>\n";
                 }
 
                 $str .= $this->askForStravaGpx($overnightRidesNeeded, $maxKmFileUploads, "copy_strava_to_mcl", "add to MyCyclingLog");
@@ -441,7 +442,7 @@ class MainPage
             $strava_rides = $strava->getRides($this->start_date, $this->end_date);
             if ($strava->getError()) {
                 return ("<br>There was a problem getting data from Strava.<br>" . $strava->getError() .
-                    "\r\n<br>Please try again\r\n");
+                    "\n<br>Please try again\n");
             } else {
                 foreach ($endo_rides_to_add as $date => $ride_list) {
                     foreach ($ride_list as $ride) {
@@ -503,14 +504,14 @@ class MainPage
 
 
                 }
-                $str .= "<br>$count rides added.<br>\r\n";
+                $str .= "<br>$count rides added.<br>\n";
             }
         } else if ($state == 'delete_mcl_rides') {
             $result = $myCyclingLog->deleteRides($this->start_date, $this->end_date, $_POST['mcl_username'], $_POST['mcl_password']);
             if (is_int($result)) {
-                $str .= "Deleted $result activities from MyCyclingLog\r\n";
+                $str .= "Deleted $result activities from MyCyclingLog\n";
             } else {
-                return ("<p style=\"color:red;\"><b>Problem connecting to MyCyclingLog: $result</b></p>\r\n");
+                return ("<p style=\"color:red;\"><b>Problem connecting to MyCyclingLog: $result</b></p>\n");
             }
         } else if ($state == "copy_endo_to_rwgps") {
             $this->output("<H3>Copying rides from Endomondo to RideWithGPS...</H3>");
@@ -520,7 +521,7 @@ class MainPage
             $rwgps_rides = $rideWithGps->getRides($this->start_date, $this->end_date);
             if ($rideWithGps->getError()) {
                 return ("<br>There was a problem getting data from RideWithGPS.<br>" . $rideWithGps->getError() .
-                    "\r\n<br>Please try again\r\n");
+                    "\n<br>Please try again\n");
             } else {
 
                 foreach ($endo_rides_to_add as $date => $ride_list) {
@@ -583,23 +584,18 @@ class MainPage
 
 
                 }
-                $str .= "<br>$count rides added.<br>\r\n";
+                $str .= "<br>$count rides added.<br>\n";
             }
         } else if ($state == 'delete_mcl_rides') {
             $result = $myCyclingLog->deleteRides($this->start_date, $this->end_date, $_POST['mcl_username'], $_POST['mcl_password']);
             if (is_int($result)) {
-                $str .= "Deleted $result activities from MyCyclingLog\r\n";
+                $str .= "Deleted $result activities from MyCyclingLog\n";
             } else {
-                $str .= "<p style=\"color:red;\"><b>Problem connecting to MyCyclingLog: $result</b></p>\r\n";
+                $str .= "<p style=\"color:red;\"><b>Problem connecting to MyCyclingLog: $result</b></p>\n";
             }
         }
 
         return $str;
-    }
-
-    private function displayPage()
-    {
-
     }
 
     private function topOfPage()
@@ -637,14 +633,14 @@ class MainPage
 </head>
 <body>
 <h2>Eddington &amp; More</h2>
-\r\n";
-        $str .= "<p style=\"color:red;\"><b>$this->error_message</b></p>\r\n";
-        $str .= "<p style=\"color:blueviolet;\"><em>$this->info_message</em></p>\r\n";
-        $str .= "<p>On this page you can calculate your Eddington Number from your Strava, Endomondo, MyCyclingLog or RideWithGPS
+\n";
+        $str .= "<p style=\"color:red;\"><b>$this->error_message</b></p>\n";
+        $str .= "<p style=\"color:blueviolet;\"><em>$this->info_message</em></p>";
+        $str .= "\n<p>On this page you can calculate your Eddington Number from your Strava, Endomondo, MyCyclingLog or RideWithGPS
  accounts, or
     transfer rides from Strava
-    to MyCyclingLog, from Endomondo to Strava or from Endomondo to RideWithGPS</p>\r\n";
-        $str .= "<hr>\r\n";
+    to MyCyclingLog, from Endomondo to Strava or from Endomondo to RideWithGPS</p>\n";
+        $str .= "<hr>\n";
         $str .= "<p>The Eddington Number is a metric for long distance cyclists.  It's the largest value of E where you
     have cycled at least E miles on E days. So if you have
     cycled 35 miles or more on 35 days but have not cycled at 36 miles or more on 36 days, then your E-number is 35.</p>";
@@ -659,7 +655,6 @@ class MainPage
     {
         global $eddingtonAndMoreVersion;
         return "<div id=\"notes\">
-    <hr>
     <p>Notes:</p>
     <ol>
         <li><em>date format is dd-mm-yyyy</em></li>
@@ -735,15 +730,15 @@ class MainPage
             document.getElementById("datepicker_end").value = end;
             }
             </script>';
-        $string .= "Fill in dates:\r\n";
-        $string .= "<span class=\"roundbutton\" onclick=\"populateDates('$today','')\">today</span>\r\n";
-        $string .= "<span class=\"roundbutton\" onclick=\"populateDates('$yesterday','')\">since yesterday</span>\r\n";;
-        $string .= "<span class=\"roundbutton\" onclick=\"populateDates('$seven_days_ago','')\">last 7 days</span>\r\n";;
-        $string .= "<span class=\"roundbutton\" onclick=\"populateDates('$start_of_month','')\">this month</span>\r\n";;
-        $string .= "<span class=\"roundbutton\" onclick=\"populateDates('$start_of_year','')\">this year</span>\r\n";;
-        $string .= "<span class=\"roundbutton\" onclick=\"populateDates('$start_of_last_year','$end_of_last_year')\">last year</span>\r\n";;
-        $string .= "<span class=\"roundbutton\" onclick=\"populateDates('','')\">reset</span>\r\n";;
-        $string .= "<br>\r\n<br>\r\n";
+        $string .= "Fill in dates:\n";
+        $string .= "<span class=\"roundbutton\" onclick=\"populateDates('$today','')\">today</span>\n";
+        $string .= "<span class=\"roundbutton\" onclick=\"populateDates('$yesterday','')\">since yesterday</span>\n";;
+        $string .= "<span class=\"roundbutton\" onclick=\"populateDates('$seven_days_ago','')\">last 7 days</span>\n";;
+        $string .= "<span class=\"roundbutton\" onclick=\"populateDates('$start_of_month','')\">this month</span>\n";;
+        $string .= "<span class=\"roundbutton\" onclick=\"populateDates('$start_of_year','')\">this year</span>\n";;
+        $string .= "<span class=\"roundbutton\" onclick=\"populateDates('$start_of_last_year','$end_of_last_year')\">last year</span>\n";;
+        $string .= "<span class=\"roundbutton\" onclick=\"populateDates('','')\">reset</span>\n";;
+        $string .= "<br>\n<br>\n";
         return $string;
     }
 
@@ -759,7 +754,7 @@ class MainPage
         $(\"#datepicker_end\").datepicker({changeMonth: true, changeYear: true, dateFormat: 'dd-mm-yy'});
         $(\"#tz\").timezones();
         $(\"#tz\").val('$timezone');";
-        $str .= "</script>\r\n";
+        $str .= "</script>\n";
         return $str;
     }
 
@@ -769,7 +764,7 @@ class MainPage
         $password_warning = "Are you sure you want to do this?  This will remove all activities from " .
             "MyCyclingLog between \" + start + \" and \" + end_date + \" that have a Strava ride in the notes." .
             "\\n\\nIf you are sure, enter your MCL password here.";
-        $str .= "\r\n<script> function confirm_mcl_deletes() {
+        $str .= "\n<script> function confirm_mcl_deletes() {
             var start = document.forms[\"main_form\"][\"start_date\"].value;
             var end_date = document.forms[\"main_form\"][\"end_date\"].value;
             if (start == \"\") {
@@ -779,7 +774,7 @@ class MainPage
                 end_date = \"today\"
             }
             var password_warning = \"$password_warning\";";
-        $str .= "\r\n";
+        $str .= "\n";
 
         if (!$username) {
             $str .= 'var username = prompt("Please enter your MyCyclingLog username");';
@@ -1163,7 +1158,10 @@ class MainPage
      */
     private function compareDistance($distance1, $distance2)
     {
-        if ($distance1 <> 0 && abs(($distance2 - $distance1) / $distance1) < 0.02) {
+        if ($distance1 == $distance2) {
+            return 0;
+        }
+        if ($distance1 <> 0 && abs(($distance2 - $distance1) / $distance1) <= 0.02) {
             return 0;
         }
         return $distance1 < $distance2 ? -1 : 1;

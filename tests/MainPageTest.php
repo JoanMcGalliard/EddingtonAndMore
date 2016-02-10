@@ -14,7 +14,7 @@ class MainPageTest extends JoanMcGalliard\EddingtonAndMore\BaseTestClass
     {
         $this->mainPage = new MainPage(array($this, 'myEcho'));
 
-//        $setup = self::getMethod('setup');
+//        $setup = $this->getMethod('setup');
 //        $setup->invokeArgs($this->mainPage, array());
         date_default_timezone_set("UTC");
 
@@ -23,15 +23,47 @@ class MainPageTest extends JoanMcGalliard\EddingtonAndMore\BaseTestClass
 
     public function testEmail()
     {
-        $email = self::getMethod('email');
+        $email = $this->getMethod('email');
         $this->assertEquals(include('data/expected/emailform.php'), $email->invokeArgs($this->mainPage, array()));
     }
 
     public function testSumActivities()
     {
-        $sumActivities = self::getMethod('sumActivities');
+        $sumActivities = $this->getMethod('sumActivities');
         $this->assertEquals(include('data/expected/sumActivities.php'), $sumActivities->invokeArgs($this->mainPage, array(include('data/input/sumActivities.php'))));
     }
+    public function testConnections()
+    {
+        $connections = $this->getMethod('connections');
+
+        $this->setProperty('here', "HERE",$this->mainPage);
+
+        $this->setProperty('strava', new MockTracker(true,true,"URL"),$this->mainPage);
+        $this->setProperty('myCyclingLog', new MockTracker(true),$this->mainPage);
+        $this->setProperty('endomondo', new MockTracker(true),$this->mainPage);
+        $this->setProperty('rideWithGps', new MockTracker(true),$this->mainPage);
+        // already connected to all services, there should be no connections section at all.
+        $this->assertEquals('', $connections->invokeArgs($this->mainPage, array()));
+        // not write connected to strava, there should be the writescope strava message
+        $this->setProperty('strava', new MockTracker(true,false,"URL"),$this->mainPage);
+        $this->assertEquals(include('data/expected/connectionsStravaWrite.php'), $connections->invokeArgs($this->mainPage, array()));
+        // not connected to strava, should be
+        $this->setProperty('strava', new MockTracker(false),$this->mainPage);
+        $this->assertEquals(include('data/expected/connectionsStravaBoth.php'), $connections->invokeArgs($this->mainPage, array()));
+        // all connected except MCL
+        $this->setProperty('strava', new MockTracker(true,true),$this->mainPage);
+        $this->setProperty('myCyclingLog', new MockTracker(false),$this->mainPage);
+        $this->assertEquals(include('data/expected/connectionsMclOnly.php'), $connections->invokeArgs($this->mainPage, array()));
+        // all connected except endomondo
+        $this->setProperty('myCyclingLog', new MockTracker(true),$this->mainPage);
+        $this->setProperty('endomondo', new MockTracker(false),$this->mainPage);
+        $this->assertEquals(include('data/expected/connectionsEndoOnly.php'), $connections->invokeArgs($this->mainPage, array()));
+        // all connected except rideWithGPS
+        $this->setProperty('endomondo', new MockTracker(true),$this->mainPage);
+        $this->setProperty('rideWithGps', new MockTracker(false),$this->mainPage);
+        $this->assertEquals(include('data/expected/connectionsRwgpsOnly.php'), $connections->invokeArgs($this->mainPage, array()));
+    }
+
 
     public function testProcessUploadedGpxFiles()
     {
@@ -69,7 +101,7 @@ class MainPageTest extends JoanMcGalliard\EddingtonAndMore\BaseTestClass
         );
         $user_id=9999;
 
-        $processUploadedGpxFiles = self::getMethod('processUploadedGpxFiles');
+        $processUploadedGpxFiles = $this->getMethod('processUploadedGpxFiles');
         $this->assertEquals("20121116_085500.gpx: uploaded successfully.<br>",
             $processUploadedGpxFiles->invokeArgs($this->mainPage, array($user_id, $scratchDirectory)));
         $this->assertEquals(1, $this->countFiles($scratchDirectory));
@@ -106,7 +138,7 @@ class MainPageTest extends JoanMcGalliard\EddingtonAndMore\BaseTestClass
 
     public function testNotes()
     {
-        $notes = self::getMethod('notes');
+        $notes = $this->getMethod('notes');
         $str = $notes->invokeArgs($this->mainPage, array("REVISION NUMBER"));
         $doc = new DOMDocument();
         $doc->loadXML($str);
@@ -115,7 +147,7 @@ class MainPageTest extends JoanMcGalliard\EddingtonAndMore\BaseTestClass
 
     public function testCalculateEddington()
     {
-        $calculateEddington = self::getMethod('calculateEddington');
+        $calculateEddington = $this->getMethod('calculateEddington');
         $days = array(
             '2016-01-10' => 98670.699999999997,
             '2016-01-30' => 66378.800000000003,
@@ -147,7 +179,7 @@ class MainPageTest extends JoanMcGalliard\EddingtonAndMore\BaseTestClass
 
     public function testBuildChart()
     {
-        $buildChart = self::getMethod('buildChart');
+        $buildChart = $this->getMethod('buildChart');
 
 
         $imperial_history = array(
@@ -177,7 +209,7 @@ class MainPageTest extends JoanMcGalliard\EddingtonAndMore\BaseTestClass
     public function testDateButtons()
     {
         $twentyFourHours = 60 * 60 * 24;
-        $dateButtons = self::getMethod('dateButtons');
+        $dateButtons = $this->getMethod('dateButtons');
 
         $timezones = array("UTC", "Europe/Belfast", "America/North_Dakota/Beulah", "Australia/Melbourne");
         foreach ($timezones as $timezone) {
@@ -196,20 +228,20 @@ class MainPageTest extends JoanMcGalliard\EddingtonAndMore\BaseTestClass
     public function testDatePicker()
     {
         $twentyFourHours = 60 * 60 * 24;
-        $datePicker = self::getMethod('datePicker');
+        $datePicker = $this->getMethod('datePicker');
         $this->assertEquals(include('data/expected/datePicker.php'), $datePicker->invokeArgs($this->mainPage, array("TIME ZONE")));
     }
 
     public function testExtractStravaIds()
     {
-        $extractStravaIds = self::getMethod('extractStravaIds');;
+        $extractStravaIds = $this->getMethod('extractStravaIds');;
         $this->assertEquals(include('data/expected/extractStravaIds.php'), $extractStravaIds->invokeArgs($this->mainPage, array(include("data/input/mclRides.php"))));
         $timezones = array("UTC", "Europe/Belfast", "America/North_Dakota/Beulah", "Australia/Melbourne");
     }
 
     public function testCompareDistance()
     {
-        $compareDistance = self::getMethod('compareDistance');
+        $compareDistance = $this->getMethod('compareDistance');
         $this->assertEquals(0, $compareDistance->invokeArgs($this->mainPage, array(0, 0)));
         $this->assertEquals(0, $compareDistance->invokeArgs($this->mainPage, array(100, 100)));
         $this->assertEquals(0, $compareDistance->invokeArgs($this->mainPage, array(102, 100)));
@@ -224,14 +256,14 @@ class MainPageTest extends JoanMcGalliard\EddingtonAndMore\BaseTestClass
 
     public function testTopOfPage()
     {
-        $topOfPage = self::getMethod('topOfPage');
+        $topOfPage = $this->getMethod('topOfPage');
         $this->assertEquals(include('data/expected/topOfPage.php'), $topOfPage->invokeArgs($this->mainPage, array()));
 
     }
 
     public function testBottomOfPage()
     {
-        $bottomOfPage = self::getMethod('bottomOfPage');
+        $bottomOfPage = $this->getMethod('bottomOfPage');
         $this->assertEquals('</body></html>', $bottomOfPage->invokeArgs($this->mainPage, array()));
 
     }
@@ -243,6 +275,20 @@ class MainPageTest extends JoanMcGalliard\EddingtonAndMore\BaseTestClass
         $method->setAccessible(true);
         return $method;
     }
+    public function getPrivateProperty( $className, $propertyName ) {
+        $reflector = new ReflectionClass( $className );
+        $property = $reflector->getProperty( $propertyName );
+        $property->setAccessible( true );
+
+        return $property;
+    }
+    protected static function setProperty($name, $value,$obj)
+    {
+        $class = new ReflectionClass('MainPage');
+        $property = $class->getProperty($name);
+        $property->setAccessible(true);
+        $property->setValue($obj,$value);
+    }
 
     /*
      *     public function __construct($echoCallback)
@@ -252,7 +298,6 @@ class MainPageTest extends JoanMcGalliard\EddingtonAndMore\BaseTestClass
     private function datePicker($timezone)
     private function mclDeleteButton($username)
     private function mainForm()
-    private function connections()
     private function sumDay($rides)
     private function next_goals($x)
     private function number_of_days_to_goal($goal, $days, $factor)
@@ -264,5 +309,34 @@ class MainPageTest extends JoanMcGalliard\EddingtonAndMore\BaseTestClass
     private function processUploadedGpxFiles($userId, $scratchDirectory)
 
      */
+
+}
+
+class MockTracker {
+
+    private $connected;
+    private $writeScope;
+
+    /**
+     * MockTracker constructor.
+     */
+    public function __construct($connected,$writeScope=false)
+    {
+        $this->connected=$connected;
+        $this->writeScope=$writeScope;
+    }
+
+    public function isConnected ()
+    {
+        return $this->connected;
+    }
+    public function writeScope ()
+    {
+        return $this->writeScope;
+    }
+    public function authenticationUrl ($redirect, $approvalPrompt, $scope, $state)
+    {
+        return "$redirect-$approvalPrompt-$scope-$state";
+    }
 
 }

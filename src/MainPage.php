@@ -49,15 +49,23 @@ class MainPage
     {
         global $eddingtonAndMoreVersion;
         $this->noEcho = true;
+        $this->init();
         $state = $this->setup();
         $this->noEcho = false;
 
         $this->output($this->topOfPage());
         $this->output($this->execute($state));
+        if (!$this->isConnected()) {
+            // put connection options at the top if we aren't connected to anything
+            $this->output($this->connections());
+        }
         $this->output($this->mainForm());
         $this->output("<hr>\n");
         $this->output($this->notes($eddingtonAndMoreVersion));
-        $this->output($this->connections());
+        if ($this->isConnected()) {
+            // put connection options at the top if we aren't connected to anything
+            $this->output($this->connections());
+        }
         $this->output($this->email());
         $this->output($this->bottomOfPage());
 
@@ -70,21 +78,30 @@ class MainPage
         }
     }
 
-    private function setup()
+    private function init()
     {
-        global $stravaClientId, $stravaClientSecret, $deviceId, $googleApiKey, $scratchDirectory, $workingEmailAddress;
-
+        global $stravaClientId, $stravaClientSecret, $deviceId, $googleApiKey;
         set_include_path(get_include_path() . PATH_SEPARATOR . dirname(__FILE__) . DIRECTORY_SEPARATOR . "src" . PATH_SEPARATOR);
-
-        date_default_timezone_set("UTC");
         $this->info_message = "";
         $this->error_message = "";
+        $this->preferences = new Preferences();
+        $this->strava = new JoanMcGalliard\EddingtonAndMore\Strava($stravaClientId, $stravaClientSecret, array($this, 'output'));
+        $this->myCyclingLog = new JoanMcGalliard\EddingtonAndMore\MyCyclingLog(array($this, 'output'));
+        $this->endomondo = new JoanMcGalliard\EddingtonAndMore\Endomondo($deviceId, $googleApiKey, $this->preferences->getTimezone(), array($this, 'output'));
+        $this->rideWithGps = new JoanMcGalliard\EddingtonAndMore\RideWithGps($googleApiKey, array($this, 'output'));
+    }
+
+    private function setup()
+    {
+        global $scratchDirectory, $workingEmailAddress;
+
+
+        date_default_timezone_set("UTC");
 
 
         $this->here = "http://$_SERVER[HTTP_HOST]$_SERVER[SCRIPT_NAME]";
         $state = null;
 
-        $this->preferences = new Preferences();
         $this->start_date = null;
         $this->end_date = null;
         if (isset($_POST["start_date"]) && $_POST["start_date"] <> '') {
@@ -113,10 +130,6 @@ class MainPage
             unset($_GET["state"]);
         }
 
-        $this->strava = new JoanMcGalliard\EddingtonAndMore\Strava($stravaClientId, $stravaClientSecret, array($this, 'output'));
-        $this->myCyclingLog = new JoanMcGalliard\EddingtonAndMore\MyCyclingLog(array($this, 'output'));
-        $this->endomondo = new JoanMcGalliard\EddingtonAndMore\Endomondo($deviceId, $googleApiKey, $this->preferences->getTimezone(), array($this, 'output'));
-        $this->rideWithGps = new JoanMcGalliard\EddingtonAndMore\RideWithGps($googleApiKey, array($this, 'output'));
 
 
         $this->myCyclingLog->setUseFeetForElevation($this->preferences->getMclUseFeet());
@@ -356,7 +369,7 @@ class MainPage
             $this->output("<H3>Copying data from Strava to MyCyclingLog...</H3>");
             set_time_limit(300);
 
-            $this->strava_rides_to_add = $this->strava->getRides($this->start_date, $this->end_date);
+            $strava_rides_to_add = $this->strava->getRides($this->start_date, $this->end_date);
             if ($this->strava->getError()) {
                 return ("<br>There was a problem getting data from Strava.<br>" . $this->strava->getError() .
                     "\n<br>Please try again\n");
@@ -366,30 +379,30 @@ class MainPage
                 $rides_to_retry = [];
                 for ($i = 0; $i < 5; $i++) {
                     $mcl_rides = $this->myCyclingLog->getRides($this->start_date, $this->end_date);
-                    $this->strava_ids_in_mcl_rides = $this->extractStravaIds($mcl_rides);
+                    $strava_ids_in_mcl_rides = $this->extractStravaIds($mcl_rides);
                     $overnight_rides = $this->strava->getOvernightActivities();
-                    foreach ($this->strava_rides_to_add as $date => $ride_list) {
-                        $this->strava_day_total = $this->sumDay($ride_list);
+                    foreach ($strava_rides_to_add as $date => $ride_list) {
+                        $strava_day_total = $this->sumDay($ride_list);
                         $mcl_day_total = isset($mcl_rides[$date]) ? $this->sumDay($mcl_rides[$date]) : 0;
-                        if ($this->compareDistance($mcl_day_total, $this->strava_day_total) >= 0) {
+                        if ($this->compareDistance($mcl_day_total, $strava_day_total) >= 0) {
                             continue; //there is at least this many miles for this day already in strava
                         }
                         foreach ($ride_list as $ride) {
 
-                            if ($this->compareDistance($mcl_day_total, $this->strava_day_total) >= 0) {
+                            if ($this->compareDistance($mcl_day_total, $strava_day_total) >= 0) {
                                 break;
                             }
 
                             $distance = $ride['distance'];
-                            if (!in_array($ride['strava_id'], $this->strava_ids_in_mcl_rides)) { // not an already copied strava ride
+                            if (!in_array($ride['strava_id'], $strava_ids_in_mcl_rides)) { // not an already copied strava ride
                                 if ($this->preferences->getStravaSplitRides() && isset($overnight_rides[$ride['strava_id']])) {
                                     $overnightRidesNeeded[$ride['strava_id']] = $overnight_rides[$ride['strava_id']];
                                     continue; // this is an unsplit overnight ride
                                 }
 
-                                if ($this->compareDistance($mcl_day_total + $distance, $this->strava_day_total) >= 0) {
+                                if ($this->compareDistance($mcl_day_total + $distance, $strava_day_total) >= 0) {
                                     //this ride will make our day total on MCL bigger than strava
-                                    $distance = $this->strava_day_total - $mcl_day_total;
+                                    $distance = $strava_day_total - $mcl_day_total;
                                 }
                                 $message = "Ride with id " . $ride['strava_id'] . " on $date, distance " . round($distance * self::METRE_TO_MILE, 1) . " miles/" . round($distance * self::METRE_TO_KM, 1) . " kms. ";
                                 $bike = $this->strava->getBike($ride["bike"]);
@@ -415,7 +428,7 @@ class MainPage
                     if (sizeof($rides_to_retry) == 0) {
                         break;
                     }
-                    $this->strava_rides_to_add = $rides_to_retry;
+                    $strava_rides_to_add = $rides_to_retry;
                     $rides_to_retry = [];
                 }
                 $str .= "<br>$count rides added.<br>\n";
@@ -1081,9 +1094,8 @@ class MainPage
     }
 
     private function isDuplicateRide($endo_ride, $rides, $id_key)
-//returns true if endo id matches or a ride overlaps this ride.
+//Determines
     {
-
         if (!$rides) {
             return false;
         }
@@ -1325,6 +1337,7 @@ class MainPage
     {
         return $this->myCyclingLog->isConnected() || $this->strava->isConnected() || $this->rideWithGps->isConnected() || $this->endomondo->isConnected();
     }
+
 
 
 }

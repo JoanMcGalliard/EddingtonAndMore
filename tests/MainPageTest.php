@@ -20,7 +20,6 @@ class MainPageTest extends JoanMcGalliard\EddingtonAndMore\BaseTestClass
 
     }
 
-
     public function testEmail()
     {
         $email = $this->getMethod('email');
@@ -35,7 +34,7 @@ class MainPageTest extends JoanMcGalliard\EddingtonAndMore\BaseTestClass
 
     public function testAskForStravaGpx()
     {
-        $_POST=array (
+        $_POST = array(
             'start_date' => '01-01-2015',
             'end_date' => '31-12-2015',
         );
@@ -45,67 +44,70 @@ class MainPageTest extends JoanMcGalliard\EddingtonAndMore\BaseTestClass
 
         )));
     }
+
     public function testNextGoals()
     {
         $nextGoals = $this->getMethod('nextGoals');
-        $this->assertEquals(array(2,5,10,50,100), $nextGoals->invokeArgs($this->mainPage, array(1)));
-        $this->assertEquals(array(51,55,60,100), $nextGoals->invokeArgs($this->mainPage, array(50)));
-        $this->assertEquals(array(104,105,110,150,200), $nextGoals->invokeArgs($this->mainPage, array(103)));
-        $this->assertEquals(array(50,100), $nextGoals->invokeArgs($this->mainPage, array(49)));
+        $this->assertEquals(array(2, 5, 10, 50, 100), $nextGoals->invokeArgs($this->mainPage, array(1)));
+        $this->assertEquals(array(51, 55, 60, 100), $nextGoals->invokeArgs($this->mainPage, array(50)));
+        $this->assertEquals(array(104, 105, 110, 150, 200), $nextGoals->invokeArgs($this->mainPage, array(103)));
+        $this->assertEquals(array(50, 100), $nextGoals->invokeArgs($this->mainPage, array(49)));
     }
+
     public function testNumberOfDaysToGoal()
     {
         $numberOfDaysToGoal = $this->getMethod('numberOfDaysToGoal');
-        $this->assertEquals(26, $numberOfDaysToGoal->invokeArgs($this->mainPage, array(28,array ('2016-02-07' => 30,'2016-02-09' => 28, '2016-02-08' => 27),1)));
-        $this->assertEquals(12, $numberOfDaysToGoal->invokeArgs($this->mainPage, array(14,array ('2016-02-07' => 30,'2016-02-09' => 28, '2016-02-08' => 26.9999999999),0.5)));
-        $this->assertEquals(6, $numberOfDaysToGoal->invokeArgs($this->mainPage, array(8,array ('2016-02-07' => 29780.200000000001,'2016-02-09' => 22029.199999999997, '2016-02-08' => 6018.2000000000007),0.00062137119223999997)));
+        $this->assertEquals(26, $numberOfDaysToGoal->invokeArgs($this->mainPage, array(28, array('2016-02-07' => 30, '2016-02-09' => 28, '2016-02-08' => 27), 1)));
+        $this->assertEquals(12, $numberOfDaysToGoal->invokeArgs($this->mainPage, array(14, array('2016-02-07' => 30, '2016-02-09' => 28, '2016-02-08' => 26.9999999999), 0.5)));
+        $this->assertEquals(6, $numberOfDaysToGoal->invokeArgs($this->mainPage, array(8, array('2016-02-07' => 29780.200000000001, '2016-02-09' => 22029.199999999997, '2016-02-08' => 6018.2000000000007), 0.00062137119223999997)));
     }
+
     public function testSumDay()
     {
         $sumDay = $this->getMethod('sumDay');
         $this->assertEquals(29780.2, $sumDay->invokeArgs($this->mainPage, array(include('data/input/rides.php'))));
-        $this->assertEquals(7122.6, $sumDay->invokeArgs($this->mainPage, array(array (array ('distance' => 7122.6)))));
-        $this->assertEquals(0, $sumDay->invokeArgs($this->mainPage, array(array (array ('distance' => 0)))));
-        $this->assertEquals(0, $sumDay->invokeArgs($this->mainPage, array(array ())));
-
+        $this->assertEquals(7122.6, $sumDay->invokeArgs($this->mainPage, array(array(array('distance' => 7122.6)))));
+        $this->assertEquals(0, $sumDay->invokeArgs($this->mainPage, array(array(array('distance' => 0)))));
+        $this->assertEquals(0, $sumDay->invokeArgs($this->mainPage, array(array())));
 
 
     }
+
     public function testConnections()
     {
         $connections = $this->getMethod('connections');
 
-        $this->setProperty('here', "HERE",$this->mainPage);
+        $this->setProperty('here', "HERE", $this->mainPage);
 
-        $this->setProperty('strava', new MockTracker(true,true),$this->mainPage);
-        $this->setProperty('myCyclingLog', new MockTracker(true),$this->mainPage);
-        $this->setProperty('endomondo', new MockTracker(true),$this->mainPage);
-        $this->setProperty('rideWithGps', new MockTracker(true),$this->mainPage);
+        $this->setProperty('strava', new MockTracker(true, true), $this->mainPage);
+        $this->setProperty('myCyclingLog', new MockTracker(true), $this->mainPage);
+        $this->setProperty('endomondo', new MockTracker(true), $this->mainPage);
+        $this->setProperty('rideWithGps', new MockTracker(true), $this->mainPage);
         // already connected to all services, there should be no connections section at all.
         $this->assertEquals('', $connections->invokeArgs($this->mainPage, array()));
         // not write connected to strava, there should be the writescope strava message
-        $this->setProperty('strava', new MockTracker(true,false,"URL"),$this->mainPage);
+        $this->setProperty('strava', new MockTracker(true, false, "URL"), $this->mainPage);
         $this->assertEquals(include('data/expected/connectionsStravaWrite.php'), $connections->invokeArgs($this->mainPage, array()));
         // not connected to strava, should be
-        $this->setProperty('strava', new MockTracker(false),$this->mainPage);
+        $this->setProperty('strava', new MockTracker(false), $this->mainPage);
         $this->assertEquals(include('data/expected/connectionsStravaBoth.php'), $connections->invokeArgs($this->mainPage, array()));
         // all connected except MCL
-        $this->setProperty('strava', new MockTracker(true,true),$this->mainPage);
-        $this->setProperty('myCyclingLog', new MockTracker(false),$this->mainPage);
+        $this->setProperty('strava', new MockTracker(true, true), $this->mainPage);
+        $this->setProperty('myCyclingLog', new MockTracker(false), $this->mainPage);
         $this->assertEquals(include('data/expected/connectionsMclOnly.php'), $connections->invokeArgs($this->mainPage, array()));
         // all connected except endomondo
-        $this->setProperty('myCyclingLog', new MockTracker(true),$this->mainPage);
-        $this->setProperty('endomondo', new MockTracker(false),$this->mainPage);
+        $this->setProperty('myCyclingLog', new MockTracker(true), $this->mainPage);
+        $this->setProperty('endomondo', new MockTracker(false), $this->mainPage);
         $this->assertEquals(include('data/expected/connectionsEndoOnly.php'), $connections->invokeArgs($this->mainPage, array()));
         // all connected except rideWithGPS
-        $this->setProperty('endomondo', new MockTracker(true),$this->mainPage);
-        $this->setProperty('rideWithGps', new MockTracker(false),$this->mainPage);
+        $this->setProperty('endomondo', new MockTracker(true), $this->mainPage);
+        $this->setProperty('rideWithGps', new MockTracker(false), $this->mainPage);
         $this->assertEquals(include('data/expected/connectionsRwgpsOnly.php'), $connections->invokeArgs($this->mainPage, array()));
 
-        $this->setProperty('strava', new MockTracker(false),$this->mainPage);
-        $this->setProperty('myCyclingLog', new MockTracker(false),$this->mainPage);
-        $this->setProperty('endomondo', new MockTracker(false),$this->mainPage);
-        $this->setProperty('rideWithGps', new MockTracker(false),$this->mainPage);
+        $this->setProperty('strava', new MockTracker(false), $this->mainPage);
+        $this->setProperty('myCyclingLog', new MockTracker(false), $this->mainPage);
+        $this->setProperty('endomondo', new MockTracker(false), $this->mainPage);
+        $this->setProperty('rideWithGps', new MockTracker(false), $this->mainPage);
         $this->assertEquals(include('data/expected/connectionsAll.php'), $connections->invokeArgs($this->mainPage, array()));
 
 
@@ -114,45 +116,45 @@ class MainPageTest extends JoanMcGalliard\EddingtonAndMore\BaseTestClass
 
     public function testProcessUploadedGpxFiles()
     {
-        $scratchDirectory = __DIR__.DIRECTORY_SEPARATOR.'scratchDirectory';
-        $sourceDirectory = __DIR__.DIRECTORY_SEPARATOR.'sourceDirectory';
+        $scratchDirectory = __DIR__ . DIRECTORY_SEPARATOR . 'scratchDirectory';
+        $sourceDirectory = __DIR__ . DIRECTORY_SEPARATOR . 'sourceDirectory';
         $this->cleanDirectory($scratchDirectory);
         $this->cleanDirectory($sourceDirectory);
         $sourceFile = $sourceDirectory . DIRECTORY_SEPARATOR . "20121116_085500.gpx";
-        $gpxFile = __DIR__.DIRECTORY_SEPARATOR.'data/input/20121116_085500.gpx';
+        $gpxFile = __DIR__ . DIRECTORY_SEPARATOR . 'data/input/20121116_085500.gpx';
         copy($gpxFile, $sourceFile);
 
         $_FILES = array(
             'gpx' => array(
-                    'name' =>
-                        array(
-                            0 => '20121116_085500.gpx',
-                        ),
-                    'type' =>
-                        array(
-                            0 => 'application/octet-stream',
-                        ),
-                    'tmp_name' =>
-                        array(
-                            0 => $sourceFile,
-                        ),
-                    'error' =>
-                        array(
-                            0 => 0,
-                        ),
-                    'size' =>
-                        array(
-                            0 => 1114,
-                        ),
-                ),
+                'name' =>
+                    array(
+                        0 => '20121116_085500.gpx',
+                    ),
+                'type' =>
+                    array(
+                        0 => 'application/octet-stream',
+                    ),
+                'tmp_name' =>
+                    array(
+                        0 => $sourceFile,
+                    ),
+                'error' =>
+                    array(
+                        0 => 0,
+                    ),
+                'size' =>
+                    array(
+                        0 => 1114,
+                    ),
+            ),
         );
-        $user_id=9999;
+        $user_id = 9999;
 
         $processUploadedGpxFiles = $this->getMethod('processUploadedGpxFiles');
         $this->assertEquals("20121116_085500.gpx: uploaded successfully.<br>",
             $processUploadedGpxFiles->invokeArgs($this->mainPage, array($user_id, $scratchDirectory)));
         $this->assertEquals(1, $this->countFiles($scratchDirectory));
-        $createdFile=$scratchDirectory.DIRECTORY_SEPARATOR.$user_id."-2016-02-05T18_27_24Z.gpx";
+        $createdFile = $scratchDirectory . DIRECTORY_SEPARATOR . $user_id . "-2016-02-05T18_27_24Z.gpx";
         $this->assertTrue(file_exists($createdFile));
         $this->assertEquals(file_get_contents($gpxFile), file_get_contents($createdFile));
     }
@@ -272,6 +274,7 @@ class MainPageTest extends JoanMcGalliard\EddingtonAndMore\BaseTestClass
             $this->assertEquals(include('data/expected/dateButtons.php'), $dateButtons->invokeArgs($this->mainPage, array($timezone)));
         }
     }
+
     public function testDatePicker()
     {
         $twentyFourHours = 60 * 60 * 24;
@@ -283,7 +286,54 @@ class MainPageTest extends JoanMcGalliard\EddingtonAndMore\BaseTestClass
     {
         $extractStravaIds = $this->getMethod('extractStravaIds');;
         $this->assertEquals(include('data/expected/extractStravaIds.php'), $extractStravaIds->invokeArgs($this->mainPage, array(include("data/input/mclRides.php"))));
-        $timezones = array("UTC", "Europe/Belfast", "America/North_Dakota/Beulah", "Australia/Melbourne");
+    }
+    public function testSetup()
+    {
+        $setup = $this->getMethod('setup');
+        include('data/input/server.php');
+        $_POST=array ('calculate_from_strava' => 'Eddington Number from Strava');
+
+        $this->setProperty('preferences', new MockPreferences(), $this->mainPage);
+        $this->setProperty('strava', new MockTracker(true, true), $this->mainPage);
+        $this->setProperty('myCyclingLog', new MockTracker(true), $this->mainPage);
+        $this->setProperty('endomondo', new MockTracker(true), $this->mainPage);
+        $this->setProperty('rideWithGps', new MockTracker(true), $this->mainPage);
+
+        $this->assertEquals("calculate_from_strava", $setup->invokeArgs($this->mainPage, array()));
+    }
+
+    public function testRender()
+    {
+        //todo
+
+//        $mock=$csc = $this->getMockBuilder('MainPage')
+//            ->setConstructorArgs(array($this, 'myEcho'))
+//            ->setMethods(array('setup','execute','render'))
+//            ->getMock();
+//        $mock->method('setup')->willReturn("setup");
+//        $mock->method('execute')->willReturn("execute");
+//        $mock->method('render')->willReturn("render");
+//        $this->output="";
+//        /** @var MainPage $mock */
+//        $mock->render();
+//        $this->assertEquals("string", $this->output);
+    }
+
+    public function testIsDuplicateRide()
+    {
+        //todo !!!
+        $isDuplicateRide = $this->getMethod('isDuplicateRide');
+
+        $ride = array(
+            'distance' => 8359.2338562011719,
+            'elapsed_time' => 5736,
+            'max_speed' => 8.4078611111111101,
+            'endo_id' => 669846213,
+            'ascent' => 22,
+            'start_time' => '2016-02-09 23:25:09 UTC',
+            'name' => '',
+        );
+        $this->assertEquals(490216193, $isDuplicateRide->invokeArgs($this->mainPage, array($ride, include("data/input/endoRides.php"), "strava_id")));
     }
 
     public function testCompareDistance()
@@ -315,6 +365,48 @@ class MainPageTest extends JoanMcGalliard\EddingtonAndMore\BaseTestClass
 
     }
 
+    public function testMclDeleteButton()
+    {
+        $mclDeleteButton = $this->getMethod('mclDeleteButton');
+        $this->assertEquals(include('data/expected/mclDeleteNoUsername.php'), $mclDeleteButton->invokeArgs($this->mainPage, array(null)));
+        $this->assertEquals(include('data/expected/mclDeleteUsername.php'), $mclDeleteButton->invokeArgs($this->mainPage, array("joan")));
+    }
+    public function testExecute()
+    {
+
+        // todo
+        $execute = $this->getMethod('execute');
+
+        $this->setProperty('preferences', new MockPreferences(), $this->mainPage);
+        $this->setProperty('strava', new MockTracker(true, true), $this->mainPage);
+        $this->setProperty('myCyclingLog', new MockTracker(true), $this->mainPage);
+        $this->setProperty('endomondo', new MockTracker(true), $this->mainPage);
+        $this->setProperty('rideWithGps', new MockTracker(true), $this->mainPage);
+
+
+        $this->assertEquals(include('data/expected/calculateFromStrava.php'), $execute->invokeArgs($this->mainPage, array("calculate_from_strava")));
+    }
+    public function testEddingtonHistory()
+    {
+        $eddingtonHistory = $this->getMethod('eddingtonHistory');
+        $this->assertEquals(include('data/expected/history.php'),
+            $eddingtonHistory->invokeArgs($this->mainPage, array(include('data/input/history.php'), 0.00062137119223999997)));
+    }
+
+    public function testMainForm()
+    {
+        $mainForm = $this->getMethod('mainForm');
+
+        $this->setProperty('preferences', new MockPreferences(), $this->mainPage);
+        $this->setProperty('strava', new MockTracker(true, true), $this->mainPage);
+        $this->setProperty('myCyclingLog', new MockTracker(true), $this->mainPage);
+        $this->setProperty('endomondo', new MockTracker(true), $this->mainPage);
+        $this->setProperty('rideWithGps', new MockTracker(true), $this->mainPage);
+
+        $this->assertEquals(include('data/expected/mainForm.php'), $mainForm->invokeArgs($this->mainPage, array()));
+
+    }
+
     protected static function getMethod($name)
     {
         $class = new ReflectionClass('MainPage');
@@ -322,41 +414,41 @@ class MainPageTest extends JoanMcGalliard\EddingtonAndMore\BaseTestClass
         $method->setAccessible(true);
         return $method;
     }
-    public function getPrivateProperty( $className, $propertyName ) {
-        $reflector = new ReflectionClass( $className );
-        $property = $reflector->getProperty( $propertyName );
-        $property->setAccessible( true );
+
+    public function getPrivateProperty($className, $propertyName)
+    {
+        $reflector = new ReflectionClass($className);
+        $property = $reflector->getProperty($propertyName);
+        $property->setAccessible(true);
 
         return $property;
     }
-    protected static function setProperty($name, $value,$obj)
+
+    protected static function setProperty($name, $value, $obj)
     {
         $class = new ReflectionClass('MainPage');
         $property = $class->getProperty($name);
         $property->setAccessible(true);
-        $property->setValue($obj,$value);
+        $property->setValue($obj, $value);
     }
-
-    /*
-     *     public function __construct($echoCallback)
-    public function render()
-    private function setup()
-    private function execute($state)
-    private function datePicker($timezone)
-    private function mclDeleteButton($username)
-    private function mainForm()
-    private function number_of_days_to_goal($goal, $days, $factor)
-    private function isDuplicateRide($endo_ride, $rides, $id_key)
-    private function ($distance1, $distance2)
-    private function eddingtonHistory($days, $factor)
-    private function askForStravaGpx($overnight_rides, $maxKmFileUploads, $state, $message)
-    private function processUploadedGpxFiles($userId, $scratchDirectory)
-
-     */
-
 }
 
-class MockTracker {
+class MockPreferences {
+    public function getTimezone() {return "UTC";}
+    public function getStravaSplitRides() {return false;}
+    public function getEndoSplitRides() {return false;}
+    public function getRwgpsSplitRides() {return false;}
+    public function getMclUseFeet() {return false;}
+    public function getMclUsername() {return "helen";}
+    public function getStravaWriteScope() {return true;}
+    public function getMclAuth() {return "auth";}
+    public function getEndoAuth() {return "auth";}
+    public function getRwgpsAuth() {return "auth";}
+    public function getStravaAccessToken() {return "token";}
+    public function setStravaSplitRides($x) {}
+}
+class MockTracker
+{
 
     private $connected;
     private $writeScope;
@@ -364,23 +456,86 @@ class MockTracker {
     /**
      * MockTracker constructor.
      */
-    public function __construct($connected,$writeScope=false)
+    public function __construct($connected, $writeScope = false)
     {
-        $this->connected=$connected;
-        $this->writeScope=$writeScope;
+        $this->connected = $connected;
+        $this->writeScope = $writeScope;
     }
 
-    public function isConnected ()
+    public function isConnected()
     {
         return $this->connected;
     }
-    public function writeScope ()
+
+    public function writeScope()
     {
         return $this->writeScope;
     }
-    public function authenticationUrl ($redirect, $approvalPrompt, $scope, $state)
+
+    public function authenticationUrl($redirect, $approvalPrompt, $scope, $state)
     {
         return "$redirect-$approvalPrompt-$scope-$state";
     }
 
+    public function getUserId() {
+        return 4444;
+    }
+
+    public function getRides()
+    {
+        return array(
+            '2016-02-09' =>
+                array(
+                    0 =>
+                        array(
+                            'distance' => 2806.9000000000001,
+                            'name' => 'Lunch Ride',
+                            'strava_id' => 490216220,
+                            'start_time' => '2016-02-09T11:58:11Z',
+                            'bike' => 'b267883',
+                            'moving_time' => 738,
+                            'elapsed_time' => 738,
+                            'total_elevation_gain' => 0,
+                            'max_speed' => 8.1999999999999993,
+                            'timezone' => 'Europe/London',
+                            'endo_id' => 669521476,
+                        ),
+                    1 =>
+                        array(
+                            'distance' => 10953.799999999999,
+                            'name' => 'Evening Ride',
+                            'strava_id' => 490216213,
+                            'start_time' => '2016-02-09T19:10:21Z',
+                            'bike' => 'b267883',
+                            'moving_time' => 2935,
+                            'elapsed_time' => 3812,
+                            'total_elevation_gain' => 11.6,
+                            'max_speed' => 6.7999999999999998,
+                            'timezone' => 'Europe/London',
+                            'endo_id' => 669758003,
+                        ),
+                    2 =>
+                        array(
+                            'distance' => 8268.5,
+                            'name' => 'Night Ride',
+                            'strava_id' => 490216193,
+                            'start_time' => '2016-02-09T23:25:09Z',
+                            'bike' => 'b267883',
+                            'moving_time' => 1552,
+                            'elapsed_time' => 1552,
+                            'total_elevation_gain' => 0,
+                            'max_speed' => 8.5,
+                            'timezone' => 'Europe/London',
+                            'endo_id' => 669846213,
+                        ),
+                ),
+        );
+    }
+    public function getOvernightActivities() {return [];}
+    public function getError() {return "";}
+    public function setUseFeetForElevation($x) {}
+    public function setSplitOvernightRides($x) {}
+    public function setWriteScope($x) {}
+    public function setAuth($x) {}
+    public function setAccessToken($x) {}
 }

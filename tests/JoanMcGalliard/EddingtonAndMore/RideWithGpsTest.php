@@ -2,11 +2,9 @@
 
 namespace JoanMcGalliard\EddingtonAndMore;
 
-require_once 'mocks/RideWithGpsMock.php';
 require_once 'BaseTestClass.php';
 require_once 'JoanMcGalliard/EddingtonAndMore/RideWithGps.php';
 
-use JoanMcGalliard\EddingtonAndMore\mocks\RideWithGpsMock;
 use ReflectionClass;
 
 class RideWithGpsTest extends BaseTestClass
@@ -386,4 +384,37 @@ class RideWithGpsTest extends BaseTestClass
     }
 }
 
+class RideWithGpsMock extends BaseMockClass
+{
+
+
+    private $auth_token;
+
+    /**
+     * @return mixed
+     */
+    public function getAuthToken()
+    {
+        return $this->auth_token;
+    }
+
+    /**
+     * @param mixed $auth_token
+     */
+    public function setAuth($auth_token)
+    {
+        $this->auth_token = $auth_token;
+    }
+
+    public function getAuth()
+    {
+        return $this->auth_token;
+    }
+
+    public function getError()
+    {
+        return "";
+
+    }
+}
 ?>

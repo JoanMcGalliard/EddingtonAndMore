@@ -32,13 +32,38 @@ class MainPageTest extends JoanMcGalliard\EddingtonAndMore\BaseTestClass
         $sumActivities = $this->getMethod('sumActivities');
         $this->assertEquals(include('data/expected/sumActivities.php'), $sumActivities->invokeArgs($this->mainPage, array(include('data/input/sumActivities.php'))));
     }
+    public function testNextGoals()
+    {
+        $nextGoals = $this->getMethod('nextGoals');
+        $this->assertEquals(array(2,5,10,50,100), $nextGoals->invokeArgs($this->mainPage, array(1)));
+        $this->assertEquals(array(51,55,60,100), $nextGoals->invokeArgs($this->mainPage, array(50)));
+        $this->assertEquals(array(104,105,110,150,200), $nextGoals->invokeArgs($this->mainPage, array(103)));
+        $this->assertEquals(array(50,100), $nextGoals->invokeArgs($this->mainPage, array(49)));
+    }
+    public function testNumberOfDaysToGoal()
+    {
+        $numberOfDaysToGoal = $this->getMethod('numberOfDaysToGoal');
+//        $this->assertEquals(26, $numberOfDaysToGoal->invokeArgs($this->mainPage, array(28,array ('2016-02-07' => 27,'2016-02-09' => 28, '2016-02-08' => 30),1)));
+        $this->assertEquals(6, $numberOfDaysToGoal->invokeArgs($this->mainPage, array(8,array ('2016-02-07' => 29780.200000000001,'2016-02-09' => 22029.199999999997, '2016-02-08' => 6018.2000000000007),0.00062137119223999997)));
+    }
+    public function testSumDay()
+    {
+        $sumDay = $this->getMethod('sumDay');
+        $this->assertEquals(29780.2, $sumDay->invokeArgs($this->mainPage, array(include('data/input/rides.php'))));
+        $this->assertEquals(7122.6, $sumDay->invokeArgs($this->mainPage, array(array (array ('distance' => 7122.6)))));
+        $this->assertEquals(0, $sumDay->invokeArgs($this->mainPage, array(array (array ('distance' => 0)))));
+        $this->assertEquals(0, $sumDay->invokeArgs($this->mainPage, array(array ())));
+
+
+
+    }
     public function testConnections()
     {
         $connections = $this->getMethod('connections');
 
         $this->setProperty('here', "HERE",$this->mainPage);
 
-        $this->setProperty('strava', new MockTracker(true,true,"URL"),$this->mainPage);
+        $this->setProperty('strava', new MockTracker(true,true),$this->mainPage);
         $this->setProperty('myCyclingLog', new MockTracker(true),$this->mainPage);
         $this->setProperty('endomondo', new MockTracker(true),$this->mainPage);
         $this->setProperty('rideWithGps', new MockTracker(true),$this->mainPage);
@@ -62,6 +87,14 @@ class MainPageTest extends JoanMcGalliard\EddingtonAndMore\BaseTestClass
         $this->setProperty('endomondo', new MockTracker(true),$this->mainPage);
         $this->setProperty('rideWithGps', new MockTracker(false),$this->mainPage);
         $this->assertEquals(include('data/expected/connectionsRwgpsOnly.php'), $connections->invokeArgs($this->mainPage, array()));
+
+        $this->setProperty('strava', new MockTracker(false),$this->mainPage);
+        $this->setProperty('myCyclingLog', new MockTracker(false),$this->mainPage);
+        $this->setProperty('endomondo', new MockTracker(false),$this->mainPage);
+        $this->setProperty('rideWithGps', new MockTracker(false),$this->mainPage);
+        $this->assertEquals(include('data/expected/connectionsAll.php'), $connections->invokeArgs($this->mainPage, array()));
+
+
     }
 
 
@@ -298,8 +331,6 @@ class MainPageTest extends JoanMcGalliard\EddingtonAndMore\BaseTestClass
     private function datePicker($timezone)
     private function mclDeleteButton($username)
     private function mainForm()
-    private function sumDay($rides)
-    private function next_goals($x)
     private function number_of_days_to_goal($goal, $days, $factor)
     private function isDuplicateRide($endo_ride, $rides, $id_key)
     private function ($distance1, $distance2)

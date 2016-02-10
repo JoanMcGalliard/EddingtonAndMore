@@ -315,9 +315,9 @@ class MainPage
             $table_imperial .= "</table>";
             $str .= "<br><a href=\"#imperial\">Your imperial Eddington Number</a> is <strong>$eddington_imperial</strong>.<br>\n";
             if ($end_text == "today") {
-                $goals = $this->next_goals($eddington_imperial);
+                $goals = $this->nextGoals($eddington_imperial);
                 foreach ($goals as $goal) {
-                    $num = $this->number_of_days_to_goal($goal, $days, self::METRE_TO_MILE);
+                    $num = $this->numberOfDaysToGoal($goal, $days, self::METRE_TO_MILE);
                     $str .= "You need to do $num ride(s) of at least $goal to increase it to $goal.<br>\n";
                 }
             }
@@ -333,9 +333,9 @@ class MainPage
             $table_metric .= "</table>";
             $str .= "<br><a href=\"#metric\">Your metric Eddington Number</a> is <strong>$eddington_metric</strong><br>\n";
             if ($end_text == "today") {
-                $goals = $this->next_goals($eddington_metric);
+                $goals = $this->nextGoals($eddington_metric);
                 foreach ($goals as $goal) {
-                    $num = $this->number_of_days_to_goal($goal, $days, self::METRE_TO_KM);
+                    $num = $this->numberOfDaysToGoal($goal, $days, self::METRE_TO_KM);
                     $str .= "You need to do $num ride(s) of at least $goal to increase it to $goal.<br>\n";
                 }
             }
@@ -1049,7 +1049,7 @@ class MainPage
         return $distance;
     }
 
-    private function next_goals($x)
+    private function nextGoals($x)
     {
         $next = [];
         $next[$x + 1] = 1;
@@ -1066,7 +1066,7 @@ class MainPage
         return array_keys($next);
     }
 
-    private function number_of_days_to_goal($goal, $days, $factor)
+    private function numberOfDaysToGoal($goal, $days, $factor)
     {
         $num = $goal;
         foreach ($days as $day => $distance) {

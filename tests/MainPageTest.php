@@ -26,15 +26,82 @@ class MainPageTest extends JoanMcGalliard\EddingtonAndMore\BaseTestClass
         $email = self::getMethod('email');
         $this->assertEquals(include('data/expected/emailform.php'), $email->invokeArgs($this->mainPage, array()));
     }
+
     public function testSumActivities()
     {
         $sumActivities = self::getMethod('sumActivities');
         $this->assertEquals(include('data/expected/sumActivities.php'), $sumActivities->invokeArgs($this->mainPage, array(include('data/input/sumActivities.php'))));
     }
+
     public function testProcessUploadedGpxFiles()
     {
+        $scratchDirectory = __DIR__.DIRECTORY_SEPARATOR.'scratchDirectory';
+        $sourceDirectory = __DIR__.DIRECTORY_SEPARATOR.'sourceDirectory';
+        $this->cleanDirectory($scratchDirectory);
+        $this->cleanDirectory($sourceDirectory);
+        $sourceFile = $sourceDirectory . DIRECTORY_SEPARATOR . "20121116_085500.gpx";
+        $gpxFile = __DIR__.DIRECTORY_SEPARATOR.'data/input/20121116_085500.gpx';
+        copy($gpxFile, $sourceFile);
+
+        $_FILES = array(
+            'gpx' => array(
+                    'name' =>
+                        array(
+                            0 => '20121116_085500.gpx',
+                        ),
+                    'type' =>
+                        array(
+                            0 => 'application/octet-stream',
+                        ),
+                    'tmp_name' =>
+                        array(
+                            0 => $sourceFile,
+                        ),
+                    'error' =>
+                        array(
+                            0 => 0,
+                        ),
+                    'size' =>
+                        array(
+                            0 => 1114,
+                        ),
+                ),
+        );
+        $user_id=9999;
+
         $processUploadedGpxFiles = self::getMethod('processUploadedGpxFiles');
-//        $this->assertEquals(include('data/expected/processUploadedGpxFiles.php'), $processUploadedGpxFiles->invokeArgs($this->mainPage, array(include('data/input/processUploadedGpxFiles.php'))));
+        $this->assertEquals("20121116_085500.gpx: uploaded successfully.<br>",
+            $processUploadedGpxFiles->invokeArgs($this->mainPage, array($user_id, $scratchDirectory)));
+        $this->assertEquals(1, $this->countFiles($scratchDirectory));
+        $createdFile=$scratchDirectory.DIRECTORY_SEPARATOR.$user_id."-2016-02-05T18_27_24Z.gpx";
+        $this->assertTrue(file_exists($createdFile));
+        $this->assertEquals(file_get_contents($gpxFile), file_get_contents($createdFile));
+    }
+
+    private function countFiles($dir)
+    {
+        $count = 0;
+        foreach (scandir($dir) as $file) {
+            $path = $dir . DIRECTORY_SEPARATOR . $file;
+            if (!is_dir($path)) {
+                $count++;
+            }
+        }
+        return $count;
+    }
+
+    private function cleanDirectory($dir)
+    {
+        if (!file_exists($dir)) {
+            mkdir($dir);
+        }
+        foreach (scandir($dir) as $file) {
+            $path = $dir . DIRECTORY_SEPARATOR . $file;
+            if (!is_dir($path)) {
+                unlink($path);
+            }
+        }
+
     }
 
     public function testNotes()
@@ -106,13 +173,14 @@ class MainPageTest extends JoanMcGalliard\EddingtonAndMore\BaseTestClass
 
         $this->assertEquals(include('data/expected/chart.php'), $buildChart->invokeArgs($this->mainPage, array($imperial_history, $metric_history)));
     }
+
     public function testDateButtons()
     {
         $twentyFourHours = 60 * 60 * 24;
+        $dateButtons = self::getMethod('dateButtons');
 
         $timezones = array("UTC", "Europe/Belfast", "America/North_Dakota/Beulah", "Australia/Melbourne");
         foreach ($timezones as $timezone) {
-
             date_default_timezone_set($timezone);
             $today = date("d-m-Y", time());
             $yesterday = date("d-m-Y", time() - $twentyFourHours);
@@ -122,14 +190,19 @@ class MainPageTest extends JoanMcGalliard\EddingtonAndMore\BaseTestClass
             $lastYear = intval(date("Y", time())) - 1;
             $beginningOfLastYear = "01-01-$lastYear";
             $endOfLastYear = "31-12-$lastYear";
-            $dateButtons = self::getMethod('dateButtons');
             $this->assertEquals(include('data/expected/dateButtons.php'), $dateButtons->invokeArgs($this->mainPage, array($timezone)));
         }
     }
+    public function testDatePicker()
+    {
+        $twentyFourHours = 60 * 60 * 24;
+        $datePicker = self::getMethod('datePicker');
+        $this->assertEquals(include('data/expected/datePicker.php'), $datePicker->invokeArgs($this->mainPage, array("TIME ZONE")));
+    }
+
     public function testExtractStravaIds()
     {
-        $extractStravaIds = self::getMethod('extractStravaIds');
-        ;
+        $extractStravaIds = self::getMethod('extractStravaIds');;
         $this->assertEquals(include('data/expected/extractStravaIds.php'), $extractStravaIds->invokeArgs($this->mainPage, array(include("data/input/mclRides.php"))));
         $timezones = array("UTC", "Europe/Belfast", "America/North_Dakota/Beulah", "Australia/Melbourne");
     }
@@ -176,7 +249,6 @@ class MainPageTest extends JoanMcGalliard\EddingtonAndMore\BaseTestClass
     public function render()
     private function setup()
     private function execute($state)
-    private function dateButtons($timezone)
     private function datePicker($timezone)
     private function mclDeleteButton($username)
     private function mainForm()

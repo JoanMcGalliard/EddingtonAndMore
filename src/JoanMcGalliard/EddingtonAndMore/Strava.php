@@ -15,7 +15,6 @@ class Strava extends trackerAbstract
     protected $bikes = [];
     private $writeScope = false;
     private $overnightActivities = [];
-    private $splitOvernight;
     private $accessTokenIsSet=false;
 
     public function __construct($clientId, $clientSecret, $echoCallback, $api = null)
@@ -86,6 +85,9 @@ class Strava extends trackerAbstract
     }
 
     /**
+     * @param $start_date
+     * @param $end_date
+     * @param int $activities_per_page
      * @return null
      */
 
@@ -121,7 +123,6 @@ class Strava extends trackerAbstract
                 }
                 $before = strtotime($activities[sizeof($activities) - 1]->start_date) - 1;
             }
-            $start_date = strtotime($before);
         } else {
             // before and after date set.
             $after = $start_date;
@@ -179,7 +180,7 @@ class Strava extends trackerAbstract
                 $gpx_file = $scratchDirectory . DIRECTORY_SEPARATOR . $this->userId . "-" .
                     preg_replace("/:/", "_", $activity->start_date) . ".gpx";
                 $numberOfDays = $this->numberOfDays($activity->start_date, $next['timezone'], $activity->elapsed_time);
-                if ($this->splitOvernight && $numberOfDays > 1 && file_exists($gpx_file)) {
+                if ($this->splitOvernightRides && $numberOfDays > 1 && file_exists($gpx_file)) {
                     $xml = file_get_contents($gpx_file);
                     preg_match_all('/<trkpt[^>]*>.*?<\/trkpt>/s', $xml, $trkpts);
                     $points = new Points($activity->start_date, $this->echoCallback, $next['timezone']);
@@ -210,7 +211,7 @@ class Strava extends trackerAbstract
                     $points = null;
 
                 } else {
-                    if ($this->splitOvernight && $numberOfDays > 1) {
+                    if ($this->splitOvernightRides && $numberOfDays > 1) {
                         // it's a multi day ride, but we don't have a file for it.
                         $this->overnightActivities[$activity->id] = $activity;
 
@@ -254,6 +255,7 @@ class Strava extends trackerAbstract
     public function getBike($id)
     {
         if (!array_key_exists($id, $this->bikes)) {
+            /** @var object $gear */
             $gear = $this->getWithDot("gear/$id");
             $this->bikes[$id]["brand"] = $gear->brand_name;
             $this->bikes[$id]["model"] = $gear->model_name;
@@ -264,10 +266,10 @@ class Strava extends trackerAbstract
 
     public function uploadGpx($file_path, $external_id, $external_msg, $name, $description)
     {
-        $cfile = new CURLFile($file_path,'text', $name);
-        $params = ["activity_type" => "ride", "file" => $cfile,
+        $params = ["activity_type" => "ride", "file" => new CURLFile($file_path,'text', $name),
             "data_type" => "gpx", "external_id" => $external_id,
             "name" => $name, "description" => $description];
+        /** @var object $result */
         $result = $this->api->post("uploads", $params);
         if ($result->error) {
             return $result->error;
@@ -277,7 +279,7 @@ class Strava extends trackerAbstract
         $queued->external_id = $external_id;
         $queued->file = $file_path;
         $this->pending_uploads[$result->id] = $queued;
-
+        return null;
     }
 
     public function activityUrl($activityId)
@@ -292,6 +294,7 @@ class Strava extends trackerAbstract
 
         while ((time() - $timestamp < $this->fileUploadTimeout) && $this->pending_uploads) {
             foreach ($this->pending_uploads as $pending_id => $queued) {
+                /** @var object $response */
                 $response = $this->getWithDot("uploads/" . $pending_id);
                 if ($response->activity_id) {
                     $queued->status = $response->status;

@@ -2,7 +2,6 @@
 set_include_path(get_include_path() . PATH_SEPARATOR . "..");
 
 require_once 'local.php';
-require_once 'MainPage.php';
 require_once 'src/JoanMcGalliard/EddingtonAndMore/Strava.php';
 require_once 'src/JoanMcGalliard/EddingtonAndMore/MyCyclingLog.php';
 require_once 'src/JoanMcGalliard/EddingtonAndMore/Endomondo.php';
@@ -1299,17 +1298,14 @@ class MainPage
     private function processUploadedGpxFiles($userId, $scratchDirectory)
     {
         $str = "";
-        vd($_FILES);
         if (isset($_FILES) && isset ($_FILES['gpx'])) {  //gpx have been uploaded
             $user = $userId;
             $path = $scratchDirectory . DIRECTORY_SEPARATOR . $user;
             for ($i = 0; $i < sizeof($_FILES['gpx']['name']); $i++) {
 
                 $name = $_FILES['gpx']['name'][$i];
-                $type = $_FILES['gpx']['type'][$i];
                 $tmp_name = $_FILES['gpx']['tmp_name'][$i];
                 $error = $_FILES['gpx']['error'][$i];
-                $size = $_FILES['gpx']['size'][$i];
                 $pattern = "/\.gpx\$/";
                 if (!preg_match($pattern, $name, $matches) > 0) {
                     $str .= ("Skipping $name as it doesn't end in .GPX<br>");
@@ -1320,7 +1316,6 @@ class MainPage
                     $doc->loadXML(file_get_contents($tmp_name));
                     $time = str_replace(":", "_",
                         $doc->getElementsByTagName("gpx")->item(0)->getElementsByTagName("metadata")->item(0)->getElementsByTagName("time")->item(0)->nodeValue);
-
                     copy($tmp_name, "$path-$time.gpx");
                     $str .= ("$name: uploaded successfully.<br>");
                 }

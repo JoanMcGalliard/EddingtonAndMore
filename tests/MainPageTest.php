@@ -32,6 +32,19 @@ class MainPageTest extends JoanMcGalliard\EddingtonAndMore\BaseTestClass
         $sumActivities = $this->getMethod('sumActivities');
         $this->assertEquals(include('data/expected/sumActivities.php'), $sumActivities->invokeArgs($this->mainPage, array(include('data/input/sumActivities.php'))));
     }
+
+    public function testAskForStravaGpx()
+    {
+        $_POST=array (
+            'start_date' => '01-01-2015',
+            'end_date' => '31-12-2015',
+        );
+        $askForStravaGpx = $this->getMethod('askForStravaGpx');
+        $this->assertEquals(include('data/expected/askForStravaGpx.php'), $askForStravaGpx->invokeArgs($this->mainPage, array(include('data/input/askForStravaGpx.php'),
+            1000, 'calculate_from_strava', 'recalculate your E-Number'
+
+        )));
+    }
     public function testNextGoals()
     {
         $nextGoals = $this->getMethod('nextGoals');
@@ -43,7 +56,8 @@ class MainPageTest extends JoanMcGalliard\EddingtonAndMore\BaseTestClass
     public function testNumberOfDaysToGoal()
     {
         $numberOfDaysToGoal = $this->getMethod('numberOfDaysToGoal');
-//        $this->assertEquals(26, $numberOfDaysToGoal->invokeArgs($this->mainPage, array(28,array ('2016-02-07' => 27,'2016-02-09' => 28, '2016-02-08' => 30),1)));
+        $this->assertEquals(26, $numberOfDaysToGoal->invokeArgs($this->mainPage, array(28,array ('2016-02-07' => 30,'2016-02-09' => 28, '2016-02-08' => 27),1)));
+        $this->assertEquals(12, $numberOfDaysToGoal->invokeArgs($this->mainPage, array(14,array ('2016-02-07' => 30,'2016-02-09' => 28, '2016-02-08' => 26.9999999999),0.5)));
         $this->assertEquals(6, $numberOfDaysToGoal->invokeArgs($this->mainPage, array(8,array ('2016-02-07' => 29780.200000000001,'2016-02-09' => 22029.199999999997, '2016-02-08' => 6018.2000000000007),0.00062137119223999997)));
     }
     public function testSumDay()
@@ -335,7 +349,6 @@ class MainPageTest extends JoanMcGalliard\EddingtonAndMore\BaseTestClass
     private function isDuplicateRide($endo_ride, $rides, $id_key)
     private function ($distance1, $distance2)
     private function eddingtonHistory($days, $factor)
-    private function buildChart($imperial_history, $metric_history)
     private function askForStravaGpx($overnight_rides, $maxKmFileUploads, $state, $message)
     private function processUploadedGpxFiles($userId, $scratchDirectory)
 

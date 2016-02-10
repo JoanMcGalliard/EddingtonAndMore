@@ -1233,44 +1233,44 @@ class MainPage
         $str = "";
         if (sizeof($overnight_rides) > 0) {
 
-            $str .= "<br>";
+            $str .= "<br>\n";
             $str .= "To split your strava rides, you'll need to download some of the GPX from Strava, them upload them to here. ";
-            $str .= "<br><strong>First</strong> click the following links to download the GPX files. ";
+            $str .= "<br>\n<strong>First</strong> click the following links to download the GPX files.";
             uasort($overnight_rides, function ($a, $b) {
                 if ($a->distance == $b->distance) return 0; else return ($a->distance > $b->distance) ? -1 : 1;
             });
-            $str .= "<ol>";
+            $str .= "\n<ol>";
 
             $count = 0;
             $total = 0;
             foreach ($overnight_rides as $id => $details) {
                 $distance = intval($details->distance * self::METRE_TO_KM);
-                $str .= "<li><a target=\"_blank\" href=\"https://www.strava.com/activities/$id/export_gpx\">
-                    $details->name $distance km</a></li>";
+                $str .= "\n    <li><a target=\"_blank\" href=\"https://www.strava.com/activities/$id/export_gpx\">";
+                $str .= "$details->name $distance km</a></li>";
 
                 $count++;
                 $total += $distance;
                 if ($total >= $maxKmFileUploads) break;
             }
-            $str .= "</ol>";
+            $str .= "\n</ol>\n";
             if (sizeof($overnight_rides) > $count) {
                 $str .= "<em>(You've got another " . (sizeof($overnight_rides) - $count);
                 $str .= " overnight ride(s) to add after this (you do like riding over midnight!), ";
-                $str .= "but we are restricting it to $maxKmFileUploads kilometres or so at a time to keep the ";
+                $str .= "but we are restricting\nit to $maxKmFileUploads kilometres or so at a time to keep the ";
                 $str .= "server behaving nicely. The rides above are the longest of your rides that ";
-                $str .= "are needed.)</em>";
+                $str .= "are needed.)</em>\n";
             }
 
-            $str .= '<form action="" method="post" enctype="multipart/form-data">';
-            $str .= '<strong>Then</strong> select the GPX file(s) that you have just downloaded:<br>';
-            $str .= '<input type="file" name="gpx[]" id="gpx" multiple>';
-            $str .= '<input type="hidden" name="start_date" value="' . $_POST["start_date"] . '"/>';
-            $str .= '<input type="hidden" name="end_date" value="' . $_POST["end_date"] . '"/>';
-            $str .= '<input type="hidden" name="' . $state . '" />';
-            $str .= '<input type="hidden" value="split" checked name="strava_split_rides"/>';
-            $str .= "<br><strong>Finally</strong>, $message:";
-            $str .= '<br><input type="submit" value="Upload and ' . $message . '" name="submit"/>';
-            $str .= '</form>';
+            $str .= "<form action=\"\" method=\"post\" enctype=\"multipart/form-data\">";
+            $str .= "\n<strong>Then</strong> select the GPX file(s) that you have just downloaded:<br>\n";
+            $str .= "<input type=\"file\" name=\"gpx[]\" id=\"gpx\" multiple>";
+            $str .= "\n<input type=\"hidden\" name=\"start_date\" value=\"" . $_POST["start_date"] . "\"/>";
+            $str .= "\n<input type=\"hidden\" name=\"end_date\" value=\"" . $_POST["end_date"] . "\"/>";
+            $str .= "\n<input type=\"hidden\" name=\"$state\" />";
+            $str .= "\n<input type=\"hidden\" value=\"split\" checked name=\"strava_split_rides\"/>";
+            $str .= "<br>\n<strong>Finally</strong>, $message:";
+            $str .= "<br>\n<input type=\"submit\" value=\"Upload and $message\" name=\"submit\"/>";
+            $str .= "</form>";
         }
         return $str;
     }

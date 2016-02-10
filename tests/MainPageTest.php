@@ -157,6 +157,9 @@ class MainPageTest extends JoanMcGalliard\EddingtonAndMore\BaseTestClass
         $createdFile = $scratchDirectory . DIRECTORY_SEPARATOR . $user_id . "-2016-02-05T18_27_24Z.gpx";
         $this->assertTrue(file_exists($createdFile));
         $this->assertEquals(file_get_contents($gpxFile), file_get_contents($createdFile));
+        $this->cleanDirectory($scratchDirectory);
+        $this->cleanDirectory($sourceDirectory);
+
     }
 
     private function countFiles($dir)

@@ -50,7 +50,7 @@ return "<div id=\"notes\">
         <li><em>This is open source, you can download the source from <a
                     href=\"http://github.com/JoanMcGalliard/EddingtonAndMore\">
                     http://github.com/JoanMcGalliard/EddingtonAndMore</a>. This is
-                revision ba78b6e7f3bfd259814946fa6d15b769d879cf37.
+                revision REVISION NUMBER.
             </em></li>
 
     </ol>

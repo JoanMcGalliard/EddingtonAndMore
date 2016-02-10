@@ -25,17 +25,25 @@ class MainPageTest extends JoanMcGalliard\EddingtonAndMore\BaseTestClass
     {
         $email = self::getMethod('email');
         $this->assertEquals(include('data/expected/emailform.php'), $email->invokeArgs($this->mainPage, array()));
-
+    }
+    public function testSumActivities()
+    {
+        $sumActivities = self::getMethod('sumActivities');
+        $this->assertEquals(include('data/expected/sumActivities.php'), $sumActivities->invokeArgs($this->mainPage, array(include('data/input/sumActivities.php'))));
+    }
+    public function testProcessUploadedGpxFiles()
+    {
+        $processUploadedGpxFiles = self::getMethod('processUploadedGpxFiles');
+//        $this->assertEquals(include('data/expected/processUploadedGpxFiles.php'), $processUploadedGpxFiles->invokeArgs($this->mainPage, array(include('data/input/processUploadedGpxFiles.php'))));
     }
 
     public function testNotes()
     {
         $notes = self::getMethod('notes');
-        $str = $notes->invokeArgs($this->mainPage, array());
+        $str = $notes->invokeArgs($this->mainPage, array("REVISION NUMBER"));
         $doc = new DOMDocument();
         $doc->loadXML($str);
         $this->assertEquals(include('data/expected/notesform.php'), $str);
-
     }
 
     public function testCalculateEddington()
@@ -173,18 +181,15 @@ class MainPageTest extends JoanMcGalliard\EddingtonAndMore\BaseTestClass
     private function mclDeleteButton($username)
     private function mainForm()
     private function connections()
-    private function sumActivities($activities)
     private function sumDay($rides)
     private function next_goals($x)
     private function number_of_days_to_goal($goal, $days, $factor)
     private function isDuplicateRide($endo_ride, $rides, $id_key)
-    private function ($mcl_rides)
     private function ($distance1, $distance2)
     private function eddingtonHistory($days, $factor)
     private function buildChart($imperial_history, $metric_history)
     private function askForStravaGpx($overnight_rides, $maxKmFileUploads, $state, $message)
     private function processUploadedGpxFiles($userId, $scratchDirectory)
-    private function bottomOfPage()
 
      */
 

@@ -45,6 +45,7 @@ class MainPage
 
     public function render()
     {
+        global $eddingtonAndMoreVersion;
         $this->noEcho = true;
         $state = $this->setup();
         $this->noEcho = false;
@@ -53,7 +54,7 @@ class MainPage
         $this->output($this->execute($state));
         $this->output($this->mainForm());
         $this->output("<hr>\n");
-        $this->output($this->notes());
+        $this->output($this->notes($eddingtonAndMoreVersion));
         $this->output($this->connections());
         $this->output($this->email());
         $this->output($this->bottomOfPage());
@@ -651,9 +652,8 @@ class MainPage
      * @param
      * @return string
      */
-    private function notes()
+    private function notes($version)
     {
-        global $eddingtonAndMoreVersion;
         return "<div id=\"notes\">
     <p>Notes:</p>
     <ol>
@@ -705,7 +705,7 @@ class MainPage
         <li><em>This is open source, you can download the source from <a
                     href=\"http://github.com/JoanMcGalliard/EddingtonAndMore\">
                     http://github.com/JoanMcGalliard/EddingtonAndMore</a>. This is
-                revision $eddingtonAndMoreVersion.
+                revision $version.
             </em></li>
 
     </ol>
@@ -1299,6 +1299,7 @@ class MainPage
     private function processUploadedGpxFiles($userId, $scratchDirectory)
     {
         $str = "";
+        vd($_FILES);
         if (isset($_FILES) && isset ($_FILES['gpx'])) {  //gpx have been uploaded
             $user = $userId;
             $path = $scratchDirectory . DIRECTORY_SEPARATOR . $user;

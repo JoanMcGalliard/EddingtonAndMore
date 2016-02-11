@@ -19,9 +19,19 @@ class PointsTest extends BaseTestClass
     {
         date_default_timezone_set("UTC");
     }
+    public function testDistance() {
+
+        // just checking that my distance calculation is close to google maps'.  This data is also used in
+//         a test below
+        $points = new Points("2015-12-27 21:56:00 UTC", array($this, 'myEcho'), null, null);
+        $this->assertEquals(16, intval($points->distance(51.50703,-0.12728,51.51152,-0.36048)/1000));
+        $this->assertEquals(38, intval($points->distance(51.50703,-0.12728,51.49121,-0.68939)/1000));
+        $this->assertEquals(59, intval($points->distance(51.50703,-0.12728,51.45657,-0.97709)/1000));
+    }
 
 
-    public function testTimezoneFromCoords()
+
+    public function testTimezoneFromCoordsDifferentGoogleResponses()
     {
         $mock = $this->getMockBuilder('GoogleApiMock')->setMethods(array('getError', 'get'))->getMock();
         $points = new Points("2015-12-27 21:56:00 UTC", array($this, 'myEcho'), null, $mock);
@@ -87,6 +97,31 @@ class PointsTest extends BaseTestClass
         $points->clearStoredPoint();
 
     }
+    public function testTimezoneFromCoordsReusingValues()
+    {
+        // if the points are with 50km of the last time we asked google api for anything, we should just return the same
+        // timezone.
+        $mock = $this->getMockBuilder('GoogleApiMock')->setMethods(array('getError', 'get'))->getMock();
+        $points = new Points("2015-12-27 21:56:00 UTC", array($this, 'myEcho'), null, $mock);
+
+
+        $points->clearStoredPoint();
+        // happy path, returns a properly formatted JSON with timezone
+        $mock->expects($this->at(0))->method('get')
+            ->willReturn('{"timeZoneId" : "Europe/London"}');
+        $this->assertEquals('Europe/London', $points->timezoneFromCoords(51.50703,-0.12728, "2015-12-26 21:56:00 UTC"));
+        $mock->expects($this->at(0))->method('get')
+            ->willReturn('{"timeZoneId" : "Europe/Paris"}');
+        //same point should not go to api again
+        $this->assertEquals('Europe/London', $points->timezoneFromCoords(51.50703,-0.12728, "2015-12-26 21:56:00 UTC"));
+        //point 38km away should not go to api again
+        $this->assertEquals('Europe/London', $points->timezoneFromCoords(51.49121,-0.68939, "2015-12-26 21:56:00 UTC"));
+        //point 59km away should  go to api again - note the point is Reading, not really Paris.
+        $this->assertEquals('Europe/Paris', $points->timezoneFromCoords(51.45657,-0.97709, "2015-12-26 21:56:00 UTC"));
+
+
+    }
+
 
 
     public function testEmptyGpx()

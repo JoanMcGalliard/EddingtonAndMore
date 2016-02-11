@@ -7,7 +7,9 @@ require_once 'JoanMcGalliard/EddingtonAndMore/Points.php';
 require_once 'JoanMcGalliard/EddingtonAndMore/APIs/GoogleApi.php';
 
 use JoanMcGalliard;
+
 date_default_timezone_set("UTC");
+
 class PointsTest extends BaseTestClass
 {
     /**
@@ -18,44 +20,32 @@ class PointsTest extends BaseTestClass
         date_default_timezone_set("UTC");
     }
 
-    public function testStub() {
-        // Create a stub for the SomeClass class.
-        $mock = $this->getMockBuilder('GoogleApiMock')->setMethods(array('getError'))->getMock();
-        $mock->method('getError')->willReturn("hello");
-
-        var_dump($mock->getError());
-
-    }
 
     public function testTimezoneFromCoords()
     {
-        $mock = new GoogleApiMock();
-//        $mock = $this->getMockBuilder('GoogleApi')->getMock();
+        $mock = $this->getMockBuilder('GoogleApiMock')->setMethods(array('getError', 'get'))->getMock();
+        $mock->method('get')
+            ->willReturnOnConsecutiveCalls(
+                '{"dstOffset" : 0,
+                  "rawOffset" : 36000,
+                  "status" : "OK",
+                  "timeZoneId" : "Australia/Hobart",
+                  "timeZoneName" : "Australian Eastern Standard Time"}',
+                include('data/input/googleApi404.php'),
+                false,
+                '{"errorMessage" : "The provided API key is invalid.",
+                  "status" : "REQUEST_DENIED"}');
+        $mock->method('getError')->willReturnOnConsecutiveCalls("API ERROR MESSAGE", 1 ,2,3,4,5,6,7,8);
         $points = new Points("2015-12-27 21:56:00 UTC", array($this, 'myEcho'), null, $mock);
-
-        $mock->clearResponses("get", "timezone/json");
-        $mock->primeResponse('get', 'timezone/json', '{"dstOffset" : 0,"rawOffset" : 36000,"status" : "OK",
-        "timeZoneId" : "Australia/Hobart","timeZoneName" : "Australian Eastern Standard Time"}');
         $points->clearStoredPoint();
         $this->assertEquals('Australia/Hobart', $points->timezoneFromCoords(10, 10, "2015-12-27 21:56:00 UTC"));
-        $mock->clearResponses("get", "timezone/json");
-        $mock->primeResponse('get', 'timezone/json', include('data/input/googleApi404.php')        );
+        $points = new Points("2015-12-27 21:56:00 UTC", array($this, 'myEcho'), null, $mock);
         $points->clearStoredPoint();
         $this->assertEquals('UTC', $points->timezoneFromCoords(10, 10, "2015-12-27 21:56:00 UTC"));
         $this->assertEquals(include('data/input/googleApi404.php'), $points->getError());
-
-
-        $mock->clearResponses("get", "timezone/json");
-        $mock->primeResponse('get', 'timezone/json', false);
-        $points->clearStoredPoint();
         $points->setError("");
-        $mock->setError("API ERROR MESSAGE");
-
         $this->assertEquals('UTC', $points->timezoneFromCoords(10, 10, "2015-12-27 21:56:00 UTC"));
         $this->assertEquals("API ERROR MESSAGE", $points->getError());
-        $mock->clearResponses("get", "timezone/json");
-        $mock->primeResponse('get', 'timezone/json', '{"errorMessage" : "The provided API key is invalid.","status" :
-         "REQUEST_DENIED"}');
         $points->clearStoredPoint();
         $points->setError("");
         $this->assertEquals('UTC', $points->timezoneFromCoords(10, 10, "2015-12-27 21:56:00 UTC"));
@@ -85,7 +75,6 @@ class PointsTest extends BaseTestClass
     }
 
 
-
     protected function setUp()
     {
         parent::setUp();
@@ -99,13 +88,4 @@ class PointsTest extends BaseTestClass
 
 }
 
-function log_msg($message)
-{
-    echo "$message\n";
-}
 
-class GoogleApiMock extends BaseMockClass
-{
-
-
-}

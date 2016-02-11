@@ -388,6 +388,9 @@ class MainPageTest extends JoanMcGalliard\EddingtonAndMore\BaseTestClass
         $this->setProperty('rideWithGps', new MockTracker(true), $this->mainPage);
 
 
+        $elapsed_days= round((time() - strtotime("2016-02-09T00:00:00Z"))/(60 * 60 * 24));
+
+
         $this->assertEquals(include('data/expected/calculateFromStrava.php'), $execute->invokeArgs($this->mainPage, array("calculate_from_strava")));
     }
     public function testEddingtonHistory()

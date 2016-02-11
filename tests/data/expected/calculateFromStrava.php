@@ -1,4 +1,4 @@
-<?php return "<p>According to Strava, for the period from the beginning to today, 2 elapsed days</p>
+<?php return "<p>According to Strava, for the period from the beginning to today, $elapsed_days elapsed days</p>
 <br><a href=\"#imperial\">Your imperial Eddington Number</a> is <strong>1</strong>.<br>
 You need to do 1 ride(s) of at least 2 to increase it to 2.<br>
 You need to do 4 ride(s) of at least 5 to increase it to 5.<br>

@@ -6,6 +6,7 @@ require_once "MainPage.php";
 class MainPageTest extends JoanMcGalliard\EddingtonAndMore\BaseTestClass
 {
     private $mainPage;
+    protected $classUnderTest = 'MainPage';
 
     /**
      * MainPageTest constructor.
@@ -399,40 +400,25 @@ class MainPageTest extends JoanMcGalliard\EddingtonAndMore\BaseTestClass
     public function testMainForm()
     {
         $mainForm = $this->getMethod('mainForm');
-
         $this->setProperty('preferences', new MockPreferences(), $this->mainPage);
         $this->setProperty('strava', new MockTracker(true, true), $this->mainPage);
         $this->setProperty('myCyclingLog', new MockTracker(true), $this->mainPage);
         $this->setProperty('endomondo', new MockTracker(true), $this->mainPage);
         $this->setProperty('rideWithGps', new MockTracker(true), $this->mainPage);
 
+        $today = date("d-m-Y", time());
+        $twentyFourHours = 60 * 60 * 24;
+
+        $yesterday = date("d-m-Y", time() - $twentyFourHours);
+        $sevendays = date("d-m-Y", time() - (7 * $twentyFourHours));
+        $startOfMonth = date("01-m-Y", time());
+        $startOfYear = date("01-01-Y", time());
+        $lastYear = intval(date("Y", time())) - 1;
+        $beginningOfLastYear = "01-01-$lastYear";
+        $endOfLastYear = "31-12-$lastYear";
+
         $this->assertEquals(include('data/expected/mainForm.php'), $mainForm->invokeArgs($this->mainPage, array()));
 
-    }
-
-    protected static function getMethod($name)
-    {
-        $class = new ReflectionClass('MainPage');
-        $method = $class->getMethod($name);
-        $method->setAccessible(true);
-        return $method;
-    }
-
-    public function getPrivateProperty($className, $propertyName)
-    {
-        $reflector = new ReflectionClass($className);
-        $property = $reflector->getProperty($propertyName);
-        $property->setAccessible(true);
-
-        return $property;
-    }
-
-    protected static function setProperty($name, $value, $obj)
-    {
-        $class = new ReflectionClass('MainPage');
-        $property = $class->getProperty($name);
-        $property->setAccessible(true);
-        $property->setValue($obj, $value);
     }
 }
 

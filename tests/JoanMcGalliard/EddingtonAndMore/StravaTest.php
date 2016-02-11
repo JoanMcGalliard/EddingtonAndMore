@@ -15,7 +15,7 @@ class StravaTest extends  BaseTestClass
         $mock->clearResponses("get", 'activities');
 
         // tests that a simple request for rides returns expect structure.
-        $mock->primeResponse('get', 'activities', include("data/apiResponses/stravaActivities1.php"));
+        $mock->primeResponse('get', 'activities', include("data/input/stravaActivities1.php"));
         $this->output = "";
         $this->assertEquals(include("data/expected/stravaActivities1.php"), $stravaApi->getRides(null, null));
         $this->assertEquals("", $stravaApi->getError());
@@ -23,15 +23,16 @@ class StravaTest extends  BaseTestClass
 
 
         // if we get an error from strava, we should record an error.
-        $mock->primeResponse('get', 'activities', include("data/apiResponses/stravaActivities1.php"));
+        $mock->primeResponse('get', 'activities', include("data/input/stravaActivities1.php"));
         $mock->primeResponse('get', 'activities', "Operation timed out after 0 milliseconds with 0 out of 0 bytes received");
         $this->assertEquals(include("data/expected/stravaActivities1.php"), $stravaApi->getRides(null, null, 2));
         $this->assertEquals("Operation timed out after 0 milliseconds with 0 out of 0 bytes received<br>",
             $stravaApi->getError());
-
-
     }
 
+    public function testNumberOfDays() {
+
+    }
     protected function setUp()
     {
         parent::setUp();

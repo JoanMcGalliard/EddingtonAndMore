@@ -3,12 +3,12 @@
             document.getElementById(\"datepicker_end\").value = end;
             }
             </script>Fill in dates:
-<span class=\"roundbutton\" onclick=\"populateDates('10-02-2016','')\">today</span>
-<span class=\"roundbutton\" onclick=\"populateDates('09-02-2016','')\">since yesterday</span>
-<span class=\"roundbutton\" onclick=\"populateDates('03-02-2016','')\">last 7 days</span>
-<span class=\"roundbutton\" onclick=\"populateDates('01-02-2016','')\">this month</span>
-<span class=\"roundbutton\" onclick=\"populateDates('01-01-2016','')\">this year</span>
-<span class=\"roundbutton\" onclick=\"populateDates('01-01-2015','31-12-2015')\">last year</span>
+<span class=\"roundbutton\" onclick=\"populateDates('$today','')\">today</span>
+<span class=\"roundbutton\" onclick=\"populateDates('$yesterday','')\">since yesterday</span>
+<span class=\"roundbutton\" onclick=\"populateDates('$sevendays','')\">last 7 days</span>
+<span class=\"roundbutton\" onclick=\"populateDates('$startOfMonth','')\">this month</span>
+<span class=\"roundbutton\" onclick=\"populateDates('$startOfYear','')\">this year</span>
+<span class=\"roundbutton\" onclick=\"populateDates('$beginningOfLastYear','$endOfLastYear')\">last year</span>
 <span class=\"roundbutton\" onclick=\"populateDates('','')\">reset</span>
 <br>
 <br>

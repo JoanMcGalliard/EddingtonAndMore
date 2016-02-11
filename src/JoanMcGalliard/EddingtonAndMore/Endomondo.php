@@ -104,6 +104,7 @@ class Endomondo extends trackerAbstract
             $params['fields'] = 'simple,basic';
             for ($i = 0; $i < self::RETRIES; $i++) {
                 $page = $this->getPageWithDot("api/workouts", $params);
+                /** @var \stdClass $json_decode */
                 $json_decode = json_decode($page);
                 if ($json_decode) break;
                 log_msg("retrying");
@@ -140,7 +141,7 @@ class Endomondo extends trackerAbstract
                     }
                     $record['start_time'] = $ride->start_time;
                     $record['name'] = isset($ride->name) ? $ride->name : '';
-                    if ($this->splitOvernightRides && $this->isOverNightRide($ride)) {
+                    if ($this->splitOvernightRides && $this->isOvernightRide($ride)) {
                         $points = $this->getPoints($record['endo_id']);
                         if (!$points) {
                             $this->error .= "Could not split overnight ride on $ride->start_time due to errors.<br>";
@@ -177,16 +178,9 @@ class Endomondo extends trackerAbstract
         return $return;
     }
 
-    private function isOverNightRide($ride)
+    protected function isOvernightRide($ride)
     {
-        date_default_timezone_set($this->timezone);
-        $start = strtotime($ride->start_time);
-        $midnight = strtotime(date("Y-m-d", $start));
-        $start_seconds = $start - $midnight;
-        if (($start_seconds + $ride->duration) > self::TWENTY_FOUR_HOURS) {
-            return true;
-        }
-        return false;
+        return parent::isOvernight($ride->start_time, $this->timezone, $ride->duration);
     }
 
     public function getPoints($workoutId)

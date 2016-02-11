@@ -1,35 +1,68 @@
 <?php
 
 namespace JoanMcGalliard\EddingtonAndMore;
+require_once 'JoanMcGalliard/EddingtonAndMore/APIs/GoogleApi.php';
 
+use JoanMcGalliard;
 use stdClass;
 
 class Points
 {
-
+    /**
+     * @param stdClass $previousPoint
+     */
     private static $previousPoint = null;
+
+    public static function clearStoredPoint()
+    {
+        // only used in testing:
+        self::$previousPoint = null;
+    }
+
     private $points;
     private $timezone;
     private $splits;
-    private $googleApiKey;
     private $start_times;
     private $end_times;
     private $generateGPX = false;
     private $echoCallback;
     private $previous = null;
-    private $total_distance_day = [];
-private $start_day = 0;
-        private $current_day; // midnight local time in seconds on the day this ride started
+    private $start_day = 0;
+    private $current_day; // midnight local time in seconds on the day this ride started
     private $gpx;
     private $bad_points = 0;
     private $good_points = 0;
+    /** @var JoanMcGalliard\GoogleApi $api */
+    private $api;
+    private $error = "";
+
+    /**
+     * @return string
+     */
+    public function getError()
+    {
+        return $this->error;
+    }
+
+    /**
+     * @param string $error
+     */
+    public function setError($error)
+    {
+        $this->error = $error;
+    }
 
     /**
      * Points constructor.
      */
-    public function __construct($start_day, $echoCallback, $timezone = "")
+    public function __construct($start_day, $echoCallback, $timezone = "", $api = null)
     {
         $this->points = [];
+        if ($api) {
+            $this->api = $api;
+        } else {
+            $this->api = new JoanMcGalliard\GoogleApi();
+        }
         if ($timezone <> "") {
             $this->timezone = $timezone;
         }
@@ -38,17 +71,17 @@ private $start_day = 0;
         $this->gpx = '<?xml version="1.0" encoding="UTF-8"?> <gpx creator="Eddington &amp; More" >';
         $this->gpx .= "<trk><trkseg>";
         $this->gpx .= "\n";
+
     }
+
 
     private function day($timestring)
     {
         if ($timestring) {
-            $default_timezone = date_default_timezone_get();
             if (isset($this->timezone)) {
                 date_default_timezone_set($this->timezone);
             }
             $this->current_day = date("Y-m-d", strtotime($timestring));
-            date_default_timezone_set($default_timezone);
         }
         return $this->current_day;
     }
@@ -66,33 +99,24 @@ private $start_day = 0;
      */
     public function setGoogleApiKey($googleApiKey)
     {
-        $this->googleApiKey = $googleApiKey;
+        $this->api->setApikey($googleApiKey);
     }
 
+    /**
+     * @param $lat float
+     * @param $long float
+     * @param $time string
+     * Note $time can be null/empty string from endomondo API
+     */
     public function add($lat, $long, $time)
     {
         $point = [];
         $point['long'] = $long;
         $point['lat'] = $lat;
         $this->addPointToGPX($lat, $long, $time);
-        if (!isset($this->timezone)) {
-            if (!isset($this->googleApiKey)) {
-                $this->timezone = "UTC";
-            } else {
-                if ($time) {
-                    $this->timezone = $this->timezoneFromCoords($lat, $long, strtotime($time));
-                } else {
-                    $this->timezone = $this->timezoneFromCoords($lat, $long, strtotime($this->start_day));
-                }
-            }
-        }
+        $this->timezone = $this->timezoneFromCoords($lat, $long, $time);
         if ($time) {
-            $default_timezone = date_default_timezone_get();
-            date_default_timezone_set($this->timezone);
-
             $this->start_day = strtotime(date("Y-m-d\T00:00:00 e", strtotime($time)));
-            date_default_timezone_set($default_timezone);
-
         }
         if (!$this->previous) {
             $this->previous = $point;
@@ -109,7 +133,15 @@ private $start_day = 0;
         }
     }
 
-    public function addPointToGPX($lat, $long, $timestr)
+    /**
+     * @param string $timezone
+     */
+    public function setTimezone($timezone)
+    {
+        $this->timezone = $timezone;
+    }
+
+    private function addPointToGPX($lat, $long, $timestr)
     {
         if (!$this->generateGPX) {
             return;
@@ -130,49 +162,51 @@ private $start_day = 0;
 
     }
 
+
     public function timezoneFromCoords($lat, $long, $time)
     {
+        $default="UTC";
+        $tz=null;
+        if ($this->timezone) {
+            return $this->timezone;
+        }
         if (isset(self::$previousPoint) &&
             abs($this->distance(self::$previousPoint->lat, self::$previousPoint->long, $lat, $long)) < 50000
         ) {
             //previous TZ was less than 50km from here.  Use same timezone.  Needed as google is taking >3s to return TZ.
             return self::$previousPoint->tz;
         }
-        $retries = 3;
-        $params = ['location' => "$lat,$long",
-            'timestamp' => $time, 'key', $this->googleApiKey];
-
-        $url = "https://maps.googleapis.com/maps/api/timezone/json" . "?" . http_build_query($params);
-        $process = curl_init($url);
-
-        curl_setopt($process, CURLOPT_HEADER, 0);
-        curl_setopt($process, CURLOPT_TIMEOUT, 30);
-        curl_setopt($process, CURLOPT_RETURNTRANSFER, TRUE);
-
-        for ($i = 0; $i < $retries; $i++) {
-            $page = curl_exec($process);
-            $error = curl_error($process);
-            log_msg($url);
-            log_msg($page);
-            if ($error) log_msg("ERROR: " . $error);
-            log_msg("Total time: " . curl_getinfo($process)["total_time"]);
-
-            if ($page) break;
-            log_msg("retrying");
+        if (!isset($this->api)) {
+            return $default;
         }
-        curl_close($process);
-        $tz = false;
-        if ($page) {
-            $tz = json_decode($page)->timeZoneId;
+        if (!$time) {
+            $time = $this->start_day;
+        }
+        $params = ['location' => "$lat,$long",
+            'timestamp' => $time];
+        $page = $this->api->get('timezone/json', $params);
+        $json = json_decode($page);
+
+        if ($page && $json && isset($json->timeZoneId)) {
+            $tz= $json->timeZoneId;
+        } else if (!$page) {
+            $this->error .= $this->api->getError();
+        } else if (!$json) {
+            $this->error .= $page;
+        } else { // it's json, just not what we expected
+            if (isset($json->errorMessage)) {
+                $this->error .= $json->errorMessage;
+            } else {
+                $this->error .= "Unknown JSON returned by Google API, $page";
+            }
         }
         if (!$tz) {
             if (isset(self::$previousPoint)) {
                 $tz = self::$previousPoint->tz;
             } else {
-                $tz="UTC";
+                $tz = $default;
             }
             $this->output("<br>Unable to find timezone for ride on $this->current_day, defaulting to $tz.<br>");
-            $tz = self::$previousPoint->tz;
         } else {
             self::$previousPoint = new stdClass();
             self::$previousPoint->lat = $lat;

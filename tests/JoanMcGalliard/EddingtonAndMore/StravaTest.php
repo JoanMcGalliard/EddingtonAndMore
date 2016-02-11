@@ -8,29 +8,61 @@ require_once 'BaseTestClass.php';
 
 class StravaTest extends  BaseTestClass
 {
+    protected $classUnderTest='JoanMcGalliard\EddingtonAndMore\Strava';
     public function testGetRides()
     {
         $mock = new StravaApiMock();
-        $stravaApi = new Strava("", "", array($this, 'myEcho'), $mock);
+        $strava = new Strava("", "", array($this, 'myEcho'), $mock);
         $mock->clearResponses("get", 'activities');
 
         // tests that a simple request for rides returns expect structure.
         $mock->primeResponse('get', 'activities', include("data/input/stravaActivities1.php"));
         $this->output = "";
-        $this->assertEquals(include("data/expected/stravaActivities1.php"), $stravaApi->getRides(null, null));
-        $this->assertEquals("", $stravaApi->getError());
+        $this->assertEquals(include("data/expected/stravaActivities1.php"), $strava->getRides(null, null));
+        $this->assertEquals("", $strava->getError());
         $this->assertEquals(".", $this->output);
 
 
         // if we get an error from strava, we should record an error.
         $mock->primeResponse('get', 'activities', include("data/input/stravaActivities1.php"));
         $mock->primeResponse('get', 'activities', "Operation timed out after 0 milliseconds with 0 out of 0 bytes received");
-        $this->assertEquals(include("data/expected/stravaActivities1.php"), $stravaApi->getRides(null, null, 2));
+        $this->assertEquals(include("data/expected/stravaActivities1.php"), $strava->getRides(null, null, 2));
         $this->assertEquals("Operation timed out after 0 milliseconds with 0 out of 0 bytes received<br>",
-            $stravaApi->getError());
+            $strava->getError());
     }
 
-    public function testNumberOfDays() {
+//    public function testNumberOfDays() {
+//        $numberOfDays = $this->getMethod('numberOfDays');
+//        $strava = new Strava("", "", array($this, 'myEcho'));
+//
+//        $start_time = "2016-02-11T10:16:54Z"; //10:16 GMT, 21:16 Melbourne time, 4:16 chicago.
+//        $duration = 4*60*60; //4 hours
+//
+//        $this->assertEquals(1, $numberOfDays->invokeArgs($strava, array($start_time, "UTC", $duration)));
+//        $this->assertEquals(2, $numberOfDays->invokeArgs($strava, array($start_time, "Australia/Melbourne", $duration)));
+//        $this->assertEquals(1, $numberOfDays->invokeArgs($strava, array($start_time, "America/Chicago", $duration)));
+//        $duration =14*60*60; //14 hours
+//        $this->assertEquals(2, $numberOfDays->invokeArgs($strava, array($start_time, "UTC", $duration)));
+//        $this->assertEquals(2, $numberOfDays->invokeArgs($strava, array($start_time, "Australia/Melbourne", $duration)));
+//        $this->assertEquals(1, $numberOfDays->invokeArgs($strava, array($start_time, "America/Chicago", $duration)));
+//
+//
+//    }
+    public function testIsOvernightRide() {
+        $isOvernightRide = $this->getMethod('isOvernight');
+        $strava = new Strava("", "", array($this, 'myEcho'));
+
+        $start_time = "2016-02-11T10:16:54Z"; //10:16 GMT, 21:16 Melbourne time, 4:16 chicago.
+        $duration = 4*60*60; //4 hours
+
+        $this->assertEquals(false, $isOvernightRide->invokeArgs($strava, array($start_time, "UTC", $duration)));
+        $this->assertEquals(true, $isOvernightRide->invokeArgs($strava, array($start_time, "Australia/Melbourne", $duration)));
+        $this->assertEquals(false, $isOvernightRide->invokeArgs($strava, array($start_time, "America/Chicago", $duration)));
+        $duration =14*60*60; //14 hours
+        $this->assertEquals(true, $isOvernightRide->invokeArgs($strava, array($start_time, "UTC", $duration)));
+        $this->assertEquals(true, $isOvernightRide->invokeArgs($strava, array($start_time, "Australia/Melbourne", $duration)));
+        $this->assertEquals(false, $isOvernightRide->invokeArgs($strava, array($start_time, "America/Chicago", $duration)));
+
 
     }
     protected function setUp()

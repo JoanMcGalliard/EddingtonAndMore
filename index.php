@@ -27,8 +27,7 @@ function vd($x)
     global $debug;
     if (!isset($debug) || !$debug) return;
     echo "<pre>";
-    $dump = var_export($x, true);
-    echo $dump;
+    var_export($x);
     echo "</pre>";
     flush();
 }

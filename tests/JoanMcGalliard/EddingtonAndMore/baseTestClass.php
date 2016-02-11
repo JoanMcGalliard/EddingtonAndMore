@@ -2,15 +2,43 @@
 namespace JoanMcGalliard\EddingtonAndMore;
 
 use PHPUnit_Framework_TestCase;
+use ReflectionClass;
 
 abstract class BaseTestClass extends PHPUnit_Framework_TestCase
 {
     protected $output;
+    protected $classUnderTest=null;
 
     public function myEcho($msg)
     {
         $this->output .= $msg;
     }
+
+    protected function getMethod($name)
+    {
+        $class = new ReflectionClass($this->classUnderTest);
+        $method = $class->getMethod($name);
+        $method->setAccessible(true);
+        return $method;
+    }
+
+    public function getPrivateProperty($className, $propertyName)
+    {
+        $reflector = new ReflectionClass($className);
+        $property = $reflector->getProperty($propertyName);
+        $property->setAccessible(true);
+
+        return $property;
+    }
+
+    protected function setProperty($name, $value, $obj)
+    {
+        $class = new ReflectionClass($this->classUnderTest);
+        $property = $class->getProperty($name);
+        $property->setAccessible(true);
+        $property->setValue($obj, $value);
+    }
+
 
 }
 
@@ -18,6 +46,23 @@ class BaseMockClass
 {
 
     protected $responses = [];
+    protected $error;
+
+    /**
+     * @return mixed
+     */
+    public function getError()
+    {
+        return $this->error;
+    }
+
+    /**
+     * @param mixed $error
+     */
+    public function setError($error)
+    {
+        $this->error = $error;
+    }
 
 
     public function get($request, $parameters = array())

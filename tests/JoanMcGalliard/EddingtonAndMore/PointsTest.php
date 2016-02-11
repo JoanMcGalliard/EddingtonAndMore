@@ -2,19 +2,89 @@
 
 namespace JoanMcGalliard\EddingtonAndMore;
 
-require_once "JoanMcGalliard/EddingtonAndMore/Points.php";
+require_once 'BaseTestClass.php';
+require_once 'JoanMcGalliard/EddingtonAndMore/Points.php';
+require_once 'JoanMcGalliard/EddingtonAndMore/APIs/GoogleApi.php';
 
-use PHPUnit_Framework_TestCase;
-
-class PointsTest extends PHPUnit_Framework_TestCase
+use JoanMcGalliard;
+date_default_timezone_set("UTC");
+class PointsTest extends BaseTestClass
 {
+    /**
+     * PointsTest constructor.
+     */
+    public function __construct()
+    {
+        date_default_timezone_set("UTC");
+    }
+
+    public function testStub() {
+        // Create a stub for the SomeClass class.
+        $mock = $this->getMockBuilder('GoogleApiMock')->setMethods(array('getError'))->getMock();
+        $mock->method('getError')->willReturn("hello");
+
+        var_dump($mock->getError());
+
+    }
+
+    public function testTimezoneFromCoords()
+    {
+        $mock = new GoogleApiMock();
+//        $mock = $this->getMockBuilder('GoogleApi')->getMock();
+        $points = new Points("2015-12-27 21:56:00 UTC", array($this, 'myEcho'), null, $mock);
+
+        $mock->clearResponses("get", "timezone/json");
+        $mock->primeResponse('get', 'timezone/json', '{"dstOffset" : 0,"rawOffset" : 36000,"status" : "OK",
+        "timeZoneId" : "Australia/Hobart","timeZoneName" : "Australian Eastern Standard Time"}');
+        $points->clearStoredPoint();
+        $this->assertEquals('Australia/Hobart', $points->timezoneFromCoords(10, 10, "2015-12-27 21:56:00 UTC"));
+        $mock->clearResponses("get", "timezone/json");
+        $mock->primeResponse('get', 'timezone/json', include('data/input/googleApi404.php')        );
+        $points->clearStoredPoint();
+        $this->assertEquals('UTC', $points->timezoneFromCoords(10, 10, "2015-12-27 21:56:00 UTC"));
+        $this->assertEquals(include('data/input/googleApi404.php'), $points->getError());
+
+
+        $mock->clearResponses("get", "timezone/json");
+        $mock->primeResponse('get', 'timezone/json', false);
+        $points->clearStoredPoint();
+        $points->setError("");
+        $mock->setError("API ERROR MESSAGE");
+
+        $this->assertEquals('UTC', $points->timezoneFromCoords(10, 10, "2015-12-27 21:56:00 UTC"));
+        $this->assertEquals("API ERROR MESSAGE", $points->getError());
+        $mock->clearResponses("get", "timezone/json");
+        $mock->primeResponse('get', 'timezone/json', '{"errorMessage" : "The provided API key is invalid.","status" :
+         "REQUEST_DENIED"}');
+        $points->clearStoredPoint();
+        $points->setError("");
+        $this->assertEquals('UTC', $points->timezoneFromCoords(10, 10, "2015-12-27 21:56:00 UTC"));
+        $this->assertEquals("The provided API key is invalid.", $points->getError());
+    }
+
+
     public function testEmptyGpx()
     {
-        $points = new Points("2015-12-27 21:56:00 UTC", 'echo');
+        $points = new Points("2015-12-27 21:56:00 UTC", array($this, 'myEcho'));
         $expected = '<?xml version="1.0" encoding="UTF-8"?> <gpx creator="Eddington &amp; More" ><trk><trkseg>
 </trkseg> </trk> </gpx>';
         $this->assertEquals($expected, $points->gpx());
     }
+
+    public function testGpx()
+    {
+        $points = new Points("2015-12-27 21:56:00 UTC", array($this, 'myEcho'));
+        $points->setGenerateGPX(true);
+        $points->add(51.4384070, -0.3319030, "2015-12-28T10:40:13Z");
+        $points->add(51.4382350, -0.3317770, "2015-12-28T10:40:16Z");
+        $points->add(51.4378720, -0.3315100, "2015-12-28T10:40:22Z");
+        $points->add(51.4376860, -0.3313720, "2015-12-28T10:40:25Z");
+        $points->add(51.4374980, -0.3312660, "2015-12-28T10:40:28Z");
+        $points->add(51.4371450, -0.3310790, "2015-12-28T10:40:34Z");
+        $this->assertEquals(include('data/expected/gpx.php'), $points->gpx());
+    }
+
+
 
     protected function setUp()
     {
@@ -26,4 +96,16 @@ class PointsTest extends PHPUnit_Framework_TestCase
     {
         parent::tearDown();
     }
+
+}
+
+function log_msg($message)
+{
+    echo "$message\n";
+}
+
+class GoogleApiMock extends BaseMockClass
+{
+
+
 }

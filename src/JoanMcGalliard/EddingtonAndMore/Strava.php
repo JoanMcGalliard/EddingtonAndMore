@@ -179,8 +179,8 @@ class Strava extends trackerAbstract
                 }
                 $gpx_file = $scratchDirectory . DIRECTORY_SEPARATOR . $this->userId . "-" .
                     preg_replace("/:/", "_", $activity->start_date) . ".gpx";
-                $numberOfDays = $this->numberOfDays($activity->start_date, $next['timezone'], $activity->elapsed_time);
-                if ($this->splitOvernightRides && $numberOfDays > 1 && file_exists($gpx_file)) {
+                $isOvernightRide = $this->isOvernight($activity->start_date, $next['timezone'], $activity->elapsed_time);
+                if ($this->splitOvernightRides && $isOvernightRide && file_exists($gpx_file)) {
                     $xml = file_get_contents($gpx_file);
                     preg_match_all('/<trkpt[^>]*>.*?<\/trkpt>/s', $xml, $trkpts);
                     $points = new Points($activity->start_date, $this->echoCallback, $next['timezone']);
@@ -211,7 +211,7 @@ class Strava extends trackerAbstract
                     $points = null;
 
                 } else {
-                    if ($this->splitOvernightRides && $numberOfDays > 1) {
+                    if ($this->splitOvernightRides && $isOvernightRide) {
                         // it's a multi day ride, but we don't have a file for it.
                         $this->overnightActivities[$activity->id] = $activity;
 
@@ -229,16 +229,6 @@ class Strava extends trackerAbstract
         }
     }
 
-    private function numberOfDays($start_time, $tz, $duration)
-    {
-        $def_tz = date_default_timezone_get();
-        date_default_timezone_set($tz);
-        $start = strtotime($start_time);
-        $midnight = strtotime(date("Y-m-d", $start));
-        date_default_timezone_set($def_tz);
-        $start_seconds = $start - $midnight;
-        return intval(($start_seconds + $duration) / self::TWENTY_FOUR_HOURS) + 1;
-    }
 
     private function rareDot()
     {

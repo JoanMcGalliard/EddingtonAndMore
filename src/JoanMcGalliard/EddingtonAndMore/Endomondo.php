@@ -13,7 +13,7 @@ class Endomondo extends trackerAbstract
     protected $deviceId = "";
     protected $connected = false;
     private $googleApiKey;
-    private $timezone;
+    protected $timezone;
 
     public function __construct($deviceId, $googleApiKey, $tz, $echoCallback, $api = null)
     {
@@ -211,10 +211,6 @@ class Endomondo extends trackerAbstract
         return $points;
     }
 
-    public function gpxDownload($endo_id)
-    {
-        https://www.endomondo.com/rest/v1/users/2859253/workouts/655334427/export?format=GPX
-    }
 
 }
 

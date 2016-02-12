@@ -1,13 +1,14 @@
 <?php
 namespace JoanMcGalliard\EddingtonAndMore;
 
+use Exception;
 use PHPUnit_Framework_TestCase;
 use ReflectionClass;
 
 abstract class BaseTestClass extends PHPUnit_Framework_TestCase
 {
     protected $output;
-    protected $classUnderTest=null;
+    protected $classUnderTest="YOU NEED TO SET THIS VALUE";
 
     public function myEcho($msg)
     {

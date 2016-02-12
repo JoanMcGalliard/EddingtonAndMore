@@ -7,6 +7,7 @@ require_once 'src/JoanMcGalliard/EddingtonAndMore/MyCyclingLog.php';
 require_once 'src/JoanMcGalliard/EddingtonAndMore/Endomondo.php';
 require_once 'src/JoanMcGalliard/EddingtonAndMore/RideWithGps.php';
 require_once 'src/JoanMcGalliard/EddingtonAndMore/Points.php';
+require_once 'src/JoanMcGalliard/EddingtonAndMore/GoogleMapsMaps.php';
 require_once 'src/Preferences.php';
 
 class MainPage
@@ -33,6 +34,7 @@ class MainPage
     private $here;
     private $start_date;
     private $end_date;
+    private $googleMaps;
 
     /**
      * MainPage constructor.
@@ -80,7 +82,7 @@ class MainPage
 
     private function init()
     {
-        global $stravaClientId, $stravaClientSecret, $deviceId, $googleApiKey;
+        global $stravaClientId, $stravaClientSecret, $deviceId, $googleApiKey, $rideWithGpsApiKey;
         set_include_path(get_include_path() . PATH_SEPARATOR . dirname(__FILE__) . DIRECTORY_SEPARATOR . "src" . PATH_SEPARATOR);
         $this->info_message = "";
         $this->error_message = "";
@@ -88,7 +90,9 @@ class MainPage
         $this->strava = new JoanMcGalliard\EddingtonAndMore\Strava($stravaClientId, $stravaClientSecret, array($this, 'output'));
         $this->myCyclingLog = new JoanMcGalliard\EddingtonAndMore\MyCyclingLog(array($this, 'output'));
         $this->endomondo = new JoanMcGalliard\EddingtonAndMore\Endomondo($deviceId, $googleApiKey, $this->preferences->getTimezone(), array($this, 'output'));
-        $this->rideWithGps = new JoanMcGalliard\EddingtonAndMore\RideWithGps($googleApiKey, array($this, 'output'));
+        $this->rideWithGps = new JoanMcGalliard\EddingtonAndMore\RideWithGps($rideWithGpsApiKey, array($this, 'output'), $this->preferences->getTimezone());
+        $this->googleMaps = new JoanMcGalliard\EddingtonAndMore\GoogleMaps($googleApiKey);
+        $this->rideWithGps->setGoogleApi($this->googleMaps);
     }
 
     private function setup()
@@ -300,7 +304,7 @@ class MainPage
                 $activities = $this->rideWithGps->getRides($this->start_date, $this->end_date);
                 $error = $this->rideWithGps->getError();
                 if ($error) {
-                    return ("There was a problem getting data from $source:<br>" . $error);
+                     $str.="<br>There was a problem getting data from $source:<br>" . $error . "<br>";
                 }
             }
             if (!$this->start_date) {

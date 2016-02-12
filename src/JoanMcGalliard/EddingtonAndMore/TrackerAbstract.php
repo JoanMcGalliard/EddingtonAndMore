@@ -16,6 +16,7 @@ abstract class trackerAbstract
     protected $fileUploadTimeout = 300;
     protected $splitOvernightRides;
     protected $api;
+    protected $timezone;
 
     /**
      * @param boolean $splitOvernightRides
@@ -86,11 +87,9 @@ abstract class trackerAbstract
 
     protected function isOvernight($start_time, $tz, $duration)
     {
-        $def_tz = date_default_timezone_get();
         date_default_timezone_set($tz);
         $start = strtotime($start_time);
         $midnight = strtotime(date("Y-m-d", $start));
-        date_default_timezone_set($def_tz);
         $start_seconds = $start - $midnight;
         return (($start_seconds + $duration) / self::TWENTY_FOUR_HOURS >1);
     }

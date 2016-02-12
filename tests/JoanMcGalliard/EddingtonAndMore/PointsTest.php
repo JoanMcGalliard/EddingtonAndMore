@@ -17,6 +17,8 @@ class PointsTest extends BaseTestClass
      */
     public function __construct()
     {
+
+        $this->classUnderTest='JoanMcGalliard\EddingtonAndMore\Points';
         date_default_timezone_set("UTC");
     }
     public function testDistance() {
@@ -30,10 +32,38 @@ class PointsTest extends BaseTestClass
     }
 
 
+    public function testDay() {
+        $day = $this->getMethod('day');
+        $points = new Points("2015-12-27 21:56:00 UTC", array($this, 'myEcho'), "Australia/Melbourne", null);
+        $this->assertEquals("2016-02-10", $day->invokeArgs($points, array("2016-02-10T12:55:00Z")));
+        $this->assertEquals("2016-02-11", $day->invokeArgs($points, array("2016-02-10T13:55:00Z")));
+        $this->assertEquals("2016-07-10", $day->invokeArgs($points, array("2016-07-10T13:55:00Z")));
+    }
+
+
+    public function testSplittingRides() {
+
+        // points that cross midnight in melbourne, summer.  6km before midnight, 6.5 after.
+        $points = new Points("2015-12-27 21:56:00 UTC", array($this, 'myEcho'), "Australia/Melbourne", null);
+        include('data/input/melbourneRide.php'); // points for a short ride crossing midnight in a remote timezone.
+        $splits=$points->getSplits();
+        $this->assertEquals(2, sizeof($splits));
+        $this->assertEquals(array("2016-02-11", "2016-02-12"), array_keys($splits));
+        $this->assertEquals(6.0, round($splits["2016-02-11"]/1000, 1));
+        $this->assertEquals(6.5, round($splits["2016-02-12"]/1000, 1));
+
+        // if the same ride happens in New York, then it should not be split.  Note because we set timezone,
+        // it won't check so it doesn't matter that points are actually in melbourne.
+        $points = new Points("2015-12-27 21:56:00 UTC", array($this, 'myEcho'), "America/New_York", null);
+        include('data/input/melbourneRide.php'); // points for a short ride crossing midnight in a remote timezone.
+        $splits=$points->getSplits();
+        $this->assertEquals(1, sizeof($splits));
+        $this->assertEquals(12.5, round($splits["2016-02-11"]/1000, 1));
+    }
 
     public function testTimezoneFromCoordsDifferentGoogleResponses()
     {
-        $mock = $this->getMockBuilder('GoogleApiMock')->setMethods(array('getError', 'get'))->getMock();
+        $mock = $this->getMockBuilder('GoogleApi')->setMethods(array('getError', 'get'))->getMock();
         $points = new Points("2015-12-27 21:56:00 UTC", array($this, 'myEcho'), null, $mock);
 
         $points->clearStoredPoint();
@@ -101,7 +131,7 @@ class PointsTest extends BaseTestClass
     {
         // if the points are with 50km of the last time we asked google api for anything, we should just return the same
         // timezone.
-        $mock = $this->getMockBuilder('GoogleApiMock')->setMethods(array('getError', 'get'))->getMock();
+        $mock = $this->getMockBuilder('GoogleApi')->setMethods(array('getError', 'get'))->getMock();
         $points = new Points("2015-12-27 21:56:00 UTC", array($this, 'myEcho'), null, $mock);
 
 

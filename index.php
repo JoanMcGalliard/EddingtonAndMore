@@ -5,6 +5,7 @@ function myEcho($msg)
     echo str_pad('', 4096);
 }
 set_include_path(get_include_path() . PATH_SEPARATOR . dirname(__FILE__) . DIRECTORY_SEPARATOR . "src" . PATH_SEPARATOR);
+date_default_timezone_set("UTC");
 
 require_once 'src/MainPage.php';
 $page=new MainPage('myEcho');
@@ -44,11 +45,9 @@ function log_msg($message)
     } else {
         $string = var_export($message, true);
     }
-    $tz = date_default_timezone_get();
     date_default_timezone_set("UTC");
     $date = date("Y-m-d H:i:s", time());
     $file = fopen(dirname(__FILE__) . DIRECTORY_SEPARATOR . "diagnostic.log", "a");
     fwrite($file, $date . ": " . $string . "\n");
     fclose($file);
-    date_default_timezone_set($tz);
 }

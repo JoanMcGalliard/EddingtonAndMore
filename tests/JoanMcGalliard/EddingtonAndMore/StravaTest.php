@@ -48,23 +48,6 @@ class StravaTest extends  BaseTestClass
 //
 //
 //    }
-    public function testIsOvernightRide() {
-        $isOvernightRide = $this->getMethod('isOvernight');
-        $strava = new Strava("", "", array($this, 'myEcho'));
-
-        $start_time = "2016-02-11T10:16:54Z"; //10:16 GMT, 21:16 Melbourne time, 4:16 chicago.
-        $duration = 4*60*60; //4 hours
-
-        $this->assertEquals(false, $isOvernightRide->invokeArgs($strava, array($start_time, "UTC", $duration)));
-        $this->assertEquals(true, $isOvernightRide->invokeArgs($strava, array($start_time, "Australia/Melbourne", $duration)));
-        $this->assertEquals(false, $isOvernightRide->invokeArgs($strava, array($start_time, "America/Chicago", $duration)));
-        $duration =14*60*60; //14 hours
-        $this->assertEquals(true, $isOvernightRide->invokeArgs($strava, array($start_time, "UTC", $duration)));
-        $this->assertEquals(true, $isOvernightRide->invokeArgs($strava, array($start_time, "Australia/Melbourne", $duration)));
-        $this->assertEquals(false, $isOvernightRide->invokeArgs($strava, array($start_time, "America/Chicago", $duration)));
-
-
-    }
     protected function setUp()
     {
         parent::setUp();
@@ -93,7 +76,6 @@ class StravaTest extends  BaseTestClass
     public function uploadGpx($file_path, $external_id, $external_msg, $name, $description)
     public function activityUrl($activityId)
     public function waitForPendingUploads()
-    public function setSplitOvernightRides($getStravaSplitRides)
     public function authenticationUrl($redirect, $approvalPrompt, $scope, $state)
 
  */

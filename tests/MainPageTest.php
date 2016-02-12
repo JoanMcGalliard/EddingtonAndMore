@@ -1,6 +1,7 @@
 <?php
 
 require_once "JoanMcGalliard/EddingtonAndMore/BaseTestClass.php";
+require_once 'data/input/server.php';
 require_once "MainPage.php";
 
 class MainPageTest extends JoanMcGalliard\EddingtonAndMore\BaseTestClass

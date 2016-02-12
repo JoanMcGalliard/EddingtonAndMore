@@ -1,7 +1,7 @@
 <?php
 
 namespace JoanMcGalliard\EddingtonAndMore;
-require_once "Iamstuartwilson/StravaApi.php";
+require_once "APIs/StravaApi.php";
 require_once 'TrackerAbstract.php';
 require_once 'Points.php';
 use CURLFile;

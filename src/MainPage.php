@@ -1,6 +1,7 @@
 <?php
 set_include_path(get_include_path() . PATH_SEPARATOR . "..");
 
+require_once 'local_template.php';
 require_once 'local.php';
 require_once 'src/JoanMcGalliard/EddingtonAndMore/Strava.php';
 require_once 'src/JoanMcGalliard/EddingtonAndMore/MyCyclingLog.php';
@@ -1107,7 +1108,7 @@ class MainPage
 
             foreach ($ride_list as $ride) {
 
-                if ($ride['endo_id'] == $endo_ride['endo_id']) {
+                if (isset($ride['endo_id']) && $ride['endo_id'] == $endo_ride['endo_id']) {
                     return $ride[$id_key];
                 }
                 $endo_start = strtotime($endo_ride['start_time']);

@@ -458,7 +458,7 @@ class MainPage
                         $distance = $ride['distance'];
                         $start_time = $ride['start_time'];
                         $message = 'Ride with id <a target="_blank" href="' . $this->endomondo->activityUrl($ride['endo_id']) . '">' . $ride['endo_id'] . '</a>' . " on $start_time, distance " . round($distance * self::METRE_TO_MILE, 1) . " miles/" . round($distance * self::METRE_TO_KM, 1) . " kms. ";
-                        if (!$distance || $distance < 500) {
+                        if (!$distance || $distance < 300) {
                             $message .= "Skipping, too short: $distance metres";
                         } else {
                             $duplicateStravaRide = $this->isDuplicateRide($ride, $this->strava_rides, 'strava_id');
@@ -541,7 +541,7 @@ class MainPage
                         $distance = $ride['distance'];
                         $start_time = $ride['start_time'];
                         $message = '<br>Ride with id <a target="_blank" href="' . $this->endomondo->activityUrl($ride['endo_id']) . '">' . $ride['endo_id'] . '</a>' . " on $start_time, distance " . round($distance * self::METRE_TO_MILE, 1) . " miles/" . round($distance * self::METRE_TO_KM, 1) . " kms. ";
-                        if (!$distance || $distance < 500) {
+                        if (!$distance || $distance < 300) {
                             $message .= "Skipping, too short: $distance metres";
                         } else {
                             $duplicateRwgpsRide = $this->isDuplicateRide($ride, $rwgps_rides, 'rwgps_id');

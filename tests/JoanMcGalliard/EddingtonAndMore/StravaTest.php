@@ -38,6 +38,38 @@ class StravaTest extends  BaseTestClass
         $this->assertEquals(include("data/expected/stravaActivities1.php"), $strava->getRides(null, null, 2));
         $this->assertEquals("Operation timed out after 0 milliseconds with 0 out of 0 bytes received<br>",
             $strava->getError());
+
+        // split rides from gpx file
+
+//        Rides that would be split, if splitting was turned on
+        $mock->expects($this->at(0))->method('get')
+            ->with('activities', array('per_page' => 200, 'page' => 1))
+            ->willReturn(include("data/input/stravaActivities2.php"));
+        $this->assertEquals(include("data/expected/stravaActivities2.php"), $strava->getRides(null, null, 200));
+        $this->assertEquals("", $strava->getError());
+
+        //as above, with split on, but no gpx file
+
+        global $scratchDirectory;
+        $scratchDirectory="gpx_temp_dir";
+        $this->cleanDirectory($scratchDirectory);
+
+        $strava->setSplitOvernightRides(true);
+        $mock->expects($this->at(0))->method('get')
+            ->with('activities', array('per_page' => 200, 'page' => 1))
+            ->willReturn(include("data/input/stravaActivities2.php"));
+        $this->assertEquals(include("data/expected/stravaActivities2.php"), $strava->getRides(null, null, 200));
+        $this->assertEquals("", $strava->getError());
+
+
+        copy(__DIR__ . DIRECTORY_SEPARATOR.'data/input/London-Edinburgh-London_2013.gpx',"$scratchDirectory/".$strava->getUserId()."-2013-07-28T09_04_51Z.gpx");
+        $mock->expects($this->at(0))->method('get')
+            ->with('activities', array('per_page' => 200, 'page' => 1))
+            ->willReturn(include("data/input/stravaActivities2.php"));
+        $this->assertEquals(include("data/expected/stravaActivities2a.php"), $strava->getRides(null, null, 200));
+        $this->assertEquals("", $strava->getError());
+
+
     }
 
 //    public function testNumberOfDays() {

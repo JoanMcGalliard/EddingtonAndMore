@@ -176,19 +176,6 @@ class MainPageTest extends JoanMcGalliard\EddingtonAndMore\BaseTestClass
         return $count;
     }
 
-    private function cleanDirectory($dir)
-    {
-        if (!file_exists($dir)) {
-            mkdir($dir);
-        }
-        foreach (scandir($dir) as $file) {
-            $path = $dir . DIRECTORY_SEPARATOR . $file;
-            if (!is_dir($path)) {
-                unlink($path);
-            }
-        }
-
-    }
 
     public function testNotes()
     {

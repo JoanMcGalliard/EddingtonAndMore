@@ -15,6 +15,21 @@ abstract class BaseTestClass extends PHPUnit_Framework_TestCase
         $this->output .= $msg;
     }
 
+    protected function cleanDirectory($dir)
+    {
+        if (!file_exists($dir)) {
+            mkdir($dir);
+        }
+        foreach (scandir($dir) as $file) {
+            $path = $dir . DIRECTORY_SEPARATOR . $file;
+            if (!is_dir($path)) {
+                unlink($path);
+            }
+        }
+
+    }
+
+
     protected function getMethod($name)
     {
         $class = new ReflectionClass($this->classUnderTest);

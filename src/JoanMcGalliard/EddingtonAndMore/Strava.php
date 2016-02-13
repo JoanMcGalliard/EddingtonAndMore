@@ -183,7 +183,7 @@ class Strava extends trackerAbstract
                 if ($this->splitOvernightRides && $isOvernightRide && file_exists($gpx_file)) {
                     $xml = file_get_contents($gpx_file);
                     preg_match_all('/<trkpt[^>]*>.*?<\/trkpt>/s', $xml, $trkpts);
-                    $points = new Points($activity->start_date, $this->echoCallback, $next['timezone']);
+                    $points = new Points($activity->start_date, $this->echoCallback, null, $next['timezone']);
                     foreach ($trkpts[0] as $trkpt) {
                         preg_match('/<trkpt.*lat="([^"]*)"/', $trkpt, $matches);
                         $lat = $matches[1];

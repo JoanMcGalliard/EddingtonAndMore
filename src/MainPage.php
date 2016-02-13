@@ -8,7 +8,7 @@ require_once 'src/JoanMcGalliard/EddingtonAndMore/MyCyclingLog.php';
 require_once 'src/JoanMcGalliard/EddingtonAndMore/Endomondo.php';
 require_once 'src/JoanMcGalliard/EddingtonAndMore/RideWithGps.php';
 require_once 'src/JoanMcGalliard/EddingtonAndMore/Points.php';
-require_once 'src/JoanMcGalliard/EddingtonAndMore/GoogleMapsMaps.php';
+require_once 'src/JoanMcGalliard/EddingtonAndMore/GoogleMaps.php';
 require_once 'src/Preferences.php';
 
 class MainPage
@@ -88,11 +88,11 @@ class MainPage
         $this->info_message = "";
         $this->error_message = "";
         $this->preferences = new Preferences();
+        $this->googleMaps = new JoanMcGalliard\EddingtonAndMore\GoogleMaps($googleApiKey);
         $this->strava = new JoanMcGalliard\EddingtonAndMore\Strava($stravaClientId, $stravaClientSecret, array($this, 'output'));
         $this->myCyclingLog = new JoanMcGalliard\EddingtonAndMore\MyCyclingLog(array($this, 'output'));
-        $this->endomondo = new JoanMcGalliard\EddingtonAndMore\Endomondo($deviceId, $googleApiKey, $this->preferences->getTimezone(), array($this, 'output'));
+        $this->endomondo = new JoanMcGalliard\EddingtonAndMore\Endomondo($deviceId, $this->googleMaps, $this->preferences->getTimezone(), array($this, 'output'));
         $this->rideWithGps = new JoanMcGalliard\EddingtonAndMore\RideWithGps($rideWithGpsApiKey, array($this, 'output'), $this->preferences->getTimezone());
-        $this->googleMaps = new JoanMcGalliard\EddingtonAndMore\GoogleMaps($googleApiKey);
         $this->rideWithGps->setGoogleApi($this->googleMaps);
     }
 

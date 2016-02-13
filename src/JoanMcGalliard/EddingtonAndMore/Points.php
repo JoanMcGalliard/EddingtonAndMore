@@ -32,8 +32,8 @@ class Points
     private $gpx;
     private $bad_points = 0;
     private $good_points = 0;
-    /** @var JoanMcGalliard\GoogleApi $api */
-    private $api;
+    /** @var GoogleMaps $googleMaps */
+    private $googleMaps;
     private $error = "";
 
     /**
@@ -45,23 +45,13 @@ class Points
     }
 
     /**
-     * @param string $error
-     */
-    public function setError($error)
-    {
-        $this->error = $error;
-    }
-
-    /**
      * Points constructor.
      */
-    public function __construct($start_day, $echoCallback, $timezone = "", $api = null)
+    public function __construct($start_day, $echoCallback, $googleMaps=null, $timezone = "")
     {
         $this->points = [];
-        if ($api) {
-            $this->api = $api;
-        } else {
-            $this->api = new JoanMcGalliard\GoogleApi();
+        if ($googleMaps) {
+            $this->googleMaps = $googleMaps;
         }
         if ($timezone <> "") {
             $this->timezone = $timezone;
@@ -98,13 +88,6 @@ class Points
         $this->generateGPX = $generateGPX;
     }
 
-    /**
-     * @param mixed $googleApiKey
-     */
-    public function setGoogleApiKey($googleApiKey)
-    {
-        $this->api->setApikey($googleApiKey);
-    }
 
     /**
      * @param $lat float
@@ -182,29 +165,16 @@ class Points
             //previous TZ was less than 50km from here.  Use same timezone.  Needed as google is taking >3s to return TZ.
             return self::$previousPoint->tz;
         }
-        if (!isset($this->api)) {
+        if (!isset($this->googleMaps) || !$this->googleMaps) {
             return $default;
         }
         if (!$time) {
             $time = $this->start_day;
         }
-        $params = ['location' => "$lat,$long",
-            'timestamp' => $time];
-        $page = $this->api->get('timezone/json', $params);
-        $json = json_decode($page);
-
-        if ($page && $json && isset($json->timeZoneId)) {
-            $tz= $json->timeZoneId;
-        } else if (!$page) {
-            $this->error .= $this->api->getError();
-        } else if (!$json) {
-            $this->error .= $page;
-        } else { // it's json, just not what we expected
-            if (isset($json->errorMessage)) {
-                $this->error .= $json->errorMessage;
-            } else {
-                $this->error .= "Unknown JSON returned by Google API, $page";
-            }
+        $tz=$this->googleMaps->timezoneFromCoords($lat,$long,$time);
+        if (!$tz) {
+            $error = $this->googleMaps->getError();
+            $this->error.= $error;
         }
         if (!$tz) {
             if (isset(self::$previousPoint)) {

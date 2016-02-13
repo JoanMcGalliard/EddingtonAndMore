@@ -29,10 +29,14 @@ class GoogleMaps
      * Google constructor.
      * @param $api
      */
-    public function __construct($apiKey)
+    public function __construct($apiKey, $api=null)
     {
-        $this->api = new GoogleApi();
-        $this->api->setApikey($apiKey);
+        if (isset($api)) {
+            $this->api=$api;
+        } else {
+            $this->api = new GoogleApi();
+            $this->api->setApikey($apiKey);
+        }
     }
 
     public function timezoneFromCoords($lat,$long, $time) {
@@ -41,6 +45,7 @@ class GoogleMaps
         $page = $this->api->get('timezone/json', $params);
         $json = json_decode($page);
 
+        $tz=null;
         if ($page && $json && isset($json->timeZoneId)) {
             $tz= $json->timeZoneId;
         } else if (!$page) {
@@ -54,6 +59,7 @@ class GoogleMaps
                 $this->error .= "Unknown JSON returned by Google API, $page";
             }
         }
+        return $tz;
     }
 
 }

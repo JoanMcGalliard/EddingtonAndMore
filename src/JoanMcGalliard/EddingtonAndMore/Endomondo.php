@@ -12,14 +12,14 @@ class Endomondo extends trackerAbstract
 {
     protected $deviceId = "";
     protected $connected = false;
-    private $googleApiKey;
+    private $googleMaps;
     protected $timezone;
 
-    public function __construct($deviceId, $googleApiKey, $tz, $echoCallback, $api = null)
+    public function __construct($deviceId, $googleMaps, $tz, $echoCallback, $api = null)
     {
         $this->deviceId = $deviceId;
         $this->timezone = $tz;
-        $this->googleApiKey = $googleApiKey;
+        $this->googleMaps = $googleMaps;
         $this->echoCallback = $echoCallback;
         if ($api) {
             $this->api = $api;
@@ -198,9 +198,8 @@ class Endomondo extends trackerAbstract
             $this->error .= "$page<br>";
             return null;
         }
-        $points = new Points($json_decode->start_time, $this->echoCallback);
+        $points = new Points($json_decode->start_time,$this->echoCallback,$this->googleMaps);
         $points->setGenerateGPX(true);
-        $points->setGoogleApiKey($this->googleApiKey);
         if (isset($json_decode->points) && is_array($json_decode->points)) {
             foreach ($json_decode->points as $point) {
                 if (isset($point->lat) && isset($point->lng) && isset($point->time)) {

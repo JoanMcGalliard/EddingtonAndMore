@@ -479,7 +479,7 @@ class RideWithGps extends TrackerAbstract
             $this->error.="RWGps didn't return any points";
             return null;
         }
-        $points=new Points($start_day, $this->echoCallback, $timezone);
+        $points=new Points($start_day, $this->echoCallback, $this->googleMaps, $timezone);
         foreach ($track_points as $track_point)
         {
             if (!isset($track_point->y) || !isset($track_point->x)) {

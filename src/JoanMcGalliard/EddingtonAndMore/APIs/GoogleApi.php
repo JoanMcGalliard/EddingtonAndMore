@@ -53,6 +53,11 @@ class GoogleApi
             }
             if ($page) break;
         }
+        log_msg("google " . $url);
+        log_msg($page);
+        if ($error) log_msg("ERROR: " . $error);
+        log_msg("Total time: " . curl_getinfo($process)["total_time"]);
+
         curl_close($process);
         return $page;
     }

@@ -464,7 +464,8 @@ class MainPage
                             $duplicateStravaRide = $this->isDuplicateRide($ride, $this->strava_rides, 'strava_id');
 
                             if ($duplicateStravaRide) {
-                                $message = ".";
+                                $message="";
+                                 $this->output( ".");
                             } else {
                                 $path = $scratchDirectory . DIRECTORY_SEPARATOR . "endomondo+" . $ride['endo_id'] . ".gpx";
                                 $points = $this->endomondo->getPoints($ride['endo_id']);
@@ -489,8 +490,10 @@ class MainPage
                             }
 
                         }
-                        $this->output("<br>$message ");
-                        flush();
+                        if ($message) {
+                            $this->output("<br>$message ");
+                            flush();
+                        }
 
                     }
 

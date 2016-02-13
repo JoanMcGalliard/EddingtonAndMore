@@ -94,6 +94,20 @@ abstract class trackerAbstract
         return (($start_seconds + $duration) / self::TWENTY_FOUR_HOURS >1);
     }
 
+    protected function rareDot()
+    {
+        static $rareDotCount;
+        if (!isset($rareDotCount)) {
+            $rareDotCount = 0;
+        }
+        if ($rareDotCount++ > 1000) {
+            $this->output('.');
+            $rareDotCount = 0;
+        }
+        flush();
+    }
+
+
 }
 
 ?>

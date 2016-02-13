@@ -230,17 +230,6 @@ class Strava extends trackerAbstract
     }
 
 
-    private function rareDot()
-    {
-        if (!isset($this->rareDotCount)) {
-            $this->rareDotCount = 0;
-        }
-        if ($this->rareDotCount++ > 1000) {
-            $this->output('.');
-            $this->rareDotCount = 0;
-        }
-        flush();
-    }
 
     public function getBike($id)
     {

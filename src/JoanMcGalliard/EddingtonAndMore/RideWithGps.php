@@ -492,6 +492,7 @@ class RideWithGps extends TrackerAbstract
                 $time=$track_point->t;
             }
             $points->add($lat,$long,$time);
+            $this->rareDot();
         }
         return $points;
     }

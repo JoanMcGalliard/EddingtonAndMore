@@ -10,12 +10,12 @@ use Iamstuartwilson;
 
 class Strava extends trackerAbstract
 {
-    const GPX_SUFFIX = "\.gpx";
+    const GPX_SUFFIX = "gpx";
     protected $connected = false;
     protected $bikes = [];
     private $writeScope = false;
     private $overnightActivities = [];
-    private $accessTokenIsSet=false;
+    private $accessTokenIsSet = false;
 
     public function __construct($clientId, $clientSecret, $echoCallback, $api = null)
     {
@@ -177,46 +177,36 @@ class Strava extends trackerAbstract
                 } else {
                     $next['timezone'] = null;
                 }
-                $gpx_file = $scratchDirectory . DIRECTORY_SEPARATOR . $this->userId . "-" .
-                    preg_replace("/:/", "_", $activity->start_date) . ".gpx";
+;
                 $isOvernightRide = $this->isOvernight($activity->start_date, $next['timezone'], $activity->elapsed_time);
-                if ($this->splitOvernightRides && $isOvernightRide && file_exists($gpx_file)) {
-                    $xml = file_get_contents($gpx_file);
-                    preg_match_all('/<trkpt[^>]*>.*?<\/trkpt>/s', $xml, $trkpts);
-                    $points = new Points($activity->start_date, $this->echoCallback, null, $next['timezone']);
-                    foreach ($trkpts[0] as $trkpt) {
-                        preg_match('/<trkpt.*lat="([^"]*)"/', $trkpt, $matches);
-                        $lat = $matches[1];
-                        preg_match('/<trkpt.*lon="([^"]*)"/', $trkpt, $matches);
-                        $lon = $matches[1];
-                        preg_match('/<time>([^<]*)<\/time>/', $trkpt, $matches);
-                        $time = $matches[1];
-                        $points->add($lat, $lon, $time);
-                        $this->rareDot();
+
+;
+                if ($this->splitOvernightRides && $isOvernightRide) {
+
+                    $points = $this->getPoints($activity->start_date, $next['timezone']);
+                    if ($points) {
+                        if (sizeof($points->getSplits()) > 0) {
+                            $next['total_elevation_gain'] = $next['total_elevation_gain'] / sizeof($points->getSplits());
+                        }
+
+
+                        foreach ($points->getSplits() as $split_date => $split) {
+                            $new = $next;
+                            $new['distance'] = $split;
+                            $new['start_time'] = $points->getStartTimes()[$split_date];
+                            $new['elapsed_time'] = strtotime($points->getEndTimes()[$split_date]) - strtotime($points->getStartTimes()[$split_date]);
+                            $new['moving_time'] = $new['elapsed_time'];
+                            $activities_list[$split_date][] = $new;
+                        }
+
                     }
-
-                    if (sizeof($points->getSplits()) > 0) {
-                        $next['total_elevation_gain'] = $next['total_elevation_gain'] / sizeof($points->getSplits());
-                    }
-
-                    foreach ($points->getSplits() as $split_date => $split) {
-                        $new = $next;
-                        $new['distance'] = $split;
-                        $new['start_time'] = $points->getStartTimes()[$split_date];
-                        $new['elapsed_time'] = strtotime($points->getEndTimes()[$split_date]) - strtotime($points->getStartTimes()[$split_date]);
-                        $new['moving_time'] = $new['elapsed_time'];
-                        $activities_list[$split_date][] = $new;
-                    }
-
-                    $points = null;
-
                 } else {
                     if ($this->splitOvernightRides && $isOvernightRide) {
                         // it's a multi day ride, but we don't have a file for it.
                         $this->overnightActivities[$activity->id] = $activity;
 
                     }
-                    $pattern = "/^([0-9][0-9]*)" . self::GPX_SUFFIX . "/";
+                    $pattern = "/^([0-9][0-9]*)\." . self::GPX_SUFFIX . "/";
                     if (preg_match($pattern, $activity->external_id, $matches) > 0) {
                         $next['endo_id'] = intval($matches[1]);
                     } else {
@@ -228,7 +218,6 @@ class Strava extends trackerAbstract
             }
         }
     }
-
 
 
     public function getBike($id)
@@ -245,7 +234,7 @@ class Strava extends trackerAbstract
 
     public function uploadGpx($file_path, $external_id, $external_msg, $name, $description)
     {
-        $params = ["activity_type" => "ride", "file" => new CURLFile($file_path,'text', $name),
+        $params = ["activity_type" => "ride", "file" => new CURLFile($file_path, 'text', $name),
             "data_type" => "gpx", "external_id" => $external_id,
             "name" => $name, "description" => $description];
         /** @var object $result */
@@ -300,7 +289,6 @@ class Strava extends trackerAbstract
     }
 
 
-
     public function authenticationUrl($redirect, $approvalPrompt, $scope, $state)
     {
         return $this->api->authenticationUrl($redirect, $approvalPrompt, $scope, $state);
@@ -309,6 +297,31 @@ class Strava extends trackerAbstract
     public function getOvernightActivities()
     {
         return $this->overnightActivities;
+    }
+
+    public function getPoints($start_date, $tz)
+    {
+        global $scratchDirectory;
+        $gpx_file = $scratchDirectory . DIRECTORY_SEPARATOR . $this->userId . "-" .
+            preg_replace("/:/", "_", $start_date) . "." . self::GPX_SUFFIX;
+        if (!file_exists($gpx_file)) {
+            return null;
+        }
+
+        $xml = file_get_contents($gpx_file);
+        preg_match_all('/<trkpt[^>]*>.*?<\/trkpt>/s', $xml, $trkpts);
+        $points = new Points($start_date, $this->echoCallback, null, $tz);
+        foreach ($trkpts[0] as $trkpt) {
+            preg_match('/<trkpt.*lat="([^"]*)"/', $trkpt, $matches);
+            $lat = $matches[1];
+            preg_match('/<trkpt.*lon="([^"]*)"/', $trkpt, $matches);
+            $lon = $matches[1];
+            preg_match('/<time>([^<]*)<\/time>/', $trkpt, $matches);
+            $time = $matches[1];
+            $points->add($lat, $lon, $time);
+            $this->rareDot();
+        }
+        return $points;
     }
 
 }

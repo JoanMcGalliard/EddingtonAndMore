@@ -60,6 +60,8 @@ class StravaTest extends  BaseTestClass
             ->willReturn(include("data/input/stravaActivities2.php"));
         $this->assertEquals(include("data/expected/stravaActivities2.php"), $strava->getRides(null, null, 200));
         $this->assertEquals("", $strava->getError());
+        $obj=include('data/expected/overnightActivity.php');
+        $this->assertEquals(include('data/expected/overnightActivity.php'), $strava->getOvernightActivities());
 
 
         copy(__DIR__ . DIRECTORY_SEPARATOR.'data/input/London-Edinburgh-London_2013.gpx',"$scratchDirectory/".$strava->getUserId()."-2013-07-28T09_04_51Z.gpx");
@@ -72,23 +74,6 @@ class StravaTest extends  BaseTestClass
 
     }
 
-//    public function testNumberOfDays() {
-//        $numberOfDays = $this->getMethod('numberOfDays');
-//        $strava = new Strava("", "", array($this, 'myEcho'));
-//
-//        $start_time = "2016-02-11T10:16:54Z"; //10:16 GMT, 21:16 Melbourne time, 4:16 chicago.
-//        $duration = 4*60*60; //4 hours
-//
-//        $this->assertEquals(1, $numberOfDays->invokeArgs($strava, array($start_time, "UTC", $duration)));
-//        $this->assertEquals(2, $numberOfDays->invokeArgs($strava, array($start_time, "Australia/Melbourne", $duration)));
-//        $this->assertEquals(1, $numberOfDays->invokeArgs($strava, array($start_time, "America/Chicago", $duration)));
-//        $duration =14*60*60; //14 hours
-//        $this->assertEquals(2, $numberOfDays->invokeArgs($strava, array($start_time, "UTC", $duration)));
-//        $this->assertEquals(2, $numberOfDays->invokeArgs($strava, array($start_time, "Australia/Melbourne", $duration)));
-//        $this->assertEquals(1, $numberOfDays->invokeArgs($strava, array($start_time, "America/Chicago", $duration)));
-//
-//
-//    }
     protected function setUp()
     {
         parent::setUp();

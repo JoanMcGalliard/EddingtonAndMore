@@ -12,26 +12,23 @@ class EndomondoTest extends  BaseTestClass
 
     public function testIsOverNightRide() {
         $isOverNightRide = $this->getMethod('isOverNightRide');
-        $mock = new EndomondoApiMock();
-
-
 
         $ride=new \stdClass();
         $ride->duration = 4*60*60; //4 hours
         $ride->start_time = "2016-02-11T10:16:54Z"; //10:16 GMT, 21:16 Melbourne time, 4:16 chicago.
 
-        $endomondo = new Endomondo("", "", "UTC", array($this, 'myEcho'), $mock);
+        $endomondo = new Endomondo("", "", "UTC", array($this, 'myEcho'), null);
         $this->assertEquals(false, $isOverNightRide->invokeArgs($endomondo, array($ride)));
-        $endomondo = new Endomondo("", "", "Australia/Melbourne", array($this, 'myEcho'), $mock);
+        $endomondo = new Endomondo("", "", "Australia/Melbourne", array($this, 'myEcho'), null);
         $this->assertEquals(true, $isOverNightRide->invokeArgs($endomondo, array($ride)));
-        $endomondo = new Endomondo("", "", "America/Chicago", array($this, 'myEcho'), $mock);
+        $endomondo = new Endomondo("", "", "America/Chicago", array($this, 'myEcho'), null);
         $this->assertEquals(false, $isOverNightRide->invokeArgs($endomondo, array($ride)));
         $ride->duration =14*60*60; //14 hours
-        $endomondo = new Endomondo("", "", "UTC", array($this, 'myEcho'), $mock);
+        $endomondo = new Endomondo("", "", "UTC", array($this, 'myEcho'), null);
         $this->assertEquals(true, $isOverNightRide->invokeArgs($endomondo, array($ride)));
-        $endomondo = new Endomondo("", "", "Australia/Melbourne", array($this, 'myEcho'), $mock);
+        $endomondo = new Endomondo("", "", "Australia/Melbourne", array($this, 'myEcho'), null);
         $this->assertEquals(true, $isOverNightRide->invokeArgs($endomondo, array($ride)));
-        $endomondo = new Endomondo("", "", "America/Chicago", array($this, 'myEcho'), $mock);
+        $endomondo = new Endomondo("", "", "America/Chicago", array($this, 'myEcho'), null);
         $this->assertEquals(false, $isOverNightRide->invokeArgs($endomondo, array($ride)));
 
 
@@ -68,14 +65,5 @@ class EndomondoTest extends  BaseTestClass
     public function authenticationUrl($redirect, $approvalPrompt, $scope, $state)
 
  */
-
-/**
- * A mock version of Iamstuartwilson\EndomondoApi
- */
-class EndomondoApiMock extends BaseMockClass
-{
-
-}
-
 
 ?>

@@ -191,10 +191,14 @@ class MyCyclingLog extends trackerAbstract
         foreach ($rides as $date => $ride_list) {
             foreach ($ride_list as $ride) {
                 if ($ride['strava_id'] <> null) {
-                    $this->output("Deleting " . $ride['mcl_id'] . " from " . $date . ", strava id " . $ride["strava_id"] . ".<br>");
-                    flush();
-                    $this->api->delete($ride['mcl_id']);
-                    $count++;
+                    $this->output("Deleting " . $ride['mcl_id'] . " from " . $date . ", strava id " . $ride["strava_id"]);
+                    if($this->api->delete($ride['mcl_id'])) {
+                        $count++;
+                    } else {
+                        $this->output(": FAILED");
+                    }
+                    $this->output(".<br>");
+
                 }
             }
         }
@@ -203,11 +207,10 @@ class MyCyclingLog extends trackerAbstract
     }
 
 
-    public function getRides($start_date, $end_date)
+    public function getRides($start_date, $end_date, $limit=800)
     {
         $records = [];
         $offset = 0;
-        $limit = 800;
         $done = false;
 
         while (!$done) {

@@ -477,7 +477,7 @@ class MainPage
 
                                 } else {
                                     file_put_contents($path, $points->gpx());
-                                    $error = $this->strava->uploadGpx($path, $ride['endo_id'], $message,
+                                    $error = $this->strava->uploadGpx($path, 'endomondo_'.$this->endomondo->getUserId().'_'.$ride['endo_id'], $message,
                                         $ride['name'], $this->endomondo->activityUrl($ride['endo_id']));
                                     if ($error) {
                                         $message = $message . '<span style="color:red;">Failed: </span>' . $error;

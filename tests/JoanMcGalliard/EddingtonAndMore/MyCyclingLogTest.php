@@ -111,6 +111,46 @@ class MyCyclingLogTest extends BaseTestClass
 
     }
 
+    public function testAddRide()
+    {
+        $mock = $this->getMockBuilder('MyCyclingLogApi')->setMethods(array('postPage'))->getMock();
+        $myCyclingLog = new MyCyclingLog(array($this, 'myEcho'), $mock);
+
+        $params = array(
+            'event_date' => '02/07/2016',
+            'is_ride' => 'T',
+            'h' => 2,
+            'm' => 21,
+            's' => 24,
+            'distance' => 32000*0.00062137119224,
+            'user_unit' => 'mi',
+            'notes' => 'http://www.strava.com/activities/490216308',
+            'max_speed' => 7.8*3600*0.00062137119224,
+            'elevation' => 0,
+            'bid' => '');
+        $mock->expects($this->at(0))->method('postPage')
+            ->with('?method=ride.new', $params)
+            ->willReturn("blah");
+
+        $ride =
+            array(
+                'distance' => 32000,
+                'name' => 'Lunch Ride',
+                'strava_id' => 490216308,
+                'start_time' => '2016-02-07T11:19:54Z',
+                'bike' => 'b267883',
+                'moving_time' => 8484,
+                'elapsed_time' => 2125,
+                'total_elevation_gain' => 0,
+                'max_speed' => 7.8,
+                'timezone' => 'Europe/London',
+                'endo_id' => 668479655,
+                'mcl_bid' => '',
+            );
+
+        $this->assertEquals("blah", $myCyclingLog->addRide('2016-02-07', $ride));
+    }
+
     public function testDeleteRides()
     {
         $mock = $this->getMockBuilder('MyCyclingLogApi')->setMethods(array('getPage', 'login', 'delete', 'logout'))->getMock();

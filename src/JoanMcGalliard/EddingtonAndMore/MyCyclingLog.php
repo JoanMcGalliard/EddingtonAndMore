@@ -85,7 +85,9 @@ class MyCyclingLog extends trackerAbstract
         if ($this->connected) return true;
         if ($this->api->getAuth() != null) {
             $rides = $this->getPageDom("?method=ride.list&limit=0&offset=0");
-            if ($rides != null && preg_match('/^[0-9][0-9]*$/',
+            if ($rides != null && $rides->hasChildNodes() && $rides->childNodes->item(0)->hasChildNodes() &&
+                $rides->childNodes->item(0)->childNodes->item(0)->hasAttributes() &&
+                preg_match('/^[0-9][0-9]*$/',
                     $rides->childNodes->item(0)->childNodes->item(0)->getAttribute('total_size'))
             ) {
                 $this->connected=true;

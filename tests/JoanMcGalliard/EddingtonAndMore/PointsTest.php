@@ -36,7 +36,7 @@ class PointsTest extends BaseTestClass
         $points = new Points("2015-12-27 21:56:00 UTC", array($this, 'myEcho'),null, "Australia/Melbourne");
         $points->clearStoredPoint();
         $this->assertEquals("2016-02-10", $day->invokeArgs($points, array("2016-02-10T12:55:00Z")));
-        $this->assertEquals("2016-02-12", $day->invokeArgs($points, array("2016-02-11T13:55:00Z"))); //todo review this
+        $this->assertEquals("2016-02-12", $day->invokeArgs($points, array("2016-02-11T13:55:00Z")));
         $this->assertEquals("2016-07-10", $day->invokeArgs($points, array("2016-07-10T13:55:00Z")));
     }
 

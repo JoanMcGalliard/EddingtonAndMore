@@ -44,10 +44,6 @@ class MyCyclingLogTest extends BaseTestClass
             ->willReturn("You are not authorized.");
         $this->assertFalse($myCyclingLog->isConnected());
 
-        //mcl returns some other xml
-        // TODO
-        //  xml that doesn't precisely match the required structure.  Currently crashes out the test
-
         //happy path
         $mock->expects($this->at(1))->method('getPage')
             ->with('?method=ride.list&limit=0&offset=0')
@@ -57,11 +53,29 @@ class MyCyclingLogTest extends BaseTestClass
         $this->assertTrue($myCyclingLog->isConnected());
 
         // connect ok even if zero rides
-        $myCyclingLog = new MyCyclingLog(array($this, 'myEcho'), $mock);
+
+        $this->setProperty('connected', false, $myCyclingLog);
+
         $mock->expects($this->at(1))->method('getPage')
             ->with('?method=ride.list&limit=0&offset=0')
             ->willReturn("<?xml version=\"1.0\" encoding=\"UTF-8\"?><response><list offset=\"0\" limit=\"0\" total_size=\"0\"></list></response>");
         $this->assertTrue($myCyclingLog->isConnected());
+
+
+        // bad xml
+
+        $this->setProperty('connected', false, $myCyclingLog);
+        $mock->expects($this->at(1))->method('getPage')
+            ->with('?method=ride.list&limit=0&offset=0')
+            ->willReturn("<?xml version=\"1.0\"?> <gpx version=\"1.0\" creator=\"CardioTrainer - http://www.worksmartlabs.com/cardiotrainer\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns=\"http://www.topografix.com/GPX/1/0\" xsi:schemaLocation=\"http://www.topografix.com/GPX/1/0 http://www.topografix.com/GPX/1/0/gpx.xsd\"> <time>2015-02-13T15:53:58Z</time> <name>2015-02-13T15:53:58Z</name> <desc>Track recorded by CardioTrainer on 2015-02-13T15:53:58Z Distance: 2.5 km.</desc><trk> </trk> </gpx>");
+        $this->assertFalse($myCyclingLog->isConnected());
+
+
+        $this->setProperty('connected', false, $myCyclingLog);
+        $mock->expects($this->at(1))->method('getPage')
+            ->with('?method=ride.list&limit=0&offset=0')
+            ->willReturn("<?xml version=\"1.0\" encoding=\"UTF-8\"?><response><list offset=\"0\" limit=\"0\" total_sizex=\"0\"></list></response>");
+        $this->assertFalse($myCyclingLog->isConnected());
 
 
     }

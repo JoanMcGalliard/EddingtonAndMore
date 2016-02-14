@@ -14,16 +14,60 @@ class MyCyclingLogTest extends BaseTestClass
 {
     protected $classUnderTest = 'JoanMcGalliard\EddingtonAndMore\MyCyclingLog';
 
-    protected function numberOfRides($rides) {
-        $count=0;
-        foreach ($rides as $day =>$ride_list) {
+    protected function numberOfRides($rides)
+    {
+        $count = 0;
+        foreach ($rides as $day => $ride_list) {
             foreach ($ride_list as $ride) {
                 $count++;
             }
         }
-    return $count;
+        return $count;
     }
-    public function testGetRides() {
+
+    public function testIsConnected()
+    {
+
+        $mock = $this->getMockBuilder('MyCyclingLogApi')->setMethods(array('getPage', 'getAuth', 'setAuth'))->getMock();
+        $myCyclingLog = new MyCyclingLog(array($this, 'myEcho'), $mock);
+
+        // no auth token saved
+        $mock->expects($this->at(0))->method('getAuth')->with()
+            ->willReturn(null);
+        $this->assertFalse($myCyclingLog->isConnected());
+
+        // we are not authorised
+        $mock->expects($this->any())->method('getAuth')->with()
+            ->willReturn("auth");
+        $mock->expects($this->at(1))->method('getPage')
+            ->with('?method=ride.list&limit=0&offset=0')
+            ->willReturn("You are not authorized.");
+        $this->assertFalse($myCyclingLog->isConnected());
+
+        //mcl returns some other xml
+        // TODO
+        //  xml that doesn't precisely match the required structure.  Currently crashes out the test
+
+        //happy path
+        $mock->expects($this->at(1))->method('getPage')
+            ->with('?method=ride.list&limit=0&offset=0')
+            ->willReturn("<?xml version=\"1.0\" encoding=\"UTF-8\"?><response><list offset=\"0\" limit=\"0\" total_size=\"2934\"></list></response>");
+        $this->assertTrue($myCyclingLog->isConnected());
+        // doesn't test connection again, just returns true;
+        $this->assertTrue($myCyclingLog->isConnected());
+
+        // connect ok even if zero rides
+        $myCyclingLog = new MyCyclingLog(array($this, 'myEcho'), $mock);
+        $mock->expects($this->at(1))->method('getPage')
+            ->with('?method=ride.list&limit=0&offset=0')
+            ->willReturn("<?xml version=\"1.0\" encoding=\"UTF-8\"?><response><list offset=\"0\" limit=\"0\" total_size=\"0\"></list></response>");
+        $this->assertTrue($myCyclingLog->isConnected());
+
+
+    }
+
+    public function testGetRides()
+    {
 
         // all rides in single page
         $mock = $this->getMockBuilder('MyCyclingLogApi')->setMethods(array('getPage'))->getMock();
@@ -50,9 +94,26 @@ class MyCyclingLogTest extends BaseTestClass
         $this->assertEquals(include('data/expected/mclActivities1.php'), $rides);
 
 
+        // date range
+        $mock->expects($this->at(0))->method('getPage')
+            ->with('?method=ride.list&limit=4&offset=0')
+            ->willReturn(include("data/input/mclActivities2a.php"));
+        $mock->expects($this->at(1))->method('getPage')
+            ->with('?method=ride.list&limit=4&offset=4')
+            ->willReturn(include("data/input/mclActivities2b.php"));
+        $mock->expects($this->at(2))->method('getPage')
+            ->with('?method=ride.list&limit=4&offset=8')
+            ->willReturn(include("data/input/mclActivities2c.php"));
+        $rides = $myCyclingLog->getRides(strtotime("2016-02-03"), strtotime("2016-02-09"), 4);
+        $this->assertEquals(6, $this->numberOfRides($rides));
+        $this->assertEquals(include('data/expected/mclActivities3.php'), $rides);
+
+
     }
-    public function testDeleteRides() {
-        $mock = $this->getMockBuilder('MyCyclingLogApi')->setMethods(array('getPage','login','delete','logout'))->getMock();
+
+    public function testDeleteRides()
+    {
+        $mock = $this->getMockBuilder('MyCyclingLogApi')->setMethods(array('getPage', 'login', 'delete', 'logout'))->getMock();
         $myCyclingLog = new MyCyclingLog(array($this, 'myEcho'), $mock);
 
         // login fails
@@ -95,11 +156,11 @@ class MyCyclingLogTest extends BaseTestClass
         $mock->expects($this->at(11))->method('delete')->with(1209139)
             ->willReturn(true);
         $mock->expects($this->at(12))->method('logout')->with();
-        $this->output="";
+        $this->output = "";
         $this->assertEquals(10,
             $myCyclingLog->deleteRides(null, null, 'username', 'password'));
         $this->assertEquals('Deleting 1210520 from 2016-02-09, strava id 490216193.<br>Deleting 1210521 from 2016-02-09, strava id 490216213.<br>Deleting 1210522 from 2016-02-09, strava id 490216220.<br>Deleting 1210523 from 2016-02-08, strava id 490216230.<br>Deleting 1210524 from 2016-02-08, strava id 490216249.<br>Deleting 1210528 from 2016-02-07, strava id 490216308.<br>Deleting 1210525 from 2016-02-07, strava id 490216271.<br>Deleting 1210526 from 2016-02-07, strava id 490216294.<br>Deleting 1210527 from 2016-02-07, strava id 490216295.<br>Deleting 1209139 from 2016-02-02, strava id 484814865.<br>'
-            ,$this->output);
+            , $this->output);
 
 
         // some fail
@@ -130,13 +191,15 @@ class MyCyclingLogTest extends BaseTestClass
         $mock->expects($this->at(11))->method('delete')->with(1209139)
             ->willReturn(true);
         $mock->expects($this->at(12))->method('logout')->with();
-        $this->output="";
+        $this->output = "";
         $this->assertEquals(9,
             $myCyclingLog->deleteRides(null, null, 'username', 'password'));
         $this->assertEquals('Deleting 1210520 from 2016-02-09, strava id 490216193.<br>Deleting 1210521 from 2016-02-09, strava id 490216213.<br>Deleting 1210522 from 2016-02-09, strava id 490216220.<br>Deleting 1210523 from 2016-02-08, strava id 490216230.<br>Deleting 1210524 from 2016-02-08, strava id 490216249.<br>Deleting 1210528 from 2016-02-07, strava id 490216308: FAILED.<br>Deleting 1210525 from 2016-02-07, strava id 490216271.<br>Deleting 1210526 from 2016-02-07, strava id 490216294.<br>Deleting 1210527 from 2016-02-07, strava id 490216295.<br>Deleting 1209139 from 2016-02-02, strava id 484814865.<br>'
-            ,$this->output);
+            , $this->output);
     }
-    public function setUp() {
+
+    public function setUp()
+    {
         date_default_timezone_set("UTC");
     }
 }

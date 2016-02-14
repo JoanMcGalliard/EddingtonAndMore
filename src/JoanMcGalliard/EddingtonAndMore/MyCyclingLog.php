@@ -2,6 +2,7 @@
 namespace JoanMcGalliard\EddingtonAndMore;
 
 require_once 'JoanMcGalliard/EddingtonAndMore/APIs/MyCyclingLogApi.php';
+require_once 'TrackerAbstract.php';
 
 use DOMDocument;
 use Iamstuartwilson;

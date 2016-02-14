@@ -31,6 +31,7 @@ return array(
                     'elapsed_time' => 49867,
                     'total_elevation_gain' => 1728.7599999999998,
                     'max_speed' => 16.600000000000001,
+                    'endo_id' => null,
                     'timezone' => 'Europe/London')
         ),
     '2013-07-29' =>
@@ -46,6 +47,7 @@ return array(
                     'elapsed_time' => 86397,
                     'total_elevation_gain' => 1728.7599999999998,
                     'max_speed' => 16.600000000000001,
+                    'endo_id' => null,
                     'timezone' => 'Europe/London'
                 ),
         ),
@@ -63,6 +65,7 @@ return array(
                     'elapsed_time' => 86398,
                     'total_elevation_gain' => 1728.7599999999998,
                     'max_speed' => 16.600000000000001,
+                    'endo_id' => null,
                     'timezone' => 'Europe/London'
                 ),
         ),
@@ -80,6 +83,7 @@ return array(
                     'elapsed_time' => 86398,
                     'total_elevation_gain' => 1728.7599999999998,
                     'max_speed' => 16.600000000000001,
+                    'endo_id' => null,
                     'timezone' => 'Europe/London'),
         ),
     '2013-08-01' =>
@@ -96,6 +100,7 @@ return array(
                     'elapsed_time' => 52542,
                     'total_elevation_gain' => 1728.7599999999998,
                     'max_speed' => 16.600000000000001,
+                    'endo_id' => null,
                     'timezone' => 'Europe/London')
         ),
     '2013-08-18' =>

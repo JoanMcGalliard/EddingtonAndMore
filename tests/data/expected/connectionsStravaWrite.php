@@ -4,6 +4,6 @@
             &#9786; Oh, and there is a button to delete the cookies when you are done. </em></p><table>
         <tr>
 <td>Read/write acccess (only click this if you want to upload rides from Endomondo to Strava): <br>
-<a href=\"HERE-auto-write-write\"> <img src=\"images/ConnectWithStrava@2x.png\" alt=\"Connect with Strava\"></a></td></tr>
+<a href=\"URL\"> <img src=\"images/ConnectWithStrava@2x.png\" alt=\"Connect with Strava\"></a></td></tr>
     </table>
 ";

@@ -8,18 +8,113 @@ class MainPageTest extends JoanMcGalliard\EddingtonAndMore\BaseTestClass
 {
     private $mainPage;
     protected $classUnderTest = 'MainPage';
+    private $mockPreferences;
+    /** @var PHPUnit_Framework_MockObject_MockObject $mockConnectedWriteScope */
+    private $mockConnectedWriteScope;
+    /** @var PHPUnit_Framework_MockObject_MockObject $mockConnectedReadOnly */
+    private $mockConnectedReadOnly;
+    /** @var PHPUnit_Framework_MockObject_MockObject $mockNotConnected */
+    private $mockNotConnected;
 
-    /**
-     * MainPageTest constructor.
-     */
-    public function __construct()
+
+    public function setUp()
     {
         $this->mainPage = new MainPage(array($this, 'myEcho'));
-
-//        $setup = $this->getMethod('setup');
-//        $setup->invokeArgs($this->mainPage, array());
         date_default_timezone_set("UTC");
+        $this->mockPreferences = $this->getMockBuilder('Preferences')->disableOriginalConstructor()
+            ->setMethods(array('getTimezone', 'getStravaSplitRides', 'getEndoSplitRides', 'getRwgpsSplitRides', 'getMclUseFeet',
+                'getMclUsername', 'getStravaWriteScope', 'getMclAuth', 'getEndoAuth', 'getRwgpsAuth', 'getStravaAccessToken',
+                'setStravaSplitRides'
+            ))->getMock();
+        $this->mockPreferences->expects($this->any())->method('getTimezone')->willReturn('UTC');
+        $this->mockPreferences->expects($this->any())->method('getStravaSplitRides')->willReturn(false);
+        $this->mockPreferences->expects($this->any())->method('getEndoSplitRides')->willReturn(false);
+        $this->mockPreferences->expects($this->any())->method('getRwgpsSplitRides')->willReturn(false);
+        $this->mockPreferences->expects($this->any())->method('getMclUseFeet')->willReturn(false);
+        $this->mockPreferences->expects($this->any())->method('getMclUsername')->willReturn("helen");
+        $this->mockPreferences->expects($this->any())->method('getStravaWriteScope')->willReturn(true);
+        $this->mockPreferences->expects($this->any())->method('getMclAuth')->willReturn("auth");
+        $this->mockPreferences->expects($this->any())->method('getTimezone')->willReturn("auth");
+        $this->mockPreferences->expects($this->any())->method('getRwgpsAuth')->willReturn("auth");
+        $this->mockPreferences->expects($this->any())->method('getStravaAccessToken')->willReturn("token");
+        $this->mockPreferences->expects($this->any())->method('setStravaSplitRides')->willReturn(false);
 
+
+        $builder = $this->getMockBuilder('Strava')
+            ->setMethods(array('isConnected', 'writeScope', 'authenticationUrl', 'getUserId', 'getRides',
+                'getOvernightActivities', 'getError', 'setUseFeetForElevation', 'setSplitOvernightRides',
+                'setWriteScope', 'setAuth', 'setAccessToken'
+            ));
+        $this->mockConnectedWriteScope = $builder->getMock();
+        $this->mockConnectedWriteScope->expects($this->any())->method('getOvernightActivities')->willReturn([]);
+        $this->mockConnectedWriteScope->expects($this->any())->method('getError')->willReturn("");
+        $this->mockConnectedWriteScope->expects($this->any())->method('isConnected')->willReturn(true);
+        $this->mockConnectedWriteScope->expects($this->any())->method('writeScope')->willReturn(true);
+        $rides=array(
+            '2016-02-09' =>
+                array(
+                    0 =>
+                        array(
+                            'distance' => 2806.9000000000001,
+                            'name' => 'Lunch Ride',
+                            'strava_id' => 490216220,
+                            'start_time' => '2016-02-09T11:58:11Z',
+                            'bike' => 'b267883',
+                            'moving_time' => 738,
+                            'elapsed_time' => 738,
+                            'total_elevation_gain' => 0,
+                            'max_speed' => 8.1999999999999993,
+                            'timezone' => 'Europe/London',
+                            'endo_id' => 669521476,
+                        ),
+                    1 =>
+                        array(
+                            'distance' => 10953.799999999999,
+                            'name' => 'Evening Ride',
+                            'strava_id' => 490216213,
+                            'start_time' => '2016-02-09T19:10:21Z',
+                            'bike' => 'b267883',
+                            'moving_time' => 2935,
+                            'elapsed_time' => 3812,
+                            'total_elevation_gain' => 11.6,
+                            'max_speed' => 6.7999999999999998,
+                            'timezone' => 'Europe/London',
+                            'endo_id' => 669758003,
+                        ),
+                    2 =>
+                        array(
+                            'distance' => 8268.5,
+                            'name' => 'Night Ride',
+                            'strava_id' => 490216193,
+                            'start_time' => '2016-02-09T23:25:09Z',
+                            'bike' => 'b267883',
+                            'moving_time' => 1552,
+                            'elapsed_time' => 1552,
+                            'total_elevation_gain' => 0,
+                            'max_speed' => 8.5,
+                            'timezone' => 'Europe/London',
+                            'endo_id' => 669846213,
+                        ),
+                ),
+        );
+        $this->mockConnectedWriteScope->method('getRides')->willReturn($rides);
+
+
+        $this->mockConnectedReadOnly = $builder->getMock();
+        $this->mockConnectedReadOnly->expects($this->any())->method('getOvernightActivities')->willReturn([]);
+        $this->mockConnectedReadOnly->expects($this->any())->method('getError')->willReturn("");
+        $this->mockConnectedReadOnly->expects($this->any())->method('isConnected')->willReturn(true);
+        $this->mockConnectedReadOnly->expects($this->any())->method('writeScope')->willReturn(false);
+
+
+        $this->mockNotConnected = $builder->getMock();
+        $this->mockNotConnected->expects($this->any())->method('getOvernightActivities')->willReturn([]);
+        $this->mockNotConnected->expects($this->any())->method('getError')->willReturn("");
+        $this->mockNotConnected->expects($this->any())->method('isConnected')->willReturn(false);
+        $this->mockNotConnected->expects($this->any())->method('writeScope')->willReturn(false);
+
+
+        parent::setUp();
     }
 
     public function testEmail()
@@ -81,35 +176,43 @@ class MainPageTest extends JoanMcGalliard\EddingtonAndMore\BaseTestClass
 
         $this->setProperty('here', "HERE", $this->mainPage);
 
-        $this->setProperty('strava', new MockTracker(true, true), $this->mainPage);
-        $this->setProperty('myCyclingLog', new MockTracker(true), $this->mainPage);
-        $this->setProperty('endomondo', new MockTracker(true), $this->mainPage);
-        $this->setProperty('rideWithGps', new MockTracker(true), $this->mainPage);
+        $this->setProperty('strava', $this->mockConnectedWriteScope, $this->mainPage);
+        $this->setProperty('myCyclingLog', $this->mockConnectedReadOnly, $this->mainPage);
+        $this->setProperty('endomondo', $this->mockConnectedReadOnly, $this->mainPage);
+        $this->setProperty('rideWithGps', $this->mockConnectedReadOnly, $this->mainPage);
         // already connected to all services, there should be no connections section at all.
         $this->assertEquals('', $connections->invokeArgs($this->mainPage, array()));
         // not write connected to strava, there should be the writescope strava message
-        $this->setProperty('strava', new MockTracker(true, false, "URL"), $this->mainPage);
+        $this->setProperty('strava', $this->mockConnectedReadOnly, $this->mainPage);
+        $this->mockConnectedReadOnly->expects($this->any())->method('authenticationUrl')
+            ->with('HERE', 'auto', 'write', 'write')->willReturn("URL");
         $this->assertEquals(include('data/expected/connectionsStravaWrite.php'), $connections->invokeArgs($this->mainPage, array()));
         // not connected to strava, should be
-        $this->setProperty('strava', new MockTracker(false), $this->mainPage);
+        $this->setProperty('strava', $this->mockNotConnected, $this->mainPage);
+        $map = array(
+            array('HERE', 'auto', 'write', 'write', 'Write Scope URL')
+        , array('HERE', 'auto', null, 'read_only', 'Read Scope URL'),
+        );
+        $this->mockNotConnected->method('authenticationUrl')
+            ->will($this->returnValueMap($map));
         $this->assertEquals(include('data/expected/connectionsStravaBoth.php'), $connections->invokeArgs($this->mainPage, array()));
         // all connected except MCL
-        $this->setProperty('strava', new MockTracker(true, true), $this->mainPage);
-        $this->setProperty('myCyclingLog', new MockTracker(false), $this->mainPage);
+        $this->setProperty('strava', $this->mockConnectedWriteScope, $this->mainPage);
+        $this->setProperty('myCyclingLog', $this->mockNotConnected, $this->mainPage);
         $this->assertEquals(include('data/expected/connectionsMclOnly.php'), $connections->invokeArgs($this->mainPage, array()));
         // all connected except endomondo
-        $this->setProperty('myCyclingLog', new MockTracker(true), $this->mainPage);
-        $this->setProperty('endomondo', new MockTracker(false), $this->mainPage);
+        $this->setProperty('myCyclingLog', $this->mockConnectedReadOnly, $this->mainPage);
+        $this->setProperty('endomondo', $this->mockNotConnected, $this->mainPage);
         $this->assertEquals(include('data/expected/connectionsEndoOnly.php'), $connections->invokeArgs($this->mainPage, array()));
         // all connected except rideWithGPS
-        $this->setProperty('endomondo', new MockTracker(true), $this->mainPage);
-        $this->setProperty('rideWithGps', new MockTracker(false), $this->mainPage);
+        $this->setProperty('endomondo', $this->mockConnectedReadOnly, $this->mainPage);
+        $this->setProperty('rideWithGps', $this->mockNotConnected, $this->mainPage);
         $this->assertEquals(include('data/expected/connectionsRwgpsOnly.php'), $connections->invokeArgs($this->mainPage, array()));
 
-        $this->setProperty('strava', new MockTracker(false), $this->mainPage);
-        $this->setProperty('myCyclingLog', new MockTracker(false), $this->mainPage);
-        $this->setProperty('endomondo', new MockTracker(false), $this->mainPage);
-        $this->setProperty('rideWithGps', new MockTracker(false), $this->mainPage);
+        $this->setProperty('strava', $this->mockNotConnected, $this->mainPage);
+        $this->setProperty('myCyclingLog', $this->mockNotConnected, $this->mainPage);
+        $this->setProperty('endomondo', $this->mockNotConnected, $this->mainPage);
+        $this->setProperty('rideWithGps', $this->mockNotConnected, $this->mainPage);
         $this->assertEquals(include('data/expected/connectionsAll.php'), $connections->invokeArgs($this->mainPage, array()));
 
 
@@ -279,17 +382,19 @@ class MainPageTest extends JoanMcGalliard\EddingtonAndMore\BaseTestClass
         $extractStravaIds = $this->getMethod('extractStravaIds');;
         $this->assertEquals(include('data/expected/extractStravaIds.php'), $extractStravaIds->invokeArgs($this->mainPage, array(include("data/input/mclRides.php"))));
     }
+
     public function testSetup()
     {
         $setup = $this->getMethod('setup');
         include('data/input/server.php');
-        $_POST=array ('calculate_from_strava' => 'Eddington Number from Strava');
+        $_POST = array('calculate_from_strava' => 'Eddington Number from Strava');
 
-        $this->setProperty('preferences', new MockPreferences(), $this->mainPage);
-        $this->setProperty('strava', new MockTracker(true, true), $this->mainPage);
-        $this->setProperty('myCyclingLog', new MockTracker(true), $this->mainPage);
-        $this->setProperty('endomondo', new MockTracker(true), $this->mainPage);
-        $this->setProperty('rideWithGps', new MockTracker(true), $this->mainPage);
+
+        $this->setProperty('preferences', $this->mockPreferences, $this->mainPage);
+        $this->setProperty('strava', $this->mockConnectedWriteScope, $this->mainPage);
+        $this->setProperty('myCyclingLog', $this->mockConnectedReadOnly, $this->mainPage);
+        $this->setProperty('endomondo', $this->mockConnectedReadOnly, $this->mainPage);
+        $this->setProperty('rideWithGps', $this->mockConnectedReadOnly, $this->mainPage);
 
         $this->assertEquals("calculate_from_strava", $setup->invokeArgs($this->mainPage, array()));
     }
@@ -363,24 +468,27 @@ class MainPageTest extends JoanMcGalliard\EddingtonAndMore\BaseTestClass
         $this->assertEquals(include('data/expected/mclDeleteNoUsername.php'), $mclDeleteButton->invokeArgs($this->mainPage, array(null)));
         $this->assertEquals(include('data/expected/mclDeleteUsername.php'), $mclDeleteButton->invokeArgs($this->mainPage, array("joan")));
     }
+
     public function testExecute()
     {
 
         // todo
         $execute = $this->getMethod('execute');
 
-        $this->setProperty('preferences', new MockPreferences(), $this->mainPage);
-        $this->setProperty('strava', new MockTracker(true, true), $this->mainPage);
-        $this->setProperty('myCyclingLog', new MockTracker(true), $this->mainPage);
-        $this->setProperty('endomondo', new MockTracker(true), $this->mainPage);
-        $this->setProperty('rideWithGps', new MockTracker(true), $this->mainPage);
+
+        $this->setProperty('preferences', $this->mockPreferences, $this->mainPage);
+        $this->setProperty('strava', $this->mockConnectedWriteScope, $this->mainPage);
+        $this->setProperty('myCyclingLog', $this->mockConnectedReadOnly, $this->mainPage);
+        $this->setProperty('endomondo', $this->mockConnectedReadOnly, $this->mainPage);
+        $this->setProperty('rideWithGps', $this->mockConnectedReadOnly, $this->mainPage);
 
 
-        $elapsed_days= round((time() - strtotime("2016-02-09T00:00:00Z"))/(60 * 60 * 24));
+        $elapsed_days = round((time() - strtotime("2016-02-09T00:00:00Z")) / (60 * 60 * 24));
 
 
         $this->assertEquals(include('data/expected/calculateFromStrava.php'), $execute->invokeArgs($this->mainPage, array("calculate_from_strava")));
     }
+
     public function testEddingtonHistory()
     {
         $eddingtonHistory = $this->getMethod('eddingtonHistory');
@@ -391,11 +499,11 @@ class MainPageTest extends JoanMcGalliard\EddingtonAndMore\BaseTestClass
     public function testMainForm()
     {
         $mainForm = $this->getMethod('mainForm');
-        $this->setProperty('preferences', new MockPreferences(), $this->mainPage);
-        $this->setProperty('strava', new MockTracker(true, true), $this->mainPage);
-        $this->setProperty('myCyclingLog', new MockTracker(true), $this->mainPage);
-        $this->setProperty('endomondo', new MockTracker(true), $this->mainPage);
-        $this->setProperty('rideWithGps', new MockTracker(true), $this->mainPage);
+        $this->setProperty('preferences', $this->mockPreferences, $this->mainPage);
+        $this->setProperty('strava', $this->mockConnectedWriteScope, $this->mainPage);
+        $this->setProperty('myCyclingLog', $this->mockConnectedReadOnly, $this->mainPage);
+        $this->setProperty('endomondo', $this->mockConnectedReadOnly, $this->mainPage);
+        $this->setProperty('rideWithGps', $this->mockConnectedReadOnly, $this->mainPage);
 
         $today = date("d-m-Y", time());
         $twentyFourHours = 60 * 60 * 24;
@@ -413,109 +521,3 @@ class MainPageTest extends JoanMcGalliard\EddingtonAndMore\BaseTestClass
     }
 }
 
-class MockPreferences {
-    public function getTimezone() {return "UTC";}
-    public function getStravaSplitRides() {return false;}
-    public function getEndoSplitRides() {return false;}
-    public function getRwgpsSplitRides() {return false;}
-    public function getMclUseFeet() {return false;}
-    public function getMclUsername() {return "helen";}
-    public function getStravaWriteScope() {return true;}
-    public function getMclAuth() {return "auth";}
-    public function getEndoAuth() {return "auth";}
-    public function getRwgpsAuth() {return "auth";}
-    public function getStravaAccessToken() {return "token";}
-    public function setStravaSplitRides($x) {}
-}
-class MockTracker
-{
-
-    private $connected;
-    private $writeScope;
-
-    /**
-     * MockTracker constructor.
-     */
-    public function __construct($connected, $writeScope = false)
-    {
-        $this->connected = $connected;
-        $this->writeScope = $writeScope;
-    }
-
-    public function isConnected()
-    {
-        return $this->connected;
-    }
-
-    public function writeScope()
-    {
-        return $this->writeScope;
-    }
-
-    public function authenticationUrl($redirect, $approvalPrompt, $scope, $state)
-    {
-        return "$redirect-$approvalPrompt-$scope-$state";
-    }
-
-    public function getUserId() {
-        return 4444;
-    }
-
-    public function getRides()
-    {
-        return array(
-            '2016-02-09' =>
-                array(
-                    0 =>
-                        array(
-                            'distance' => 2806.9000000000001,
-                            'name' => 'Lunch Ride',
-                            'strava_id' => 490216220,
-                            'start_time' => '2016-02-09T11:58:11Z',
-                            'bike' => 'b267883',
-                            'moving_time' => 738,
-                            'elapsed_time' => 738,
-                            'total_elevation_gain' => 0,
-                            'max_speed' => 8.1999999999999993,
-                            'timezone' => 'Europe/London',
-                            'endo_id' => 669521476,
-                        ),
-                    1 =>
-                        array(
-                            'distance' => 10953.799999999999,
-                            'name' => 'Evening Ride',
-                            'strava_id' => 490216213,
-                            'start_time' => '2016-02-09T19:10:21Z',
-                            'bike' => 'b267883',
-                            'moving_time' => 2935,
-                            'elapsed_time' => 3812,
-                            'total_elevation_gain' => 11.6,
-                            'max_speed' => 6.7999999999999998,
-                            'timezone' => 'Europe/London',
-                            'endo_id' => 669758003,
-                        ),
-                    2 =>
-                        array(
-                            'distance' => 8268.5,
-                            'name' => 'Night Ride',
-                            'strava_id' => 490216193,
-                            'start_time' => '2016-02-09T23:25:09Z',
-                            'bike' => 'b267883',
-                            'moving_time' => 1552,
-                            'elapsed_time' => 1552,
-                            'total_elevation_gain' => 0,
-                            'max_speed' => 8.5,
-                            'timezone' => 'Europe/London',
-                            'endo_id' => 669846213,
-                        ),
-                ),
-        );
-    }
-    public function getOvernightActivities() {return [];}
-    public function getError() {return "";}
-    public function setUseFeetForElevation($x) {}
-    public function setSplitOvernightRides($x) {}
-    public function setWriteScope($x) {}
-    public function setAuth($x) {}
-    public function setAccessToken($x) {}
-}

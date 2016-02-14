@@ -176,12 +176,16 @@ class Strava extends trackerAbstract
                     $next['timezone'] = $matches[1];
                 } else {
                     $next['timezone'] = null;
+                };;
+                $date = date("Y-m-d", strtotime($activity->start_date_local));
+                $pattern = "/^([0-9][0-9]*)\." . self::GPX_SUFFIX . "/";
+                if (preg_match($pattern, $activity->external_id, $matches) > 0) {
+                    $next['endo_id'] = intval($matches[1]);
+                } else {
+                    $next['endo_id'] = null;
                 }
-;
-                $isOvernightRide = $this->isOvernight($activity->start_date, $next['timezone'], $activity->elapsed_time);
 
-;
-                if ($this->splitOvernightRides && $isOvernightRide) {
+                if ($this->splitOvernightRides && $this->isOvernight($activity->start_date, $next['timezone'], $activity->elapsed_time)) {
 
                     $points = $this->getPoints($activity->start_date, $next['timezone']);
                     if ($points) {
@@ -199,20 +203,13 @@ class Strava extends trackerAbstract
                             $activities_list[$split_date][] = $new;
                         }
 
-                    }
-                } else {
-                    if ($this->splitOvernightRides && $isOvernightRide) {
+                    } else {
                         // it's a multi day ride, but we don't have a file for it.
                         $this->overnightActivities[$activity->id] = $activity;
+                        $activities_list[$date][] = $next;
 
                     }
-                    $pattern = "/^([0-9][0-9]*)\." . self::GPX_SUFFIX . "/";
-                    if (preg_match($pattern, $activity->external_id, $matches) > 0) {
-                        $next['endo_id'] = intval($matches[1]);
-                    } else {
-                        $next['endo_id'] = null;
-                    }
-                    $date = date("Y-m-d", strtotime($activity->start_date_local));
+                } else {
                     $activities_list[$date][] = $next;
                 }
             }

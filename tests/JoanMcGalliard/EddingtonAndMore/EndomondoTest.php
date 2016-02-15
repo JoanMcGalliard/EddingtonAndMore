@@ -274,8 +274,9 @@ class EndomondoTest extends BaseTestClass
 
 
         // workout id is missing
+        $json = '{"distance": 10.8,"owner_id": 9999999, "start_time": "2015-12-27 21:56:00 UTC", "is_valid": true, "sport": 1}';
         $mock->expects($this->at(0))->method('get')->with('get',
-            $params)->willReturn('{"distance": 10.8,"owner_id": 9999999, "start_time": "2015-12-27 21:56:00 UTC", "is_valid": true, "sport": 1}');
+            $params)->willReturn($json);
         $this->setProperty('error', "", $endomondo);
         $this->assertNull($endomondo->getWorkout($workoutId));
         $this->assertEquals("Response not in a recognised format: $json", $endomondo->getError());

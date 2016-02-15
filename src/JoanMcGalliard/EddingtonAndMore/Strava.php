@@ -177,6 +177,8 @@ class Strava extends trackerAbstract
                 } else {
                     $next['timezone'] = null;
                 };;
+                $next['kudos_count'] = $activity->kudos_count;
+                $next['comment_count'] = $activity->comment_count;
                 $date = date("Y-m-d", strtotime($activity->start_date_local));
                 $pattern = "/^([0-9][0-9]*)\." . self::GPX_SUFFIX . "/";
                 if (preg_match($pattern, $activity->external_id, $matches) > 0) {

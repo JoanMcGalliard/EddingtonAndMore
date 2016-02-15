@@ -15,7 +15,9 @@ return array(
                     'total_elevation_gain' => 0,
                     'max_speed' => 5.5,
                     'endo_id' => NULL,
-                    'timezone' => 'Europe/London'
+                    'timezone' => 'Europe/London',
+                    'kudos_count' => 0,
+                    'comment_count' => 0
                 ),
             1 =>
                 array(
@@ -29,7 +31,9 @@ return array(
                     'total_elevation_gain' => 0,
                     'max_speed' => 5.2000000000000002,
                     'endo_id' => NULL,
-                    'timezone' => 'Europe/London'
+                    'timezone' => 'Europe/London',
+                    'kudos_count' => 0,
+                    'comment_count' => 0
                 ),
         ),
     '2016-01-10' =>
@@ -46,6 +50,8 @@ return array(
                     'total_elevation_gain' => 0,
                     'max_speed' => 3.6000000000000001,
                     'endo_id' => NULL,
-                    'timezone' => 'Europe/London'
+                    'timezone' => 'Europe/London',
+                    'kudos_count' => 0,
+                    'comment_count' => 0
                 )));
 ?>

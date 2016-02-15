@@ -242,6 +242,8 @@ class MainPage
             $state = "copy_endo_to_rwgps";
         } else if (array_key_exists("delete_mcl_rides", $_POST) && $this->myCyclingLog->isConnected()) {
             $state = "delete_mcl_rides";
+        } else if (array_key_exists("delete_endo_from_strava", $_POST) && $this->strava->isConnected()) {
+            $state = "delete_endo_from_strava";
         }
         if (isset($_POST['commentSend'])) {
             mail("$workingEmailAddress", "eddington enquiry",
@@ -524,6 +526,11 @@ class MainPage
                 $str .= "Deleted $result activities from MyCyclingLog\n";
             } else {
                 return ("<p style=\"color:red;\"><b>Problem connecting to MyCyclingLog: $result</b></p>\n");
+            }
+        } else if ($state == 'delete_endo_from_strava') {
+            $rides=$this->strava->getRides($this->start_date, $this->end_date);
+            foreach ($rides as $ride) {
+                echo "hello";
             }
         } else if ($state == "copy_endo_to_rwgps") {
             $this->output("<H3>Copying rides from Endomondo to RideWithGPS...</H3>");
@@ -879,16 +886,18 @@ class MainPage
             $str .= "</td></tr>";
         }
         if ($this->strava->isConnected() && $this->endomondo->isConnected() && $this->strava->writeScope()) {
-            $str .= '<tr><td' . $colSpan . '><input type="submit" name="copy_endo_to_strava" value="Copy rides and routes from Endomondo to Strava"/>  <br>';
+            $str .= "\n<tr><td" . $colSpan . '><input type="submit" name="copy_endo_to_strava" value="Copy rides and routes from Endomondo to Strava"/>  <br>';
+            $str .= "</td></tr>";
+            $str .= "\n<tr><td" . $colSpan . '><input type="submit" name="delete_endo_from_strava" value="Delete Strava rides copied from Endomondo"/>  <br>';
             $str .= "</td></tr>";
         }
         if ($this->rideWithGps->isConnected() && $this->endomondo->isConnected()) {
-            $str .= '<tr><td' . $colSpan . '><input type="submit" name="copy_endo_to_rwgps" value="Copy rides and routes from Endomondo to RideWithGPS"/>  <br>';
+            $str .= "\n<tr><td" . $colSpan . '><input type="submit" name="copy_endo_to_rwgps" value="Copy rides and routes from Endomondo to RideWithGPS"/>  <br>';
             $str .= "</td></tr>";
         }
 
         if ($this->myCyclingLog->isConnected()) {
-            $str .= '<tr><td' . $colSpan . '>' . $this->mclDeleteButton($this->preferences->getMclUsername());
+            $str .= "\n<tr><td" . $colSpan . '>' . $this->mclDeleteButton($this->preferences->getMclUsername());
             $str .= "</td></tr>";
         }
         $str .= " <tr>

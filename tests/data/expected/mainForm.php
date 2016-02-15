@@ -25,7 +25,11 @@
             <input type=\"checkbox\" value=\"split\"  id=\"strava_split_1\" name=\"strava_split_rides\"/></td></tr><tr><td colspan=\"3\"><input type=\"submit\" name=\"calculate_from_mcl\" value=\"Eddington Number from MyCyclingLog\"/></td></tr><tr><td colspan=\"3\"><input type=\"submit\" name=\"calculate_from_endo\" value=\"Eddington Number from Endomondo\"/><br>Split multiday rides?:
             <input type=\"checkbox\" value=\"split\"  name=\"endo_split_rides\"/></td></tr><tr><td colspan=\"3\"><input type=\"submit\" name=\"calculate_from_rwgps\" value=\"Eddington Number from RideWithGPS\"/><br>Split multiday rides?:
             <input type=\"checkbox\" value=\"split\"  name=\"rwgps_split_rides\"/></td></tr><tr><td colspan=\"3\"><input type=\"submit\" name=\"copy_strava_to_mcl\" value=\"Copy ride data from Strava to MyCyclingLog\"/>  <br>Save elevation as feet: <input type=\"checkbox\" name=\"elevation_units\" value=\"feet\" /><br>Split multiday rides?:
-            <input type=\"checkbox\" value=\"split\"  id=\"strava_split_2\" name=\"strava_split_rides\"/></td></tr><tr><td colspan=\"3\"><input type=\"submit\" name=\"copy_endo_to_strava\" value=\"Copy rides and routes from Endomondo to Strava\"/>  <br></td></tr><tr><td colspan=\"3\"><input type=\"submit\" name=\"copy_endo_to_rwgps\" value=\"Copy rides and routes from Endomondo to RideWithGPS\"/>  <br></td></tr><tr><td colspan=\"3\"><input onclick=\"confirm_mcl_deletes()\" type=\"button\" name=\"delete_mcl_rides\" value=\"Delete MyCyclingLog rides\"/>
+            <input type=\"checkbox\" value=\"split\"  id=\"strava_split_2\" name=\"strava_split_rides\"/></td></tr>
+<tr><td colspan=\"3\"><input type=\"submit\" name=\"copy_endo_to_strava\" value=\"Copy rides and routes from Endomondo to Strava\"/>  <br></td></tr>
+<tr><td colspan=\"3\"><input type=\"submit\" name=\"delete_endo_from_strava\" value=\"Delete Strava rides copied from Endomondo\"/>  <br></td></tr>
+<tr><td colspan=\"3\"><input type=\"submit\" name=\"copy_endo_to_rwgps\" value=\"Copy rides and routes from Endomondo to RideWithGPS\"/>  <br></td></tr>
+<tr><td colspan=\"3\"><input onclick=\"confirm_mcl_deletes()\" type=\"button\" name=\"delete_mcl_rides\" value=\"Delete MyCyclingLog rides\"/>
 <script> function confirm_mcl_deletes() {
             var start = document.forms[\"main_form\"][\"start_date\"].value;
             var end_date = document.forms[\"main_form\"][\"end_date\"].value;

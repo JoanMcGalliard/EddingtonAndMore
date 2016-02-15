@@ -307,7 +307,7 @@ class MainPage
                 $activities = $this->rideWithGps->getRides($this->start_date, $this->end_date);
                 $error = $this->rideWithGps->getError();
                 if ($error) {
-                     $str.="<br>There was a problem getting data from $source:<br>" . $error . "<br>";
+                    $str .= "<br>There was a problem getting data from $source:<br>" . $error . "<br>";
                 }
             }
             if (!$this->start_date) {
@@ -466,8 +466,8 @@ class MainPage
                             $duplicateStravaRide = $this->isDuplicateRide($ride, $this->strava_rides, 'strava_id');
 
                             if ($duplicateStravaRide) {
-                                $message="";
-                                 $this->output( ".");
+                                $message = "";
+                                $this->output(".");
                             } else {
                                 $path = $scratchDirectory . DIRECTORY_SEPARATOR . "endomondo+" . $ride['endo_id'] . ".gpx";
                                 $points = $this->endomondo->getPoints($ride['endo_id']);
@@ -479,7 +479,7 @@ class MainPage
 
                                 } else {
                                     file_put_contents($path, $points->gpx());
-                                    $error = $this->strava->uploadGpx($path, 'endomondo_'.$this->endomondo->getUserId().'_'.$ride['endo_id'], $message,
+                                    $error = $this->strava->uploadGpx($path, 'endomondo_' . $this->endomondo->getUserId() . '_' . $ride['endo_id'], $message,
                                         $ride['name'], $this->endomondo->activityUrl($ride['endo_id']));
                                     if ($error) {
                                         $message = $message . '<span style="color:red;">Failed: </span>' . $error;
@@ -528,9 +528,35 @@ class MainPage
                 return ("<p style=\"color:red;\"><b>Problem connecting to MyCyclingLog: $result</b></p>\n");
             }
         } else if ($state == 'delete_endo_from_strava') {
-            $rides=$this->strava->getRides($this->start_date, $this->end_date);
-            foreach ($rides as $ride) {
-                echo "hello";
+            $rides = $this->strava->getRides($this->start_date, $this->end_date);
+            foreach ($rides as $date => $ride_list) {
+                foreach ($ride_list as $ride) {
+                    $stravaLink = "<a target=\"_blank\" href=\"". $this->strava->activityUrl(  $ride['strava_id']) . '\">' . $ride['strava_id'] . "</a>";
+                    $endoLink = "<a target=\"_blank\" href=\"".$this->endomondo->activityUrl($ride['endo_id']) . '\">' . $ride['endo_id'] . "</a>";
+                    if (!$ride['endo_id']) {
+                        continue;
+                    }
+                    if ($ride['kudos_count'] > 0) {
+                        $str .= "Skipping $stravaLink because it has " . $ride['kudos_count'] . " kudo(s)<br>";
+                        $str .= "Endomondo: $endoLink<br>";
+                        continue;
+
+                    }
+                    if ($ride['comment_count'] > 0) {
+                        $str .= "Skipping $stravaLink ($endoLink) because it has " . $ride['comment_count'] . " comment(s)<br>";
+                        continue;
+                    }
+                    $endoWorkout=$this->endomondo->getWorkout($ride['endo_id']);
+                    if (!$endoWorkout) {
+                        $str .= "Skipping $stravaLink ($endoLink) because the associated endo ride has issues: ".$this->endomondo->getError()."<br>";
+                    }
+                    if ($this->compareDistance($endoWorkout->distance,$ride['distance']) != 0) {
+                        $str .= "Skipping $stravaLink ($endoLink) because the associated endo ride isn't within 2% of this the strava distance <br>";
+                    }
+
+
+                    $str .= "deleting $stravaLink which is a copy of $endoLink<br>";
+                }
             }
         } else if ($state == "copy_endo_to_rwgps") {
             $this->output("<H3>Copying rides from Endomondo to RideWithGPS...</H3>");
@@ -605,19 +631,21 @@ class MainPage
                 }
                 $str .= "<br>$count rides added.<br>\n";
             }
-        } else if ($state == 'delete_mcl_rides') {
-            $result = $this->myCyclingLog->deleteRides($this->start_date, $this->end_date, $_POST['mcl_username'], $_POST['mcl_password']);
-            if (is_int($result)) {
-                $str .= "Deleted $result activities from MyCyclingLog\n";
-            } else {
-                $str .= "<p style=\"color:red;\"><b>Problem connecting to MyCyclingLog: $result</b></p>\n";
+        } else
+            if ($state == 'delete_mcl_rides') {
+                $result = $this->myCyclingLog->deleteRides($this->start_date, $this->end_date, $_POST['mcl_username'], $_POST['mcl_password']);
+                if (is_int($result)) {
+                    $str .= "Deleted $result activities from MyCyclingLog\n";
+                } else {
+                    $str .= "<p style=\"color:red;\"><b>Problem connecting to MyCyclingLog: $result</b></p>\n";
+                }
             }
-        }
 
         return $str;
     }
 
-    private function topOfPage()
+    private
+    function topOfPage()
     {
         $str = "<!DOCTYPE html>
 <html>
@@ -670,7 +698,8 @@ class MainPage
      * @param
      * @return string
      */
-    private function notes($version)
+    private
+    function notes($version)
     {
         return "<div id=\"notes\">
     <p>Notes:</p>
@@ -733,7 +762,8 @@ class MainPage
 ";
     }
 
-    private function dateButtons($timezone)
+    private
+    function dateButtons($timezone)
     {
         date_default_timezone_set($timezone);
         $today = date("d-m-Y", time());
@@ -760,7 +790,8 @@ class MainPage
         return $string;
     }
 
-    private function datePicker($timezone)
+    private
+    function datePicker($timezone)
     {
         $str = "<tr>
                 <td>Start Date <input type=\"text\" name=\"start_date\" id=\"datepicker_start\"/></td>
@@ -776,7 +807,8 @@ class MainPage
         return $str;
     }
 
-    private function mclDeleteButton($username)
+    private
+    function mclDeleteButton($username)
     {
         $str = "<input onclick=\"confirm_mcl_deletes()\" type=\"button\" name=\"delete_mcl_rides\" value=\"Delete MyCyclingLog rides\"/>";
         $password_warning = "Are you sure you want to do this?  This will remove all activities from " .
@@ -835,7 +867,8 @@ class MainPage
         return $str;
     }
 
-    private function mainForm()
+    private
+    function mainForm()
     {
         $str = "";
         $str .= "<form action=\"$this->here\" method=\"post\" name=\"main_form\">";
@@ -926,7 +959,8 @@ class MainPage
         return $str;
     }
 
-    private function connections()
+    private
+    function connections()
     {
         if ($this->connectedToAll()) {
             return "";
@@ -1038,7 +1072,8 @@ class MainPage
         return $str;
     }
 
-    private function email()
+    private
+    function email()
     {
         $str = "<hr>
 <p>Bug reports, feature requests, thanks? Please use this form. <em>Note this will only stay here until the spam bots
@@ -1060,7 +1095,8 @@ class MainPage
         return $str;
     }
 
-    private function sumActivities($activities)
+    private
+    function sumActivities($activities)
     {
         $days = [];
         foreach ($activities as $date => $rides) {
@@ -1070,7 +1106,8 @@ class MainPage
     }
 
 
-    private function sumDay($rides)
+    private
+    function sumDay($rides)
     {
         $distance = 0;
         foreach ($rides as $ride) {
@@ -1079,7 +1116,8 @@ class MainPage
         return $distance;
     }
 
-    private function nextGoals($x)
+    private
+    function nextGoals($x)
     {
         $next = [];
         $next[$x + 1] = 1;
@@ -1096,7 +1134,8 @@ class MainPage
         return array_keys($next);
     }
 
-    private function numberOfDaysToGoal($goal, $days, $factor)
+    private
+    function numberOfDaysToGoal($goal, $days, $factor)
     {
         $num = $goal;
         foreach ($days as $day => $distance) {
@@ -1110,7 +1149,8 @@ class MainPage
         return $num;
     }
 
-    private function isDuplicateRide($endo_ride, $rides, $id_key)
+    private
+    function isDuplicateRide($endo_ride, $rides, $id_key)
 //Determines
     {
         if (!$rides) {
@@ -1144,7 +1184,8 @@ class MainPage
         return false;
     }
 
-    private function extractStravaIds($mcl_rides)
+    private
+    function extractStravaIds($mcl_rides)
     {
         $stravaIds = [];
         if ($mcl_rides) {
@@ -1164,7 +1205,8 @@ class MainPage
      * @param $distance2
      * @return int. 0 if distances are with 2% of each other, -1 if $distance1 is less, +1 is it is greater.
      */
-    private function compareDistance($distance1, $distance2)
+    private
+    function compareDistance($distance1, $distance2)
     {
         if ($distance1 == $distance2) {
             return 0;
@@ -1175,7 +1217,8 @@ class MainPage
         return $distance1 < $distance2 ? -1 : 1;
     }
 
-    private function calculateEddington($days, &$eddington_days, $factor)
+    private
+    function calculateEddington($days, &$eddington_days, $factor)
     {
         uasort($days, function ($a, $b) {
             if ($a == $b) return 0; else return ($a > $b) ? -1 : 1;
@@ -1196,7 +1239,8 @@ class MainPage
     }
 
 
-    private function eddingtonHistory($days, $factor)
+    private
+    function eddingtonHistory($days, $factor)
     {
         $eddingtonHistory = [];
         $history = [];
@@ -1217,7 +1261,8 @@ class MainPage
         return $eddingtonHistory;
     }
 
-    private function buildChart($imperial_history, $metric_history)
+    private
+    function buildChart($imperial_history, $metric_history)
     {
         $dates = array_unique(array_merge(array_keys($imperial_history), array_keys($metric_history)));
         asort($dates);
@@ -1257,7 +1302,8 @@ class MainPage
         return $text;
     }
 
-    private function askForStravaGpx($overnight_rides, $maxKmFileUploads, $state, $message)
+    private
+    function askForStravaGpx($overnight_rides, $maxKmFileUploads, $state, $message)
     {
         $str = "";
         if (sizeof($overnight_rides) > 0) {
@@ -1304,7 +1350,8 @@ class MainPage
         return $str;
     }
 
-    private function processUploadedGpxFiles($userId, $scratchDirectory)
+    private
+    function processUploadedGpxFiles($userId, $scratchDirectory)
     {
         $str = "";
         if (isset($_FILES) && isset ($_FILES['gpx'])) {  //gpx have been uploaded
@@ -1334,7 +1381,8 @@ class MainPage
         return $str;
     }
 
-    private function bottomOfPage()
+    private
+    function bottomOfPage()
     {
         return "</body></html>";
     }
@@ -1342,19 +1390,20 @@ class MainPage
     /**
      * @return bool
      */
-    private function connectedToAll()
+    private
+    function connectedToAll()
     {
-        return $this->strava->isConnected() && $this->myCyclingLog->isConnected() && $this->endomondo->isConnected()  && $this->rideWithGps->isConnected() && $this->strava->writeScope();
+        return $this->strava->isConnected() && $this->myCyclingLog->isConnected() && $this->endomondo->isConnected() && $this->rideWithGps->isConnected() && $this->strava->writeScope();
     }
 
     /**
      * @return bool
      */
-    private function isConnected()
+    private
+    function isConnected()
     {
         return $this->myCyclingLog->isConnected() || $this->strava->isConnected() || $this->rideWithGps->isConnected() || $this->endomondo->isConnected();
     }
-
 
 
 }

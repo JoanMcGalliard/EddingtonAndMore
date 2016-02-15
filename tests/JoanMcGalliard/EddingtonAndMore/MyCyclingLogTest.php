@@ -1,10 +1,4 @@
 <?php
-/**
- * Created by IntelliJ IDEA.
- * User: jem
- * Date: 14/02/2016
- * Time: 08:53
- */
 
 namespace JoanMcGalliard\EddingtonAndMore;
 require_once 'JoanMcGalliard/EddingtonAndMore/MyCyclingLog.php';

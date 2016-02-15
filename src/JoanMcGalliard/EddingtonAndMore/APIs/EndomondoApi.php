@@ -20,7 +20,7 @@ class EndomondoApi
     }
 
 
-    public function getPage($url, $params = [])
+    public function get($url, $params = [])
     {
         if (!$this->auth) {
             return null;

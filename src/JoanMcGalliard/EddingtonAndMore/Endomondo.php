@@ -34,16 +34,22 @@ class Endomondo extends trackerAbstract
         $this->api->setAuth($auth);
     }
 
+    public function getUserId()
+    {
+        $this->isConnected();
+        return parent::getUserId();
+    }
+
     public function isConnected()
     {
         if (!$this->connected && $this->api->getAuth()) {
-            $page = $this->api->getPage('api/profile/account/get');
+            $page = $this->api->get('api/profile/account/get');
             if (isset(json_decode($page)->data->id)) {
                 $this->connected = true;
                 $this->userId = json_decode($page)->data->id;
             } else {
                 $this->api->setAuth(null);
-                $this->error=$page;
+                $this->error = $page;
             }
         }
         return $this->connected;
@@ -51,12 +57,19 @@ class Endomondo extends trackerAbstract
 
     public function activityUrl($workoutId)
     {
-        return "https://www.endomondo.com/users/{$this->userId}/workouts/$workoutId";
+        if (!$this->getUserId()) {
+            return null;
+        }
+
+        return "https://www.endomondo.com/users/" . $this->getUserId() . "/workouts/$workoutId";
     }
 
     public function gpxDownloadUrl($workoutId)
     {
-        return "https://www.endomondo.com/rest/v1/users/{$this->userId}/workouts/$workoutId/export?format=GPX";
+        if (!$this->getUserId()) {
+            return null;
+        }
+        return "https://www.endomondo.com/rest/v1/users/" . $this->getUserId() . "/workouts/$workoutId/export?format=GPX";
     }
 
 
@@ -76,6 +89,50 @@ class Endomondo extends trackerAbstract
     public function getDeviceId()
     {
         return $this->deviceId;
+    }
+
+    public function getWorkout($workoutId)
+    {
+        if (!$this->isConnected()) {
+            $this->error .= "Not connected to Endomondo";
+            return null;
+        }
+        $params = array("workoutId" => $workoutId, "fields" => "basic");
+        $page = $this->api->get('get', $params);
+        if (!isset($page)) {
+            $this->error .= $this->api->getError();
+            return null;
+        }
+        $ride = json_decode($page);
+        if (!isset($ride)) {
+            $this->error .= "API returned unexpected value: $page";
+            return null;
+        }
+        if (isset($ride->error)) {
+            $this->error .= json_encode($ride->error);
+            return null;
+        }
+        if (!isset($ride->id) || !isset($ride->owner_id) || !isset($ride->distance) || !isset($ride->start_time)) {
+            $this->error .= "Response not in a recognised format: $page";
+            return null;
+        }
+        if ($ride->owner_id <> $this->getUserId()) {
+            $this->error .= "Workout does not belong to current user.";
+            return null;
+        }
+        if ($ride->id <> $workoutId) {
+            $this->error .= "Endomondo returned the wrong workout";
+            return null;
+        }
+        if (!$this->isValid($ride)) {
+            $this->error.="Not a valid ride";
+            return null;
+        }
+        $workout = new \stdClass();
+        $workout->distance = $ride->distance / self::METRE_TO_KM;
+        $workout->startTime = strtotime($ride->start_time);
+        $workout->id = $workoutId;
+        return $workout;
     }
 
     public function getRides($start_date, $end_date)
@@ -124,7 +181,7 @@ class Endomondo extends trackerAbstract
                         break;
                     }
                     $id = $ride->id;
-                    if (!in_array(intval($ride->sport), [1, 2, 3]) || !$ride->is_valid) {
+                    if (!$this->isValid($ride)) {
                         continue; // not a bike ride or not include in stats
                     }
                     $record = [];
@@ -173,7 +230,7 @@ class Endomondo extends trackerAbstract
 
     protected function getPageWithDot($url, $params)
     {
-        $return = $this->api->getPage($url, $params);
+        $return = $this->api->get($url, $params);
         $this->output(".");
         return $return;
     }
@@ -198,7 +255,7 @@ class Endomondo extends trackerAbstract
             $this->error .= "$page<br>";
             return null;
         }
-        $points = new Points($json_decode->start_time,$this->echoCallback,$this->googleMaps);
+        $points = new Points($json_decode->start_time, $this->echoCallback, $this->googleMaps);
         $points->setGenerateGPX(true);
         if (isset($json_decode->points) && is_array($json_decode->points)) {
             foreach ($json_decode->points as $point) {
@@ -208,6 +265,15 @@ class Endomondo extends trackerAbstract
             }
         }
         return $points;
+    }
+
+    /**
+     * @param $ride
+     * @return bool
+     */
+    private function isValid($ride)
+    {
+        return isset($ride->sport) && in_array(intval($ride->sport), [1, 2, 3]) && isset($ride->is_valid) && $ride->is_valid;
     }
 
 

@@ -106,7 +106,7 @@ class MyCyclingLog extends trackerAbstract
         }
         if (!$xml) {
             $this->output("There is a problem with MyCyclingLog.  Please try again");
-            exit();
+            return null;
         }
         if ($xml == "You are not authorized.") {
             $this->setAuth(null);

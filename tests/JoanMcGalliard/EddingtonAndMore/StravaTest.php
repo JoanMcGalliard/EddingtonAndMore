@@ -73,17 +73,57 @@ class StravaTest extends  BaseTestClass
 
 
     }
+    public function testGetActivityDescription() {
+        $mock = $this->getMockBuilder('StravaApi')->setMethods(array('getAuth', 'setAuth', 'get'))->getMock();
 
-    protected function setUp()
-    {
-        parent::setUp();
-        date_default_timezone_set('UTC');
+        $strava = new Strava("", "", array($this, 'myEcho'), $mock);
+
+
+        // if api returns an error, we get it as a string
+
+        $mock->expects($this->at(0))->method('get')->with('activities/99999')->willReturn("error message");
+        $this->setProperty('error', "", $strava);
+        $this->assertNull($strava->getActivityDescription(99999));
+        $this->assertEquals("error message", $strava->getError());
+
+        // incorrect JSON
+        $mock->expects($this->at(0))->method('get')->with('activities/99999')
+            ->willReturn(json_decode('{"message":"Record Not Found","errors":[{"resource":"resource","field":"path","code":"invalid"}]}'));
+        $this->setProperty('error', "", $strava);
+        $this->assertNull($strava->getActivityDescription(99999));
+        $this->assertEquals("Not the expected activity", $strava->getError());
+
+        // realistic JSON
+        $mock->expects($this->at(0))->method('get')->with('activities/99999')->willReturn(include('data/input/stravaActivity.php'));
+        $this->setProperty('error', "", $strava);
+        $this->assertEquals("hello baby", $strava->getActivityDescription(99999));
+        $this->assertEquals("", $strava->getError());
+
+        // workout id doesn't match
+        $mock->expects($this->at(0))->method('get')->with('activities/88888')->willReturn(include('data/input/stravaActivity.php'));
+        $this->setProperty('error', "", $strava);
+        $this->assertEquals(null, $strava->getActivityDescription(88888));
+        $this->assertEquals("Not the expected activity", $strava->getError());
+
+        // mininal JSON
+        $mock->expects($this->at(0))->method('get')->with('activities/99999')
+            ->willReturn(json_decode('{"id": 99999, "description": "hello dolly"}'));
+        $this->setProperty('error', "", $strava);
+        $this->assertEquals("hello dolly", $strava->getActivityDescription(99999));
+        $this->assertEquals("", $strava->getError());
+
+        // null description, as would be returned by strava
+        $mock->expects($this->at(0))->method('get')->with('activities/99999')
+            ->willReturn(json_decode('{"id": 99999, "description": null}'));
+        $this->setProperty('error', "", $strava);
+        $this->assertEquals(null, $strava->getActivityDescription(99999));
+        $this->assertEquals("", $strava->getError());
+
     }
 
-    protected function tearDown()
-    {
-        parent::tearDown();
-    }
+    //
+
+
 }
 
 

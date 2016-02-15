@@ -323,6 +323,23 @@ class Strava extends trackerAbstract
         return $points;
     }
 
+    public function getActivityDescription($strava_id)
+    {
+        $json=$this->api->get("activities/$strava_id");
+
+        if (is_string($json)) {
+            $this->error.=$json;
+            return null;
+        }
+        if (!isset($json->id) || $json->id <> $strava_id)
+        {
+            $this->error.="Not the expected activity";
+            return null;
+        }
+        return $json->description;
+
+    }
+
 }
 
 ?>

@@ -123,34 +123,48 @@ class EndomondoTest extends BaseTestClass
 
         $workoutId = 123456;
         $params = array('workoutId' => $workoutId, 'fields' => 'basic');
-        $mock->expects($this->at(0))->method('get')->with('get', $params)->willReturn("Not json");
+        $mock->expects($this->at(0))->method('get')->with('api/workout/get', $params)->willReturn("Not json");
         $this->setProperty('error', "", $endomondo);
         $this->assertNull($endomondo->getWorkout($workoutId));
         $this->assertEquals("API returned unexpected value: Not json", $endomondo->getError());
 
         // bad auth token
-        $mock->expects($this->at(0))->method('get')->with('get',
+        $mock->expects($this->at(0))->method('get')->with('api/workout/get',
             $params)->willReturn('{"error":{"type":"AUTH_FAILED"}}');
         $this->setProperty('error', "", $endomondo);
         $this->assertNull($endomondo->getWorkout($workoutId));
-        $this->assertEquals('{"type":"AUTH_FAILED"}', $endomondo->getError());
+        $this->assertEquals('AUTH_FAILED', $endomondo->getError());
 
         // workout not one i can see
-        $mock->expects($this->at(0))->method('get')->with('get',
+        $mock->expects($this->at(0))->method('get')->with('api/workout/get',
             $params)->willReturn('{"error":{"type":"ACCESS_DENIED"}}');
         $this->setProperty('error', "", $endomondo);
         $this->assertNull($endomondo->getWorkout($workoutId));
-        $this->assertEquals('{"type":"ACCESS_DENIED"}', $endomondo->getError());
+        $this->assertEquals('ACCESS_DENIED', $endomondo->getError());
+
+        // error not in expected format
+        $mock->expects($this->at(0))->method('get')->with('api/workout/get',
+            $params)->willReturn('{"error":{"field":"VALUE"}}');
+        $this->setProperty('error', "", $endomondo);
+        $this->assertNull($endomondo->getWorkout($workoutId));
+        $this->assertEquals('{"field":"VALUE"}', $endomondo->getError());
+
+        // workout that has been deleted
+        $mock->expects($this->at(0))->method('get')->with('api/workout/get',
+            $params)->willReturn('{"error":{"type":"NOT_FOUND"}}');
+        $this->setProperty('error', "", $endomondo);
+        $this->assertNull($endomondo->getWorkout($workoutId));
+        $this->assertEquals('NOT_FOUND', $endomondo->getError());
 
         // JSON comes back, but not expected and not an error message
-        $mock->expects($this->at(0))->method('get')->with('get',
+        $mock->expects($this->at(0))->method('get')->with('api/workout/get',
             $params)->willReturn('{"field":{"field":"value"}}');
         $this->setProperty('error', "", $endomondo);
         $this->assertNull($endomondo->getWorkout($workoutId));
         $this->assertEquals('Response not in a recognised format: {"field":{"field":"value"}}', $endomondo->getError());
 
         // api gave a error
-        $mock->expects($this->at(0))->method('get')->with('get',
+        $mock->expects($this->at(0))->method('get')->with('api/workout/get',
             $params)->willReturn(null);
         $this->setProperty('error', "", $endomondo);
         $mock->expects($this->at(1))->method('getError')->with()->willReturn("API ERROR");
@@ -162,7 +176,7 @@ class EndomondoTest extends BaseTestClass
         $insertWorkoutId = $workoutId;
         $insertDistance = 10.8;
         $insertStartDate = "2015-12-27 21:56:00 UTC";
-        $mock->expects($this->at(0))->method('get')->with('get',
+        $mock->expects($this->at(0))->method('get')->with('api/workout/get',
             $params)->willReturn(include('data/input/endoWorkout.php')); // yup, that's my workout
         $result = new \stdClass();
         $result->distance = 10800.0;
@@ -174,7 +188,7 @@ class EndomondoTest extends BaseTestClass
 
         // returned workout id doesn't match parameter
         $insertWorkoutId = 44;
-        $mock->expects($this->at(0))->method('get')->with('get',
+        $mock->expects($this->at(0))->method('get')->with('api/workout/get',
             $params)->willReturn(include('data/input/endoWorkout.php'));
         $this->setProperty('error', "", $endomondo);
         $this->assertNull($endomondo->getWorkout($workoutId));
@@ -183,7 +197,7 @@ class EndomondoTest extends BaseTestClass
         // returned used id isn't me!
         $insertWorkoutId = $workoutId;
         $insertUserId = 8888;
-        $mock->expects($this->at(0))->method('get')->with('get',
+        $mock->expects($this->at(0))->method('get')->with('api/workout/get',
             $params)->willReturn(include('data/input/endoWorkout.php'));
         $this->setProperty('error', "", $endomondo);
         $this->assertNull($endomondo->getWorkout($workoutId));
@@ -191,7 +205,7 @@ class EndomondoTest extends BaseTestClass
 
         //returned JSON has only required fields
 
-        $mock->expects($this->at(0))->method('get')->with('get',
+        $mock->expects($this->at(0))->method('get')->with('api/workout/get',
             $params)->willReturn('{"distance": 10.8,"owner_id": 9999999, "start_time": "2015-12-27 21:56:00 UTC", "id": 123456, "is_valid": true, "sport": 1}');
         $this->setProperty('error', "", $endomondo);
         $this->assertEquals($result,$endomondo->getWorkout($workoutId));
@@ -199,7 +213,7 @@ class EndomondoTest extends BaseTestClass
 
 
         // not valid
-        $mock->expects($this->at(0))->method('get')->with('get',
+        $mock->expects($this->at(0))->method('get')->with('api/workout/get',
             $params)->willReturn('{"distance": 10.8,"owner_id": 9999999, "start_time": "2015-12-27 21:56:00 UTC", "id": 123456, "is_valid": false, "sport": 1}');
         $this->setProperty('error', "", $endomondo);
         $this->assertNull($endomondo->getWorkout($workoutId));
@@ -207,7 +221,7 @@ class EndomondoTest extends BaseTestClass
 
 
         // valid is missing
-        $mock->expects($this->at(0))->method('get')->with('get',
+        $mock->expects($this->at(0))->method('get')->with('api/workout/get',
             $params)->willReturn('{"distance": 10.8,"owner_id": 9999999, "start_time": "2015-12-27 21:56:00 UTC", "id": 123456, "sport": 1}');
         $this->setProperty('error', "", $endomondo);
         $this->assertNull($endomondo->getWorkout($workoutId));
@@ -215,7 +229,7 @@ class EndomondoTest extends BaseTestClass
 
 
         //sport is 2
-        $mock->expects($this->at(0))->method('get')->with('get',
+        $mock->expects($this->at(0))->method('get')->with('api/workout/get',
             $params)->willReturn('{"distance": 10.8,"owner_id": 9999999, "start_time": "2015-12-27 21:56:00 UTC", "id": 123456, "is_valid": true, "sport": 2}');
         $this->setProperty('error', "", $endomondo);
         $this->assertEquals($result,$endomondo->getWorkout($workoutId));
@@ -223,7 +237,7 @@ class EndomondoTest extends BaseTestClass
 
 
         //sport is 3
-        $mock->expects($this->at(0))->method('get')->with('get',
+        $mock->expects($this->at(0))->method('get')->with('api/workout/get',
             $params)->willReturn('{"distance": 10.8,"owner_id": 9999999, "start_time": "2015-12-27 21:56:00 UTC", "id": 123456, "is_valid": true, "sport": 3}');
         $this->setProperty('error', "", $endomondo);
         $this->assertEquals($result,$endomondo->getWorkout($workoutId));
@@ -231,7 +245,7 @@ class EndomondoTest extends BaseTestClass
 
 
         // sport is 4 -> not cycling!
-        $mock->expects($this->at(0))->method('get')->with('get',
+        $mock->expects($this->at(0))->method('get')->with('api/workout/get',
             $params)->willReturn('{"distance": 10.8,"owner_id": 9999999, "start_time": "2015-12-27 21:56:00 UTC", "id": 123456, "is_valid": true, "sport": 4}');
         $this->setProperty('error', "", $endomondo);
         $this->assertNull($endomondo->getWorkout($workoutId));
@@ -239,7 +253,7 @@ class EndomondoTest extends BaseTestClass
 
 
        // sport is missing
-        $mock->expects($this->at(0))->method('get')->with('get',
+        $mock->expects($this->at(0))->method('get')->with('api/workout/get',
             $params)->willReturn('{"distance": 10.8,"owner_id": 9999999, "start_time": "2015-12-27 21:56:00 UTC", "id": 123456, "is_valid": true}');
         $this->setProperty('error', "", $endomondo);
         $this->assertNull($endomondo->getWorkout($workoutId));
@@ -248,7 +262,7 @@ class EndomondoTest extends BaseTestClass
 
         // distance is missing
         $json='{"owner_id": 9999999, "start_time": "2015-12-27 21:56:00 UTC", "id": 123456, "is_valid": true, "sport": 1}';
-        $mock->expects($this->at(0))->method('get')->with('get',
+        $mock->expects($this->at(0))->method('get')->with('api/workout/get',
             $params)->willReturn($json);
         $this->setProperty('error', "", $endomondo);
         $this->assertNull($endomondo->getWorkout($workoutId));
@@ -257,7 +271,7 @@ class EndomondoTest extends BaseTestClass
 
         // owner_id is missing
         $json = '{"distance": 10.8, "start_time": "2015-12-27 21:56:00 UTC", "id": 123456, "is_valid": true, "sport": 1}';
-        $mock->expects($this->at(0))->method('get')->with('get',
+        $mock->expects($this->at(0))->method('get')->with('api/workout/get',
             $params)->willReturn($json);
         $this->setProperty('error', "", $endomondo);
         $this->assertNull($endomondo->getWorkout($workoutId));
@@ -266,7 +280,7 @@ class EndomondoTest extends BaseTestClass
 
         // start_time is missing
         $json = '{"distance": 10.8,"owner_id": 9999999, "id": 123456, "is_valid": true, "sport": 1}';
-        $mock->expects($this->at(0))->method('get')->with('get',
+        $mock->expects($this->at(0))->method('get')->with('api/workout/get',
             $params)->willReturn($json);
         $this->setProperty('error', "", $endomondo);
         $this->assertNull($endomondo->getWorkout($workoutId));
@@ -275,7 +289,7 @@ class EndomondoTest extends BaseTestClass
 
         // workout id is missing
         $json = '{"distance": 10.8,"owner_id": 9999999, "start_time": "2015-12-27 21:56:00 UTC", "is_valid": true, "sport": 1}';
-        $mock->expects($this->at(0))->method('get')->with('get',
+        $mock->expects($this->at(0))->method('get')->with('api/workout/get',
             $params)->willReturn($json);
         $this->setProperty('error', "", $endomondo);
         $this->assertNull($endomondo->getWorkout($workoutId));
@@ -286,11 +300,6 @@ class EndomondoTest extends BaseTestClass
 
     }
 
-    protected function setUp()
-    {
-        parent::setUp();
-        date_default_timezone_set('UTC');
-    }
 
 }
 

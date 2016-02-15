@@ -83,6 +83,7 @@ class MainPage
 
     private function init()
     {
+        date_default_timezone_set("UTC");
         global $stravaClientId, $stravaClientSecret, $deviceId, $googleApiKey, $rideWithGpsApiKey;
         set_include_path(get_include_path() . PATH_SEPARATOR . dirname(__FILE__) . DIRECTORY_SEPARATOR . "src" . PATH_SEPARATOR);
         $this->info_message = "";
@@ -101,7 +102,6 @@ class MainPage
         global $scratchDirectory, $workingEmailAddress;
 
 
-        date_default_timezone_set("UTC");
 
 
         $this->here = "http://$_SERVER[HTTP_HOST]$_SERVER[SCRIPT_NAME]";
@@ -242,8 +242,8 @@ class MainPage
             $state = "copy_endo_to_rwgps";
         } else if (array_key_exists("delete_mcl_rides", $_POST) && $this->myCyclingLog->isConnected()) {
             $state = "delete_mcl_rides";
-        } else if (array_key_exists("delete_endo_from_strava", $_POST) && $this->strava->isConnected()) {
-            $state = "delete_endo_from_strava";
+        } else if (array_key_exists("queue_delete_endo_from_strava", $_POST) && $this->strava->isConnected()) {
+            $state = "queue_delete_endo_from_strava";
         }
         if (isset($_POST['commentSend'])) {
             mail("$workingEmailAddress", "eddington enquiry",
@@ -527,35 +527,45 @@ class MainPage
             } else {
                 return ("<p style=\"color:red;\"><b>Problem connecting to MyCyclingLog: $result</b></p>\n");
             }
-        } else if ($state == 'delete_endo_from_strava') {
+        } else if ($state == 'queue_delete_endo_from_strava') {
             $rides = $this->strava->getRides($this->start_date, $this->end_date);
             foreach ($rides as $date => $ride_list) {
                 foreach ($ride_list as $ride) {
                     $stravaLink = "<a target=\"_blank\" href=\"". $this->strava->activityUrl(  $ride['strava_id']) . '\">' . $ride['strava_id'] . "</a>";
                     $endoLink = "<a target=\"_blank\" href=\"".$this->endomondo->activityUrl($ride['endo_id']) . '\">' . $ride['endo_id'] . "</a>";
                     if (!$ride['endo_id']) {
+                        $this->output('.');
                         continue;
                     }
+                    $strava_detail=$this->strava->getActivityDescription($ride['strava_id']);
                     if ($ride['kudos_count'] > 0) {
-                        $str .= "Skipping $stravaLink because it has " . $ride['kudos_count'] . " kudo(s)<br>";
-                        $str .= "Endomondo: $endoLink<br>";
+                         $this->output("<br>Skipping $stravaLink ($endoLink) because it has " . $ride['kudos_count'] . " kudo(s)<br>");
                         continue;
 
                     }
                     if ($ride['comment_count'] > 0) {
-                        $str .= "Skipping $stravaLink ($endoLink) because it has " . $ride['comment_count'] . " comment(s)<br>";
+                         $this->output("<br>Skipping $stravaLink ($endoLink) because it has " . $ride['comment_count'] . " comment(s)<br>");
                         continue;
                     }
                     $endoWorkout=$this->endomondo->getWorkout($ride['endo_id']);
                     if (!$endoWorkout) {
-                        $str .= "Skipping $stravaLink ($endoLink) because the associated endo ride has issues: ".$this->endomondo->getError()."<br>";
+                         $this->output("<br>Skipping $stravaLink ($endoLink) because the associated endo ride has issues: ".$this->endomondo->getError()."<br>");
+                        continue;
                     }
-                    if ($this->compareDistance($endoWorkout->distance,$ride['distance']) != 0) {
-                        $str .= "Skipping $stravaLink ($endoLink) because the associated endo ride isn't within 2% of this the strava distance <br>";
+                    $percent=10;
+                    if ($this->compareDistance($endoWorkout->distance,$ride['distance'],$percent/100) != 0) {
+                         $this->output("<br>Skipping $stravaLink ($endoLink) because the associated endo ride isn't within $percent% of this the strava distance <br>");
+                        continue;
+                    }
+                    $minutes=30;
+                    if (abs($endoWorkout->startTime - strtotime($ride['start_time'])) > $minutes*60) {
+                         $this->output("<br>Skipping $stravaLink ($endoLink) because the associated endo ride didn't start within $minutes of this ride <br>");
+                        continue;
                     }
 
 
-                    $str .= "deleting $stravaLink which is a copy of $endoLink<br>";
+                    $this->output("<br>$stravaLink ($endoLink) queued for deletion<br>");
+                    
                 }
             }
         } else if ($state == "copy_endo_to_rwgps") {
@@ -921,7 +931,7 @@ class MainPage
         if ($this->strava->isConnected() && $this->endomondo->isConnected() && $this->strava->writeScope()) {
             $str .= "\n<tr><td" . $colSpan . '><input type="submit" name="copy_endo_to_strava" value="Copy rides and routes from Endomondo to Strava"/>  <br>';
             $str .= "</td></tr>";
-            $str .= "\n<tr><td" . $colSpan . '><input type="submit" name="delete_endo_from_strava" value="Delete Strava rides copied from Endomondo"/>  <br>';
+            $str .= "\n<tr><td" . $colSpan . '><input type="submit" name="queue_delete_endo_from_strava" value="Delete Strava rides copied from Endomondo"/>  <br>';
             $str .= "</td></tr>";
         }
         if ($this->rideWithGps->isConnected() && $this->endomondo->isConnected()) {
@@ -1206,12 +1216,12 @@ class MainPage
      * @return int. 0 if distances are with 2% of each other, -1 if $distance1 is less, +1 is it is greater.
      */
     private
-    function compareDistance($distance1, $distance2)
+    function compareDistance($distance1, $distance2, $margin=0.02)
     {
         if ($distance1 == $distance2) {
             return 0;
         }
-        if ($distance1 <> 0 && abs(($distance2 - $distance1) / $distance1) <= 0.02) {
+        if ($distance1 <> 0 && abs(($distance2 - $distance1) / $distance1) <= $margin) {
             return 0;
         }
         return $distance1 < $distance2 ? -1 : 1;

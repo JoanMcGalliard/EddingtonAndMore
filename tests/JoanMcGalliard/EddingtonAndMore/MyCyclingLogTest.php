@@ -245,9 +245,4 @@ class MyCyclingLogTest extends BaseTestClass
         $this->assertEquals('Deleting 1210520 from 2016-02-09, strava id 490216193.<br>Deleting 1210521 from 2016-02-09, strava id 490216213.<br>Deleting 1210522 from 2016-02-09, strava id 490216220.<br>Deleting 1210523 from 2016-02-08, strava id 490216230.<br>Deleting 1210524 from 2016-02-08, strava id 490216249.<br>Deleting 1210528 from 2016-02-07, strava id 490216308: FAILED.<br>Deleting 1210525 from 2016-02-07, strava id 490216271.<br>Deleting 1210526 from 2016-02-07, strava id 490216294.<br>Deleting 1210527 from 2016-02-07, strava id 490216295.<br>Deleting 1209139 from 2016-02-02, strava id 484814865.<br>'
             , $this->output);
     }
-
-    public function setUp()
-    {
-        date_default_timezone_set("UTC");
-    }
 }

@@ -8,8 +8,6 @@ require_once 'JoanMcGalliard/EddingtonAndMore/APIs/GoogleApi.php';
 
 use JoanMcGalliard;
 
-date_default_timezone_set("UTC");
-
 class PointsTest extends BaseTestClass
 {
     /**
@@ -19,7 +17,6 @@ class PointsTest extends BaseTestClass
     {
 
         $this->classUnderTest='JoanMcGalliard\EddingtonAndMore\Points';
-        date_default_timezone_set("UTC");
     }
     public function testDistance() {
         // just checking that my distance calculation is close value given by another source.

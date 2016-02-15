@@ -98,7 +98,7 @@ class Endomondo extends trackerAbstract
             return null;
         }
         $params = array("workoutId" => $workoutId, "fields" => "basic");
-        $page = $this->api->get('get', $params);
+        $page = $this->api->get('api/workout/get', $params);
         if (!isset($page)) {
             $this->error .= $this->api->getError();
             return null;
@@ -109,7 +109,11 @@ class Endomondo extends trackerAbstract
             return null;
         }
         if (isset($ride->error)) {
-            $this->error .= json_encode($ride->error);
+            if (isset($ride->error->type)) {
+                $this->error .= $ride->error->type;
+            } else {
+                $this->error .= json_encode($ride->error);
+            }
             return null;
         }
         if (!isset($ride->id) || !isset($ride->owner_id) || !isset($ride->distance) || !isset($ride->start_time)) {
@@ -125,7 +129,7 @@ class Endomondo extends trackerAbstract
             return null;
         }
         if (!$this->isValid($ride)) {
-            $this->error.="Not a valid ride";
+            $this->error .= "Not a valid ride";
             return null;
         }
         $workout = new \stdClass();
@@ -145,7 +149,6 @@ class Endomondo extends trackerAbstract
         if (!isset($start_date) || !is_int($start_date)) {
             $start_date = 0;
         }
-        $default_tz = date_default_timezone_get();
         date_default_timezone_set($this->timezone);
         $maxResults = 500;
         $params = [];
@@ -223,7 +226,6 @@ class Endomondo extends trackerAbstract
 
         }
 
-        date_default_timezone_set($default_tz);
         return $records;
 
     }

@@ -19,8 +19,9 @@ class MainPageTest extends JoanMcGalliard\EddingtonAndMore\BaseTestClass
 
     public function setUp()
     {
+        parent::setUp();
+
         $this->mainPage = new MainPage(array($this, 'myEcho'));
-        date_default_timezone_set("UTC");
         $this->mockPreferences = $this->getMockBuilder('Preferences')->disableOriginalConstructor()
             ->setMethods(array('getTimezone', 'getStravaSplitRides', 'getEndoSplitRides', 'getRwgpsSplitRides', 'getMclUseFeet',
                 'getMclUsername', 'getStravaWriteScope', 'getMclAuth', 'getEndoAuth', 'getRwgpsAuth', 'getStravaAccessToken',
@@ -114,7 +115,6 @@ class MainPageTest extends JoanMcGalliard\EddingtonAndMore\BaseTestClass
         $this->mockNotConnected->expects($this->any())->method('writeScope')->willReturn(false);
 
 
-        parent::setUp();
     }
 
     public function testEmail()
@@ -446,6 +446,14 @@ class MainPageTest extends JoanMcGalliard\EddingtonAndMore\BaseTestClass
         $this->assertEquals(1, $compareDistance->invokeArgs($this->mainPage, array(100, 10)));
         $this->assertEquals(-1, $compareDistance->invokeArgs($this->mainPage, array(100, 103)));
         $this->assertEquals(1, $compareDistance->invokeArgs($this->mainPage, array(103, 100)));
+
+        //$margin parameter
+        $this->assertEquals(0, $compareDistance->invokeArgs($this->mainPage, array(103, 100, 0.1)));
+
+        $this->assertEquals(0, $compareDistance->invokeArgs($this->mainPage, array(100, 90, 0.1)));
+        $this->assertEquals(1, $compareDistance->invokeArgs($this->mainPage, array(100, 89, 0.1)));
+        $this->assertEquals(0, $compareDistance->invokeArgs($this->mainPage, array(100, 110, 0.1)));
+        $this->assertEquals(-1, $compareDistance->invokeArgs($this->mainPage, array(100, 111, 0.1)));
     }
 
     public function testTopOfPage()

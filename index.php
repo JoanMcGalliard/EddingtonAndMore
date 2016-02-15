@@ -5,7 +5,6 @@ function myEcho($msg)
     echo str_pad('', 4096);
 }
 set_include_path(get_include_path() . PATH_SEPARATOR . dirname(__FILE__) . DIRECTORY_SEPARATOR . "src" . PATH_SEPARATOR);
-date_default_timezone_set("UTC");
 
 require_once 'src/MainPage.php';
 $page=new MainPage('myEcho');

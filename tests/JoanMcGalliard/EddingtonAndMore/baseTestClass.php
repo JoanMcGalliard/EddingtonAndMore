@@ -54,4 +54,9 @@ abstract class BaseTestClass extends PHPUnit_Framework_TestCase
         $property->setAccessible(true);
         $property->setValue($obj, $value);
     }
+    protected function setUp()
+    {
+        parent::setUp();
+        date_default_timezone_set('UTC');
+    }
 }

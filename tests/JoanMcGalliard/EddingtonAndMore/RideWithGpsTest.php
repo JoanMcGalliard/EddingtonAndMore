@@ -593,16 +593,7 @@ class RideWithGpsTest extends BaseTestClass
 
     }
 
-    protected function setUp()
-    {
-        parent::setUp();
-        date_default_timezone_set('UTC');
-    }
 
-    protected function tearDown()
-    {
-        parent::tearDown();
-    }
 }
 
 ?>

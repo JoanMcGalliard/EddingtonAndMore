@@ -182,7 +182,7 @@ class Strava extends trackerAbstract
                 $next['kudos_count'] = $activity->kudos_count;
                 $next['comment_count'] = $activity->comment_count;
                 $date = date("Y-m-d", strtotime($activity->start_date_local));
-                $pattern = "/^([0-9][0-9]*)\." . self::GPX_SUFFIX . "/";
+                $pattern = "/^endomondo_[^_]*_([0-9][0-9]*)\." . self::GPX_SUFFIX . "/";
                 if (preg_match($pattern, $activity->external_id, $matches) > 0) {
                     $next['endo_id'] = intval($matches[1]);
                 } else {
@@ -344,10 +344,10 @@ class Strava extends trackerAbstract
     public function deleteActivity($id)
     {
         $response = $this->api->delete("activities/$id");
-        if (is_string($response) && $response == '') {
+        if ($response === '') {
             return true;
         } else {
-            if ($response == null) {
+            if ($response === null) {
                 $this->error .= "Unknown error";
             } else if (isset($response->message)) {
                 $this->error .= $response->message;
@@ -356,6 +356,11 @@ class Strava extends trackerAbstract
             }
             return false;
         }
+    }
+
+    public function generateEndoExternalId($endoActivityId, $endoUserId)
+    {
+        return "endomondo_{$endoUserId}_{$endoActivityId}";
     }
 
 }

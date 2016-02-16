@@ -478,9 +478,7 @@ class MainPage
 
                                 } else {
                                     file_put_contents($path, $points->gpx());
-                                    $external_id = 'endomondo_' . $this->endomondo->getUserId() . '_' . $ride['endo_id'];
-                                    $external_id = $ride['endo_id'];
-                                    $error = $this->strava->uploadGpx($path, $external_id, $message,
+                                    $error = $this->strava->uploadGpx($path, $this->strava->generateEndoExternalId($ride['endo_id'],$this->endomondo->getUserId()), $message,
                                         $ride['name'], $this->endomondo->activityUrl($ride['endo_id']));
                                     if ($error) {
                                         $message = $message . '<span style="color:red;">Failed: </span>' . $error;
@@ -542,7 +540,11 @@ class MainPage
                     if (!isset($ride['description'])) {
                         $ride['description'] = $this->strava->getActivityDescription($ride['strava_id']);
                     }
-                    if ($ride['description'] <> $this->endomondo->activityUrl($ride['endo_id'])) {
+                    $endoUrl = $this->endomondo->activityUrl($ride['endo_id']);
+                    if (strpos($ride['description'], $endoUrl) === false) {
+                        continue;
+                    }
+                    if ($ride['description'] <> $endoUrl) {
                         $this->output("<br>Skipping $stravaLink ($endoLink) because description isn't (only) the URL of the strava ride<br>");
                         continue;
                     }

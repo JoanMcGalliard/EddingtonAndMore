@@ -6,9 +6,10 @@ require_once "JoanMcGalliard/EddingtonAndMore/Strava.php";
 require_once 'BaseTestClass.php';
 
 
-class StravaTest extends  BaseTestClass
+class StravaTest extends BaseTestClass
 {
-    protected $classUnderTest='JoanMcGalliard\EddingtonAndMore\Strava';
+    protected $classUnderTest = 'JoanMcGalliard\EddingtonAndMore\Strava';
+
     public function testGetRides()
     {
         $mock = $this->getMockBuilder('StravaApi')->setMethods(array('getAuth', 'setAuth', 'get'))->getMock();
@@ -38,7 +39,7 @@ class StravaTest extends  BaseTestClass
             ->with('activities', array('per_page' => 200, 'after' => 1420070400))
             ->willReturn(json_decode('[]'));
         $this->output = "";
-        $this->assertEquals(array(), $strava->getRides(1420070400,1451606399));
+        $this->assertEquals(array(), $strava->getRides(1420070400, 1451606399));
         $this->assertEquals("", $strava->getError());
         $this->assertEquals(".", $this->output);
 
@@ -67,7 +68,7 @@ class StravaTest extends  BaseTestClass
         //as above, with split on, but no gpx file
 
         global $scratchDirectory;
-        $scratchDirectory="gpx_temp_dir";
+        $scratchDirectory = "gpx_temp_dir";
         $this->cleanDirectory($scratchDirectory);
 
         $strava->setSplitOvernightRides(true);
@@ -76,11 +77,11 @@ class StravaTest extends  BaseTestClass
             ->willReturn(include("data/input/stravaActivities2.php"));
         $this->assertEquals(include("data/expected/stravaActivities2.php"), $strava->getRides(null, null, 200));
         $this->assertEquals("", $strava->getError());
-        $obj=include('data/expected/overnightActivity.php');
+        $obj = include('data/expected/overnightActivity.php');
         $this->assertEquals(include('data/expected/overnightActivity.php'), $strava->getOvernightActivities());
 
 
-        copy(__DIR__ . DIRECTORY_SEPARATOR.'data/input/London-Edinburgh-London_2013.gpx',"$scratchDirectory/".$strava->getUserId()."-2013-07-28T09_04_51Z.gpx");
+        copy(__DIR__ . DIRECTORY_SEPARATOR . 'data/input/London-Edinburgh-London_2013.gpx', "$scratchDirectory/" . $strava->getUserId() . "-2013-07-28T09_04_51Z.gpx");
         $mock->expects($this->at(0))->method('get')
             ->with('activities', array('per_page' => 200, 'page' => 1))
             ->willReturn(include("data/input/stravaActivities2.php"));
@@ -89,7 +90,9 @@ class StravaTest extends  BaseTestClass
 
 
     }
-    public function testGetActivityDescription() {
+
+    public function testGetActivityDescription()
+    {
         $mock = $this->getMockBuilder('StravaApi')->setMethods(array('getAuth', 'setAuth', 'get'))->getMock();
         $strava = new Strava("", "", array($this, 'myEcho'), $mock);
 
@@ -136,7 +139,38 @@ class StravaTest extends  BaseTestClass
 
     }
 
-    public function testDeleteActivity (){
+    public function testIsConnected()
+    {
+        $mock = $this->getMockBuilder('StravaApi')->setMethods(array('setAccessToken', 'get'))->getMock();
+        $strava = new Strava("", "", array($this, 'myEcho'), $mock);
+        $mock->expects($this->any())->method('setAccessToken');
+
+        //We don't try to connect until we have a token
+        $this->assertFalse($strava->isConnected());
+        $this->assertEquals("", $strava->getError());
+
+
+        $strava->setAccessToken("TOKEN");
+        $mock->expects($this->at(0))->method('get')->with("athlete")
+            ->willReturn(json_decode('{"message":"Authorization Error","errors":[{"resource":"Athlete","field":"access_token","code":"invalid"}]}'));
+        $this->assertFalse($strava->isConnected());
+        $this->assertEquals('Authorization Error', $strava->getError());
+
+        // we don't try to connect until we get a new TOKEN
+        $this->assertFalse($strava->isConnected());
+
+        $strava->setAccessToken("TOKEN");
+        $mock->expects($this->at(0))->method('get')->with("athlete")
+            ->willReturn(include('data/input/stravaAthlete.php'));
+        $this->assertTrue($strava->isConnected());
+
+        // once we are connected, we don't queary API again.
+        $this->assertTrue($strava->isConnected());
+
+    }
+
+    public function testDeleteActivity()
+    {
         $mock = $this->getMockBuilder('StravaApi')->setMethods(array('delete'))->getMock();
         $strava = new Strava("", "", array($this, 'myEcho'), $mock);
         $mock->expects($this->at(0))->method('delete')
@@ -178,23 +212,80 @@ The server didn\'t respond in time.
 
     }
 
+    public function testSetAccessTokenFromCode()
+    {
+        $mock = $this->getMockBuilder('StravaApi')->setMethods(array('tokenExchange', 'setAccessToken'))->getMock();
+        $strava = new Strava("", "", array($this, 'myEcho'), $mock);
+        $mock->expects($this->any())->method('setAccessToken');
+        $mock->expects($this->at(0))->method('tokenExchange')
+            ->with('CODE')
+            ->willReturn(json_decode('{"message":"Authorization Error","errors":[{"resource":"Athlete","field":"access_token","code":"invalid"}]}'));
+        $this->assertNull($strava->setAccessTokenFromCode("CODE"));
+        $this->assertEquals("", $strava->getError());
+
+        $mock->expects($this->at(0))->method('tokenExchange')
+            ->with('CODE')
+            ->willReturn(json_decode('{"access_token": "ada886629d64a68f9077c63cda9c886641815295","token_type": "Bearer","athlete": {}}'));
+        $this->assertEquals("ada886629d64a68f9077c63cda9c886641815295", $strava->setAccessTokenFromCode("CODE"));
+        $this->assertEquals("", $strava->getError());
+    }
+
+    public function testGetBike()
+    {
+
+        $mock = $this->getMockBuilder('StravaApi')->setMethods(array('get'))->getMock();
+        $strava = new Strava("", "", array($this, 'myEcho'), $mock);
+        $mock->expects($this->at(0))->method('get')->with('gear/b222222')
+            ->willReturn(json_decode('{"message":"Bad Request","errors":[{"resource":"Gear","field":"id","code":"invalid"}]}'));
+        $this->assertEquals(array('brand' => "", 'model' => ""), $strava->getBike('b222222'));
+        $this->assertEquals("Bad Request", $strava->getError());
+        //as we have been told that the id is invalid, it should not ask strava again for this id
+        $this->assertEquals(array('brand' => "", 'model' => ""), $strava->getBike('b222222'));
+
+        $mock->expects($this->at(0))->method('get')->with('gear/b333333')
+            ->willReturn(json_decode('{"id":"b267883","primary":true,"name":"Avail 2","resource_state":3,"distance":24908017.0,"brand_name":"Giant","model_name":"Avail 2","frame_type":3,"description":""}'));
+        $this->setProperty('error', "", $strava);
+        $avail = array('brand' => "Giant", 'model' => "Avail 2");
+        $this->assertEquals($avail, $strava->getBike('b333333'));
+        $this->assertEquals("", $strava->getError());
+
+        // do it again
+        $this->assertEquals($avail, $strava->getBike('b333333'));
+
+    }
+
+    public function testUploadGpx()
+    {
+        $mock = $this->getMockBuilder('StravaApi')->setMethods(array('post'))->getMock();
+        $strava = new Strava("", "", array($this, 'myEcho'), $mock);
+
+        $pending = $this->getProperty('pending_uploads');
+
+        // bad file upload, return the error and don't put anything on the queue
+        $mock->expects($this->at(0))->method('post')
+            ->willReturn(json_decode('{"id":546529071,"external_id":"endomondo_2859253_672012172.gpx","error":"Improperly formatted data.","status":"There was an error processing your activity.","activity_id":null}
+'));
+        $this->assertEquals("Improperly formatted data.", $strava->uploadGpx("FILE", "EXTERNAL_ID", "EXTERNAL MESSAGE", "NAME", "DESCRIPTION"));
+        $pending = $this->getProperty('pending_uploads');
+        $this->assertEquals(0, sizeof($pending->getValue($strava)));
+
+        //uploaded OK, so return null and add it to pending queue
+        $mock->expects($this->at(0))->method('post')
+            ->willReturn(json_decode('{"id":546495227,"external_id":"endomondo_2859253_672012172.gpx","error":null,"status":"Your activity is still being processed.","activity_id":null}'));
+        $this->assertNull($strava->uploadGpx("FILE", "EXTERNAL_ID", "EXTERNAL MESSAGE", "NAME", "DESCRIPTION"));
+        $this->assertEquals(1, sizeof($pending->getValue($strava)));
+        $this->assertEquals(array(546495227 => (object)array('message' => 'EXTERNAL MESSAGE', 'external_id' => 'EXTERNAL_ID', 'file' => "FILE")), $pending->getValue($strava));
+
+    }
+    public function testWwaitForPendingUploads ()
+    {
+        //todp
+    }
 }
 
 
 /*
  *
-    public function __construct($clientId, $clientSecret, $stravaApi = null)
-    public function writeScope()
-    public function setWriteScope($scope)
-    public function setAccessTokenFromCode($code)
-    public function setAccessToken($token)
-    public function uploadUrl()
-    public function isConnected()
-    public function getError()
-    public function getRides($start_date, $end_date)
-    public function getBike($id)
-    public function uploadGpx($file_path, $external_id, $external_msg, $name, $description)
-    public function activityUrl($activityId)
     public function waitForPendingUploads()
     public function authenticationUrl($redirect, $approvalPrompt, $scope, $state)
 

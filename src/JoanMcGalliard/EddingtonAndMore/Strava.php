@@ -77,9 +77,13 @@ class Strava extends trackerAbstract
             $this->userId = $athlete->id;
         } else {
             $this->accessTokenIsSet = false;
-        }
-        if (isset($athlete->errors)) {
-            $this->error = $athlete->errors;
+            if (isset($athlete->errors)) {
+                if (isset($athlete->message)) {
+                    $this->error = $athlete->message;
+                } else {
+                    $this->error = json_encode($athlete->errors);
+                }
+            }
         }
         return $this->connected;
     }
@@ -226,11 +230,17 @@ class Strava extends trackerAbstract
         if (!array_key_exists($id, $this->bikes)) {
             /** @var object $gear */
             $gear = $this->getWithDot("gear/$id");
-            $this->bikes[$id]["brand"] = $gear->brand_name;
-            $this->bikes[$id]["model"] = $gear->model_name;
+            $this->bikes[$id]["brand"] = isset($gear->brand_name) ? $gear->brand_name : "";
+            $this->bikes[$id]["model"] = isset($gear->model_name) ? $gear->model_name : "";
+            if (isset($gear->errors)) {
+                if (isset($gear->message)) {
+                    $this->error = $gear->message;
+                } else {
+                    $this->error = json_encode($gear->errors);
+                }
+            }
         }
         return $this->bikes[$id];
-
     }
 
     public function uploadGpx($file_path, $external_id, $external_msg, $name, $description)

@@ -278,7 +278,6 @@ class Endomondo extends trackerAbstract
         return isset($ride->sport) && in_array(intval($ride->sport), [1, 2, 3]) && isset($ride->is_valid) && $ride->is_valid;
     }
 
-
 }
 
 ?>

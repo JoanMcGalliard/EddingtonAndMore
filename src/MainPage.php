@@ -580,7 +580,7 @@ class MainPage
             }
             $keys = array_keys($queue);
             if ($keys) {
-                $str .= "As listed above, the following rides seem to have been copied from Endomondo, and can be deleted from Strava (and then re-added, if you choose).<br>";
+                $str .= "<br>As listed above, the following rides seem to have been copied from Endomondo, and can be deleted from Strava (and then re-added, if you choose).<br>";
                 $str .= "<ol>";
                 $ride_list="";
                 foreach ($keys as $id) {

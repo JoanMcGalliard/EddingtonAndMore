@@ -102,8 +102,6 @@ class MainPage
         global $scratchDirectory, $workingEmailAddress;
 
 
-
-
         $this->here = "http://$_SERVER[HTTP_HOST]$_SERVER[SCRIPT_NAME]";
         $state = null;
 
@@ -134,7 +132,6 @@ class MainPage
             unset($_GET["code"]);
             unset($_GET["state"]);
         }
-
 
 
         $this->myCyclingLog->setUseFeetForElevation($this->preferences->getMclUseFeet());
@@ -242,8 +239,10 @@ class MainPage
             $state = "copy_endo_to_rwgps";
         } else if (array_key_exists("delete_mcl_rides", $_POST) && $this->myCyclingLog->isConnected()) {
             $state = "delete_mcl_rides";
-        } else if (array_key_exists("queue_delete_endo_from_strava", $_POST) && $this->strava->isConnected()) {
+        } else if (array_key_exists("queue_delete_endo_from_strava", $_POST) && $this->strava->isConnected() && $this->endomondo->isConnected()) {
             $state = "queue_delete_endo_from_strava";
+        } else if (array_key_exists("delete_from_strava", $_POST) && $this->strava->isConnected()) {
+            $state = "delete_from_strava";
         }
         if (isset($_POST['commentSend'])) {
             mail("$workingEmailAddress", "eddington enquiry",
@@ -479,7 +478,9 @@ class MainPage
 
                                 } else {
                                     file_put_contents($path, $points->gpx());
-                                    $error = $this->strava->uploadGpx($path, 'endomondo_' . $this->endomondo->getUserId() . '_' . $ride['endo_id'], $message,
+                                    $external_id = 'endomondo_' . $this->endomondo->getUserId() . '_' . $ride['endo_id'];
+                                    $external_id = $ride['endo_id'];
+                                    $error = $this->strava->uploadGpx($path, $external_id, $message,
                                         $ride['name'], $this->endomondo->activityUrl($ride['endo_id']));
                                     if ($error) {
                                         $message = $message . '<span style="color:red;">Failed: </span>' . $error;
@@ -529,45 +530,83 @@ class MainPage
             }
         } else if ($state == 'queue_delete_endo_from_strava') {
             $rides = $this->strava->getRides($this->start_date, $this->end_date);
+            $queue = [];
             foreach ($rides as $date => $ride_list) {
                 foreach ($ride_list as $ride) {
-                    $stravaLink = "<a target=\"_blank\" href=\"". $this->strava->activityUrl(  $ride['strava_id']) . '\">' . $ride['strava_id'] . "</a>";
-                    $endoLink = "<a target=\"_blank\" href=\"".$this->endomondo->activityUrl($ride['endo_id']) . '\">' . $ride['endo_id'] . "</a>";
+                    $stravaLink = "<a target=\"_blank\" href=\"" . $this->strava->activityUrl($ride['strava_id']) . '\">' . $ride['strava_id'] . "</a>";
+                    $endoLink = "<a target=\"_blank\" href=\"" . $this->endomondo->activityUrl($ride['endo_id']) . '\">' . $ride['endo_id'] . "</a>";
                     if (!$ride['endo_id']) {
                         $this->output('.');
                         continue;
                     }
-                    $strava_detail=$this->strava->getActivityDescription($ride['strava_id']);
-                    if ($ride['kudos_count'] > 0) {
-                         $this->output("<br>Skipping $stravaLink ($endoLink) because it has " . $ride['kudos_count'] . " kudo(s)<br>");
+                    if (!isset($ride['description'])) {
+                        $ride['description'] = $this->strava->getActivityDescription($ride['strava_id']);
+                    }
+                    if ($ride['description'] <> $this->endomondo->activityUrl($ride['endo_id'])) {
+                        $this->output("<br>Skipping $stravaLink ($endoLink) because description isn't (only) the URL of the strava ride<br>");
                         continue;
-
+                    }
+                    if ($ride['kudos_count'] > 0) {
+                        $this->output("<br>Skipping $stravaLink ($endoLink) because it has " . $ride['kudos_count'] . " kudo(s)<br>");
+                        continue;
                     }
                     if ($ride['comment_count'] > 0) {
-                         $this->output("<br>Skipping $stravaLink ($endoLink) because it has " . $ride['comment_count'] . " comment(s)<br>");
+                        $this->output("<br>Skipping $stravaLink ($endoLink) because it has " . $ride['comment_count'] . " comment(s)<br>");
                         continue;
                     }
-                    $endoWorkout=$this->endomondo->getWorkout($ride['endo_id']);
+                    $endoWorkout = $this->endomondo->getWorkout($ride['endo_id']);
                     if (!$endoWorkout) {
-                         $this->output("<br>Skipping $stravaLink ($endoLink) because the associated endo ride has issues: ".$this->endomondo->getError()."<br>");
+                        $this->output("<br>Skipping $stravaLink ($endoLink) because the associated endo ride has issues: " . $this->endomondo->getError() . "<br>");
                         continue;
                     }
-                    $percent=10;
-                    if ($this->compareDistance($endoWorkout->distance,$ride['distance'],$percent/100) != 0) {
-                         $this->output("<br>Skipping $stravaLink ($endoLink) because the associated endo ride isn't within $percent% of this the strava distance <br>");
+                    $percent = 10;
+                    if ($this->compareDistance($endoWorkout->distance, $ride['distance'], $percent / 100) != 0) {
+                        $this->output("<br>Skipping $stravaLink ($endoLink) because the associated endo ride isn't within $percent% of this the strava distance <br>");
                         continue;
                     }
-                    $minutes=30;
-                    if (abs($endoWorkout->startTime - strtotime($ride['start_time'])) > $minutes*60) {
-                         $this->output("<br>Skipping $stravaLink ($endoLink) because the associated endo ride didn't start within $minutes of this ride <br>");
+                    $minutes = 30;
+                    if (abs($endoWorkout->startTime - strtotime($ride['start_time'])) > $minutes * 60) {
+                        $this->output("<br>Skipping $stravaLink ($endoLink) because the associated endo ride didn't start within $minutes of this ride <br>");
                         continue;
                     }
 
 
                     $this->output("<br>$stravaLink ($endoLink) queued for deletion<br>");
-                    
+                    $queue[$ride['strava_id']] = $stravaLink;
+
                 }
             }
+            $keys = array_keys($queue);
+            if ($keys) {
+                $str .= "As listed above, the following rides seem to have been copied from Endomondo, and can be deleted from Strava (and then re-added, if you choose).<br>";
+                $str .= "<ol>";
+                $ride_list="";
+                foreach ($keys as $id) {
+                    $str .= "\n<li>$queue[$id]</li>";
+                    $ride_list.="$id,";
+                }
+                $str .= "</ol>";
+                $str .= "<form action=\"$this->here\" method=\"post\" name=\"delete_strava_rides_form\">";
+                $str.="<input type=\"submit\" name=\"delete_from_strava\" value=\"Delete these rides from Strava?\"/>";
+                $str.= "<input type=\"hidden\" name=\"activity_numbers\" value=\"$ride_list\">";
+                $str.="</form>";
+            }
+        } else if ($state == "delete_from_strava") {
+            $count=0;
+            foreach(explode(',', $_POST['activity_numbers']) as $id) {
+                if (!$id) continue;
+                $this->output("Deleting $id: ");
+                if ($this->strava->deleteActivity($id)) {
+                    $count++;
+                    $this->output("OK <br>");
+
+                } else {
+
+                    $this->output("Failed " . $this->strava->getError() ." <br>");
+
+                }
+                    }
+            $str.="$count activities delete from strava<br>";
         } else if ($state == "copy_endo_to_rwgps") {
             $this->output("<H3>Copying rides from Endomondo to RideWithGPS...</H3>");
             set_time_limit(300);
@@ -1216,7 +1255,7 @@ class MainPage
      * @return int. 0 if distances are with 2% of each other, -1 if $distance1 is less, +1 is it is greater.
      */
     private
-    function compareDistance($distance1, $distance2, $margin=0.02)
+    function compareDistance($distance1, $distance2, $margin = 0.02)
     {
         if ($distance1 == $distance2) {
             return 0;

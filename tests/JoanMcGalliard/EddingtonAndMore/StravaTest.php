@@ -20,9 +20,25 @@ class StravaTest extends  BaseTestClass
         $mock->expects($this->at(0))->method('get')
             ->with('activities', array('per_page' => 200, 'page' => 1))
             ->willReturn(include("data/input/stravaActivities1.php"));
-
         $this->output = "";
         $this->assertEquals(include("data/expected/stravaActivities1.php"), $strava->getRides(null, null));
+        $this->assertEquals("", $strava->getError());
+        $this->assertEquals(".", $this->output);
+
+        //no rides are returned from Strava
+        $mock->expects($this->at(0))->method('get')
+            ->with('activities', array('per_page' => 200, 'page' => 1))
+            ->willReturn(json_decode('[]'));
+        $this->output = "";
+        $this->assertEquals(array(), $strava->getRides(null, null));
+        $this->assertEquals("", $strava->getError());
+        $this->assertEquals(".", $this->output);
+
+        $mock->expects($this->at(0))->method('get')
+            ->with('activities', array('per_page' => 200, 'after' => 1420070400))
+            ->willReturn(json_decode('[]'));
+        $this->output = "";
+        $this->assertEquals(array(), $strava->getRides(1420070400,1451606399));
         $this->assertEquals("", $strava->getError());
         $this->assertEquals(".", $this->output);
 
@@ -75,7 +91,6 @@ class StravaTest extends  BaseTestClass
     }
     public function testGetActivityDescription() {
         $mock = $this->getMockBuilder('StravaApi')->setMethods(array('getAuth', 'setAuth', 'get'))->getMock();
-
         $strava = new Strava("", "", array($this, 'myEcho'), $mock);
 
 
@@ -121,8 +136,47 @@ class StravaTest extends  BaseTestClass
 
     }
 
-    //
+    public function testDeleteActivity (){
+        $mock = $this->getMockBuilder('StravaApi')->setMethods(array('delete'))->getMock();
+        $strava = new Strava("", "", array($this, 'myEcho'), $mock);
+        $mock->expects($this->at(0))->method('delete')
+            ->with('activities/99999')
+            ->willReturn(json_decode('{"message":"Record Not Found","errors":[{"resource":"Activity","field":"id","code":"invalid"}]}'));
+        $this->assertFalse($strava->deleteActivity(99999));
+        $this->assertEquals("Record Not Found", $strava->getError());
 
+        $mock->expects($this->at(0))->method('delete')
+            ->with('activities/99999')
+            ->willReturn("a string");
+        $this->setProperty('error', "", $strava);
+        $this->assertFalse($strava->deleteActivity(99999));
+        $this->assertEquals("a string", $strava->getError());
+
+        $mock->expects($this->at(0))->method('delete')
+            ->with('activities/99999')
+            ->willReturn("");
+        $this->setProperty('error', "", $strava);
+        $this->assertTrue($strava->deleteActivity(99999));
+        $this->assertEquals("", $strava->getError());
+
+        $mock->expects($this->at(0))->method('delete')
+            ->with('activities/99999')
+            ->willReturn(null);
+        $this->setProperty('error', "", $strava);
+        $this->assertFalse($strava->deleteActivity(99999));
+        $this->assertEquals("Unknown error", $strava->getError());
+
+        $error_page = '<html><body><h1>504 Gateway Time-out</h1>
+The server didn\'t respond in time.
+</body></html>';
+        $mock->expects($this->at(0))->method('delete')
+            ->with('activities/99999')
+            ->willReturn($error_page);
+        $this->setProperty('error', "", $strava);
+        $this->assertFalse($strava->deleteActivity(99999));
+        $this->assertEquals($error_page, $strava->getError());
+
+    }
 
 }
 

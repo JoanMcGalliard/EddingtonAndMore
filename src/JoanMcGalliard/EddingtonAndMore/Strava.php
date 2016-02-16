@@ -128,7 +128,9 @@ class Strava extends trackerAbstract
             $after = $start_date;
             for ($i = 1; ; $i++) {
                 $activities = $this->getWithDot('activities', ["per_page" => $activities_per_page, "after" => $after]);
-                $after = strtotime($activities[sizeof($activities) - 1]->start_date) + 1;
+                if (sizeof($activities) > 0) {
+                    $after = strtotime($activities[sizeof($activities) - 1]->start_date) + 1;
+                }
                 if ($after > $end_date) {
                     for ($i = sizeof($activities) - 1; $i >= 0; $i--) {
                         if (strtotime($activities[$i]->start_date) > $end_date) {
@@ -325,19 +327,35 @@ class Strava extends trackerAbstract
 
     public function getActivityDescription($strava_id)
     {
-        $json=$this->api->get("activities/$strava_id");
+        $json = $this->api->get("activities/$strava_id");
 
         if (is_string($json)) {
-            $this->error.=$json;
+            $this->error .= $json;
             return null;
         }
-        if (!isset($json->id) || $json->id <> $strava_id)
-        {
-            $this->error.="Not the expected activity";
+        if (!isset($json->id) || $json->id <> $strava_id) {
+            $this->error .= "Not the expected activity";
             return null;
         }
         return $json->description;
 
+    }
+
+    public function deleteActivity($id)
+    {
+        $response = $this->api->delete("activities/$id");
+        if (is_string($response) && $response == '') {
+            return true;
+        } else {
+            if ($response == null) {
+                $this->error .= "Unknown error";
+            } else if (isset($response->message)) {
+                $this->error .= $response->message;
+            } else {
+                $this->error .= $response;
+            }
+            return false;
+        }
     }
 
 }

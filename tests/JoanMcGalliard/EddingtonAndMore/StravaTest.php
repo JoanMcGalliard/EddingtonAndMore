@@ -281,8 +281,12 @@ The server didn\'t respond in time.
     public function testWaitForPendingUploads()
     {
         //three tries before timeout
-        $timeout=0.1;
-        $sleep=0.045;
+        $timeout = 0.1;
+        $sleep = 0.035;
+
+        $complete="{\"id\":546638063,\"external_id\":\"endomondo_2859253_663547599.gpx\",\"error\":null,\"status\":\"Your activity is ready.\",\"activity_id\":##STRAVA_ID##}";
+        $inProgress = '{"id":546637956,"external_id":"endomondo_2859253_664423790.gpx","error":null,"status":"Your activity is still being processed.","activity_id":null}';
+        $failed='{"id":546650766,"external_id":"endomondo_2859253_330886943.gpx","error":"##ERROR_MSG##","status":"There was an error processing your activity.","activity_id":null}';
 
         $mock = $this->getMockBuilder('StravaApi')->setMethods(array('get'))->getMock();
         $strava = new Strava("", "", array($this, 'myEcho'), $mock);
@@ -297,9 +301,9 @@ The server didn\'t respond in time.
         $pendingList = array(546495227 => (object)array('message' => 'EXTERNAL MESSAGE', 'external_id' => 'EXTERNAL_ID', 'file' => "FILE"));
         $this->setProperty('pending_uploads', $pendingList, $strava);
         $this->setProperty('fileUploadTimeout', $timeout, $strava);
-        $mock->expects($this->at(0))->method('get')->with('uploads/546495227')->willReturn(json_decode('{"id":546637956,"external_id":"endomondo_2859253_664423790.gpx","error":null,"status":"Your activity is still being processed.","activity_id":null}'));
-        $mock->expects($this->at(1))->method('get')->with('uploads/546495227')->willReturn(json_decode('{"id":546637956,"external_id":"endomondo_2859253_664423790.gpx","error":null,"status":"Your activity is still being processed.","activity_id":null}'));
-        $mock->expects($this->at(2))->method('get')->with('uploads/546495227')->willReturn(json_decode('{"id":546637956,"external_id":"endomondo_2859253_664423790.gpx","error":null,"status":"Your activity is still being processed.","activity_id":null}'));
+        $mock->expects($this->at(0))->method('get')->with('uploads/546495227')->willReturn(json_decode($inProgress));
+        $mock->expects($this->at(1))->method('get')->with('uploads/546495227')->willReturn(json_decode($inProgress));
+        $mock->expects($this->at(2))->method('get')->with('uploads/546495227')->willReturn(json_decode($inProgress));
         $result = $strava->waitForPendingUploads($sleep);
         $this->assertEquals(array('EXTERNAL_ID' => (object)array('message' => 'EXTERNAL MESSAGE', 'external_id' => 'EXTERNAL_ID', 'file' => "FILE",
             'error' => "Timed out waiting for confirmation of upload after $timeout seconds",
@@ -311,9 +315,9 @@ The server didn\'t respond in time.
         $pendingList = array(546495227 => (object)array('message' => 'EXTERNAL MESSAGE', 'external_id' => 'EXTERNAL_ID', 'file' => "FILE"));
         $this->setProperty('pending_uploads', $pendingList, $strava);
         $this->setProperty('fileUploadTimeout', $timeout, $strava);
-        $mock->expects($this->at(0))->method('get')->with('uploads/546495227')->willReturn(json_decode('{"id":546637956,"external_id":"endomondo_2859253_664423790.gpx","error":null,"status":"Your activity is still being processed.","activity_id":null}'));
-        $mock->expects($this->at(1))->method('get')->with('uploads/546495227')->willReturn(json_decode('{"id":546637956,"external_id":"endomondo_2859253_664423790.gpx","error":null,"status":"Your activity is still being processed.","activity_id":null}'));
-        $mock->expects($this->at(2))->method('get')->with('uploads/546495227')->willReturn(json_decode('{"id":546638063,"external_id":"endomondo_2859253_663547599.gpx","error":null,"status":"Your activity is ready.","activity_id":654321}'));
+        $mock->expects($this->at(0))->method('get')->with('uploads/546495227')->willReturn(json_decode($inProgress));
+        $mock->expects($this->at(1))->method('get')->with('uploads/546495227')->willReturn(json_decode($inProgress));
+        $mock->expects($this->at(2))->method('get')->with('uploads/546495227')->willReturn(json_decode(str_replace('##STRAVA_ID##',654321,$complete)));
         $result = $strava->waitForPendingUploads($sleep);
         $this->assertEquals(array('EXTERNAL_ID' => (object)array('message' => 'EXTERNAL MESSAGE', 'external_id' => 'EXTERNAL_ID', 'file' => "FILE",
             'strava_id' => 654321,
@@ -325,28 +329,60 @@ The server didn\'t respond in time.
         $pendingList = array(546495227 => (object)array('message' => 'EXTERNAL MESSAGE', 'external_id' => 'EXTERNAL_ID', 'file' => "FILE"));
         $this->setProperty('pending_uploads', $pendingList, $strava);
         $this->setProperty('fileUploadTimeout', $timeout, $strava);
-        $mock->expects($this->at(0))->method('get')->with('uploads/546495227')->willReturn(json_decode('{"id":546637956,"external_id":"endomondo_2859253_664423790.gpx","error":null,"status":"1Your activity is still being processed.","activity_id":null}'));
-        $mock->expects($this->at(1))->method('get')->with('uploads/546495227')->willReturn(json_decode('{"id":546637956,"external_id":"endomondo_2859253_664423790.gpx","error":null,"status":"2Your activity is still being processed.","activity_id":null}'));
-        $mock->expects($this->at(2))->method('get')->with('uploads/546495227')->willReturn(json_decode('{"id":546650766,"external_id":"endomondo_2859253_330886943.gpx","error":"endomondo_2859253_330886943.gpx duplicate of an uploading activity (546649053)","status":"There was an error processing your activity.","activity_id":null}'));
+        $mock->expects($this->at(0))->method('get')->with('uploads/546495227')->willReturn(json_decode($inProgress));
+        $mock->expects($this->at(1))->method('get')->with('uploads/546495227')->willReturn(json_decode($inProgress));
+        $mock->expects($this->at(2))->method('get')->with('uploads/546495227')
+            ->willReturn(json_decode(str_replace('##ERROR_MSG##',"endomondo_2859253_330886943.gpx duplicate of an uploading activity (546649053)",$failed)));
         $result = $strava->waitForPendingUploads($sleep);
         $this->assertEquals(array('EXTERNAL_ID' => (object)array('message' => 'EXTERNAL MESSAGE', 'external_id' => 'EXTERNAL_ID', 'file' => "FILE",
-            'status' => 'There was an error processing your activity.','error' => 'endomondo_2859253_330886943.gpx duplicate of an uploading activity (546649053)'
+            'status' => 'There was an error processing your activity.', 'error' => 'endomondo_2859253_330886943.gpx duplicate of an uploading activity (546649053)'
         )), $result);
         $this->assertEquals([], $this->getProperty('pending_uploads')->getValue($strava));
 
+        //4 uploads, one completes immediately, one eventually, one fails and one times out
+        $pendingList = array(
+            111111 => (object)array('message' => 'EXTERNAL MESSAGE 1', 'external_id' => 'EXTERNAL_ID 1', 'file' => "FILE 1"),
+            222222 => (object)array('message' => 'EXTERNAL MESSAGE 2', 'external_id' => 'EXTERNAL_ID 2', 'file' => "FILE 2"),
+            333333 => (object)array('message' => 'EXTERNAL MESSAGE 3', 'external_id' => 'EXTERNAL_ID 3', 'file' => "FILE 3"),
+            444444 => (object)array('message' => 'EXTERNAL MESSAGE 4', 'external_id' => 'EXTERNAL_ID 4', 'file' => "FILE 4"));
+        $expected = array("EXTERNAL_ID 1" => (object)array('message' => 'EXTERNAL MESSAGE 1',
+            'external_id' => 'EXTERNAL_ID 1',
+            'file' => "FILE 1",
+            'status' => 'Your activity is ready.',
+            'strava_id' => "654321"),
 
-        //TODO case with multiple uploads, some complete, some error, some timeout
-//
-//
+            "EXTERNAL_ID 2" => (object)array('message' => 'EXTERNAL MESSAGE 2',
+                'external_id' => 'EXTERNAL_ID 2',
+                'file' => "FILE 2",
+                'status' => 'There was an error processing your activity.',
+                'error' => "ERROR MSG"),
+
+            "EXTERNAL_ID 3" => (object)array('message' => 'EXTERNAL MESSAGE 3',
+                'external_id' => 'EXTERNAL_ID 3',
+                'file' => "FILE 3",
+                'status' => 'Your activity is ready.',
+                'strava_id' => 12345),
+
+            "EXTERNAL_ID 4" => (object)array('message' => 'EXTERNAL MESSAGE 4',
+                'external_id' => 'EXTERNAL_ID 4',
+                'file' => "FILE 4",
+                'status' => 'Unknown status',
+                'error' => "Timed out waiting for confirmation of upload after $timeout seconds")
+        );
+        $this->setProperty('pending_uploads', $pendingList, $strava);
+        $this->setProperty('fileUploadTimeout', $timeout, $strava);
+        $mock->expects($this->at(0))->method('get')->with('uploads/111111')->willReturn(json_decode(str_replace('##STRAVA_ID##','654321',$complete)));
+        $mock->expects($this->at(1))->method('get')->with('uploads/222222')->willReturn(json_decode($inProgress));
+        $mock->expects($this->at(2))->method('get')->with('uploads/333333')->willReturn(json_decode($inProgress));
+        $mock->expects($this->at(3))->method('get')->with('uploads/444444')->willReturn(json_decode($inProgress));
+        $mock->expects($this->at(4))->method('get')->with('uploads/222222')->willReturn(json_decode(str_replace('##ERROR_MSG##',"ERROR MSG",$failed)));
+        $mock->expects($this->at(5))->method('get')->with('uploads/333333')->willReturn(json_decode($inProgress));
+        $mock->expects($this->at(6))->method('get')->with('uploads/444444')->willReturn(json_decode($inProgress));
+        $mock->expects($this->at(7))->method('get')->with('uploads/333333')->willReturn(json_decode(str_replace('##STRAVA_ID##','12345',$complete)));
+        $mock->expects($this->at(8))->method('get')->with('uploads/444444')->willReturn(json_decode($inProgress));
+        $result = $strava->waitForPendingUploads($sleep);
+        $this->assertEquals($expected, $result);
+        $this->assertEquals([], $this->getProperty('pending_uploads')->getValue($strava));
     }
 }
-
-
-/*
- *
-    public function waitForPendingUploads()
-    public function authenticationUrl($redirect, $approvalPrompt, $scope, $state)
-
- */
-
 ?>

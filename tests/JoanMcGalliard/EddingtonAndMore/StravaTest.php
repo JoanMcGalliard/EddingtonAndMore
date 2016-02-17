@@ -182,21 +182,18 @@ class StravaTest extends BaseTestClass
         $mock->expects($this->at(0))->method('delete')
             ->with('activities/99999')
             ->willReturn("a string");
-        $this->setProperty('error', "", $strava);
         $this->assertFalse($strava->deleteActivity(99999));
         $this->assertEquals("a string", $strava->getError());
 
         $mock->expects($this->at(0))->method('delete')
             ->with('activities/99999')
             ->willReturn("");
-        $this->setProperty('error', "", $strava);
         $this->assertTrue($strava->deleteActivity(99999));
         $this->assertEquals("", $strava->getError());
 
         $mock->expects($this->at(0))->method('delete')
             ->with('activities/99999')
             ->willReturn(null);
-        $this->setProperty('error', "", $strava);
         $this->assertFalse($strava->deleteActivity(99999));
         $this->assertEquals("Unknown error", $strava->getError());
 
@@ -206,7 +203,6 @@ The server didn\'t respond in time.
         $mock->expects($this->at(0))->method('delete')
             ->with('activities/99999')
             ->willReturn($error_page);
-        $this->setProperty('error', "", $strava);
         $this->assertFalse($strava->deleteActivity(99999));
         $this->assertEquals($error_page, $strava->getError());
 

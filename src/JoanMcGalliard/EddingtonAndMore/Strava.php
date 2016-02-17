@@ -354,6 +354,7 @@ class Strava extends trackerAbstract
 
     public function deleteActivity($id)
     {
+        $this->error="";
         $response = $this->api->delete("activities/$id");
         if ($response === '') {
             return true;

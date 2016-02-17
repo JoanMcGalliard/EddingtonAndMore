@@ -38,12 +38,11 @@ abstract class BaseTestClass extends PHPUnit_Framework_TestCase
         return $method;
     }
 
-    public function getPrivateProperty($className, $propertyName)
+    public function getProperty($propertyName)
     {
-        $reflector = new ReflectionClass($className);
+        $reflector = new ReflectionClass($this->classUnderTest);
         $property = $reflector->getProperty($propertyName);
         $property->setAccessible(true);
-
         return $property;
     }
 

@@ -266,21 +266,22 @@ class Strava extends trackerAbstract
         return "http://www.strava.com/activities/$activityId";
     }
 
-    public function waitForPendingUploads()
+    public function waitForPendingUploads($sleep=1)
     {
-        $timestamp = time();
+        $timestamp = microtime(true);
         $results = [];
 
-        while ((time() - $timestamp < $this->fileUploadTimeout) && $this->pending_uploads) {
+        $count=0;
+        while ((microtime(true) - $timestamp < $this->fileUploadTimeout) && $this->pending_uploads) {
             foreach ($this->pending_uploads as $pending_id => $queued) {
                 /** @var object $response */
                 $response = $this->getWithDot("uploads/" . $pending_id);
-                if ($response->activity_id) {
+                if (isset($response->activity_id) && $response->activity_id) {
                     $queued->status = $response->status;
                     $queued->strava_id = $response->activity_id;
                     $results[$queued->external_id] = $queued;
                     unset($this->pending_uploads[$pending_id]);
-                } else if ($response->error) {
+                } else if (isset($response->error) && $response->error) {
                     $queued->error = $response->error;
                     $queued->status = $response->status;
                     $results[$queued->external_id] = $queued;
@@ -288,7 +289,7 @@ class Strava extends trackerAbstract
                 }
             }
             $this->output('.');
-            sleep(1);
+            usleep($sleep *1000000);
         }
         foreach ($this->pending_uploads as $pending_id => $queued) {
             $queued->error = "Timed out waiting for confirmation of upload after $this->fileUploadTimeout seconds";

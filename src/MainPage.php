@@ -310,7 +310,11 @@ class MainPage
                 }
             }
             if (!$this->start_date) {
-                $this->start_date = strtotime(array_keys($activities)[sizeof($activities) - 1]);
+                if (sizeof($activities) == 0) {
+                    $this->start_date = time();
+                } else {
+                    $this->start_date = strtotime(array_keys($activities)[sizeof($activities) - 1]);
+                }
             }
             if (!$this->end_date) {
                 $this->end_date = time();
@@ -478,7 +482,7 @@ class MainPage
 
                                 } else {
                                     file_put_contents($path, $points->gpx());
-                                    $error = $this->strava->uploadGpx($path, $this->strava->generateEndoExternalId($ride['endo_id'],$this->endomondo->getUserId()), $message,
+                                    $error = $this->strava->uploadGpx($path, $this->strava->generateEndoExternalId($ride['endo_id'], $this->endomondo->getUserId()), $message,
                                         $ride['name'], $this->endomondo->activityUrl($ride['endo_id']));
                                     if ($error) {
                                         $message = $message . '<span style="color:red;">Failed: </span>' . $error;
@@ -582,20 +586,20 @@ class MainPage
             if ($keys) {
                 $str .= "<br>As listed above, the following rides seem to have been copied from Endomondo, and can be deleted from Strava (and then re-added, if you choose).<br>";
                 $str .= "<ol>";
-                $ride_list="";
+                $ride_list = "";
                 foreach ($keys as $id) {
                     $str .= "\n<li>$queue[$id]</li>";
-                    $ride_list.="$id,";
+                    $ride_list .= "$id,";
                 }
                 $str .= "</ol>";
                 $str .= "<form action=\"$this->here\" method=\"post\" name=\"delete_strava_rides_form\">";
-                $str.="<input type=\"submit\" name=\"delete_from_strava\" value=\"Delete these rides from Strava?\"/>";
-                $str.= "<input type=\"hidden\" name=\"activity_numbers\" value=\"$ride_list\">";
-                $str.="</form>";
+                $str .= "<input type=\"submit\" name=\"delete_from_strava\" value=\"Delete these rides from Strava?\"/>";
+                $str .= "<input type=\"hidden\" name=\"activity_numbers\" value=\"$ride_list\">";
+                $str .= "</form>";
             }
         } else if ($state == "delete_from_strava") {
-            $count=0;
-            foreach(explode(',', $_POST['activity_numbers']) as $id) {
+            $count = 0;
+            foreach (explode(',', $_POST['activity_numbers']) as $id) {
                 if (!$id) continue;
                 $this->output("Deleting $id: ");
                 if ($this->strava->deleteActivity($id)) {
@@ -604,11 +608,11 @@ class MainPage
 
                 } else {
 
-                    $this->output("Failed " . $this->strava->getError() ." <br>");
+                    $this->output("Failed " . $this->strava->getError() . " <br>");
 
                 }
-                    }
-            $str.="$count activities delete from strava<br>";
+            }
+            $str .= "$count activities delete from strava<br>";
         } else if ($state == "copy_endo_to_rwgps") {
             $this->output("<H3>Copying rides from Endomondo to RideWithGPS...</H3>");
             set_time_limit(300);

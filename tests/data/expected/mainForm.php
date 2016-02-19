@@ -40,7 +40,7 @@
                 end_date = \"today\"
             }
             var password_warning = \"Are you sure you want to do this?  This will remove all activities from MyCyclingLog between \" + start + \" and \" + end_date + \" that have a Strava ride in the notes.\\n\\nIf you are sure, enter your MCL password here.\";
-var username = 'helen'; var password = prompt(password_warning);
+var username = prompt(\"Please enter your MyCyclingLog username\");var password = prompt(password_warning);
             if (password != null) {
                 document.forms[\"main_form\"][\"start_date\"].value;
 
@@ -62,9 +62,6 @@ var username = 'helen'; var password = prompt(password_warning);
                 password_field.setAttribute('type', 'hidden');
                 password_field.setAttribute('value', password);
                 document.forms[\"main_form\"].appendChild(password_field);
-
-                ;
-
                 document.forms[\"main_form\"].submit(\"hello\");
             }
             else

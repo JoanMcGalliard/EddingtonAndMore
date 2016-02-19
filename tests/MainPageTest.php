@@ -8,8 +8,6 @@ class MainPageTest extends JoanMcGalliard\EddingtonAndMore\BaseTestClass
 {
     private $mainPage;
     protected $classUnderTest = 'MainPage';
-    private $mockPreferences;
-    /** @var PHPUnit_Framework_MockObject_MockObject $mockConnectedWriteScope */
 
 
     public function setUp()
@@ -17,23 +15,6 @@ class MainPageTest extends JoanMcGalliard\EddingtonAndMore\BaseTestClass
         parent::setUp();
 
         $this->mainPage = new MainPage(array($this, 'myEcho'));
-        $this->mockPreferences = $this->getMockBuilder('Preferences')->disableOriginalConstructor()
-            ->setMethods(array('getTimezone', 'getStravaSplitRides', 'getEndoSplitRides', 'getRwgpsSplitRides', 'getMclUseFeet',
-                'getMclUsername', 'getStravaWriteScope', 'getMclAuth', 'getEndoAuth', 'getRwgpsAuth', 'getStravaAccessToken',
-                'setStravaSplitRides'
-            ))->getMock();
-        $this->mockPreferences->expects($this->any())->method('getTimezone')->willReturn('UTC');
-        $this->mockPreferences->expects($this->any())->method('getStravaSplitRides')->willReturn(false);
-        $this->mockPreferences->expects($this->any())->method('getEndoSplitRides')->willReturn(false);
-        $this->mockPreferences->expects($this->any())->method('getRwgpsSplitRides')->willReturn(false);
-        $this->mockPreferences->expects($this->any())->method('getMclUseFeet')->willReturn(false);
-        $this->mockPreferences->expects($this->any())->method('getMclUsername')->willReturn("helen");
-        $this->mockPreferences->expects($this->any())->method('getStravaWriteScope')->willReturn(true);
-        $this->mockPreferences->expects($this->any())->method('getMclAuth')->willReturn("auth");
-        $this->mockPreferences->expects($this->any())->method('getTimezone')->willReturn("auth");
-        $this->mockPreferences->expects($this->any())->method('getRwgpsAuth')->willReturn("auth");
-        $this->mockPreferences->expects($this->any())->method('getStravaAccessToken')->willReturn("token");
-        $this->mockPreferences->expects($this->any())->method('setStravaSplitRides')->willReturn(false);
     }
 
     public function testEmail()
@@ -340,7 +321,15 @@ class MainPageTest extends JoanMcGalliard\EddingtonAndMore\BaseTestClass
                 'isConnected'))->getMock();
         $mockTracker->expects($this->any())->method('isConnected')->willReturn(true);
 
-        $this->setProperty('preferences', $this->mockPreferences, $this->mainPage);
+        $mockPreferences = $this->getMockBuilder('Preferences')->disableOriginalConstructor()
+            ->setMethods(array('getTimezone', 'getStravaSplitRides', 'getEndoSplitRides', 'getRwgpsSplitRides', 'getMclUseFeet',
+                'getMclUsername', 'getStravaWriteScope', 'getMclAuth', 'getEndoAuth', 'getRwgpsAuth', 'getStravaAccessToken',
+                'setStravaSplitRides'
+            ))->getMock();
+        $mockPreferences->expects($this->any())->method('getTimezone')->willReturn('UTC');
+
+
+        $this->setProperty('preferences', $mockPreferences, $this->mainPage);
         $this->setProperty('strava', $mockTracker, $this->mainPage);
         $this->setProperty('myCyclingLog', $mockTracker, $this->mainPage);
         $this->setProperty('endomondo', $mockTracker, $this->mainPage);
@@ -524,13 +513,19 @@ class MainPageTest extends JoanMcGalliard\EddingtonAndMore\BaseTestClass
         // todo
         $execute = $this->getMethod('execute');
         $setup = $this->getMethod('setup');
-
         $mockTracker = $this->getMockBuilder('trackerAbstract')
             ->setMethods(array('getUserId','getRides','getError','getOvernightActivities',
                 'setUseFeetForElevation','setSplitOvernightRides','setWriteScope','setAuth','setAccessToken'))->getMock();
         $rides=include('data/input/getRides.php');
         $mockTracker->expects($this->any())->method('getRides')->willReturn($rides);
-        $this->setProperty('preferences', $this->mockPreferences, $this->mainPage);
+        $mockPreferences = $this->getMockBuilder('Preferences')->disableOriginalConstructor()
+            ->setMethods(array('getTimezone', 'getStravaSplitRides', 'getEndoSplitRides', 'getRwgpsSplitRides', 'getMclUseFeet',
+                'getMclUsername', 'getStravaWriteScope', 'getMclAuth', 'getEndoAuth', 'getRwgpsAuth', 'getStravaAccessToken',
+                'setStravaSplitRides'
+            ))->getMock();
+        $mockPreferences->expects($this->any())->method('getTimezone')->willReturn('UTC');
+
+        $this->setProperty('preferences', $mockPreferences, $this->mainPage);
         $this->setProperty('strava', $mockTracker, $this->mainPage);
         $this->setProperty('myCyclingLog', $mockTracker, $this->mainPage);
         $this->setProperty('endomondo', $mockTracker, $this->mainPage);
@@ -594,8 +589,13 @@ class MainPageTest extends JoanMcGalliard\EddingtonAndMore\BaseTestClass
                 'isConnected', 'writeScope'))->getMock();
         $mockTracker->expects($this->any())->method('isConnected')->willReturn(true);
         $mockTracker->expects($this->any())->method('writeScope')->willReturn(true);
+        $mockPreferences=$this->getMockBuilder('Preferences')->disableOriginalConstructor()
+            ->setMethods(array('getTimezone', 'getStravaSplitRides', 'getEndoSplitRides', 'getRwgpsSplitRides', 'getMclUseFeet',
+                'getMclUsername', 'getStravaWriteScope', 'getMclAuth', 'getEndoAuth', 'getRwgpsAuth', 'getStravaAccessToken',
+                'setStravaSplitRides'))->getMock();
+        $mockPreferences->expects($this->any())->method('getTimezone')->willReturn('UTC');
         $mainForm = $this->getMethod('mainForm');
-        $this->setProperty('preferences', $this->mockPreferences, $this->mainPage);
+        $this->setProperty('preferences', $mockPreferences, $this->mainPage);
         $this->setProperty('strava', $mockTracker, $this->mainPage);
         $this->setProperty('myCyclingLog', $mockTracker, $this->mainPage);
         $this->setProperty('endomondo', $mockTracker, $this->mainPage);
@@ -613,7 +613,6 @@ class MainPageTest extends JoanMcGalliard\EddingtonAndMore\BaseTestClass
         $endOfLastYear = "31-12-$lastYear";
 
         $this->assertEquals(include('data/expected/mainForm.php'), $mainForm->invokeArgs($this->mainPage, array()));
-
     }
 }
 

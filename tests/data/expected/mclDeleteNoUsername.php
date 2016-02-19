@@ -31,9 +31,6 @@ var username = prompt(\"Please enter your MyCyclingLog username\");var password 
                 password_field.setAttribute('type', 'hidden');
                 password_field.setAttribute('value', password);
                 document.forms[\"main_form\"].appendChild(password_field);
-
-                ;
-
                 document.forms[\"main_form\"].submit(\"hello\");
             }
             else

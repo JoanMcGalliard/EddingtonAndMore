@@ -467,9 +467,7 @@ class MainPage
                         if (!$distance || $distance < 300) {
                             $message .= "Skipping, too short: $distance metres";
                         } else {
-                            $duplicateStravaRide = $this->isDuplicateRide($ride, $this->strava_rides);
-
-                            if ($duplicateStravaRide) {
+                            if ($this->isDuplicateRide($ride, $this->strava_rides)) {
                                 $message = "";
                                 $this->output(".");
                             } else {
@@ -633,8 +631,7 @@ class MainPage
                         if (!$distance || $distance < 300) {
                             $message .= "Skipping, too short: $distance metres";
                         } else {
-                            $duplicateRwgpsRide = $this->isDuplicateRide($ride, $rwgps_rides);
-                            if ($duplicateRwgpsRide) {
+                            if ($this->isDuplicateRide($ride, $rwgps_rides)) {
                                 $message = ".";
                             } else {
                                 $path = $scratchDirectory . DIRECTORY_SEPARATOR . "endomondo+" . $ride['endo_id'] . ".gpx";
@@ -1189,8 +1186,10 @@ class MainPage
         return $num;
     }
 
-    private function isDuplicateRide($candidate_ride, $rides)
+    private function isDuplicateRide($candidate_ride, $rides, $key='endo_id')
     {
+        $candidate_ride_start = strtotime($candidate_ride['start_time']);
+        $candidate_ride_end = $candidate_ride_start + $candidate_ride['elapsed_time'];
         if (!$rides) {
             return false;
         }
@@ -1198,23 +1197,21 @@ class MainPage
 
             foreach ($ride_list as $ride) {
 
-                if (isset($ride['endo_id']) && $ride['endo_id'] == $candidate_ride['endo_id']) {
+                if (isset($ride[$key]) && $ride[$key] == $candidate_ride[$key]) {
                     return true;
                 }
-                $endo_start = strtotime($candidate_ride['start_time']);
-                $endo_end = $endo_start + $candidate_ride['elapsed_time'];
                 $strava_start = strtotime($ride['start_time']);
                 $strava_end = $strava_start + $ride['elapsed_time'];
-                if ($endo_start >= $strava_start && $endo_start <= $strava_end) {
+                if ($candidate_ride_start >= $strava_start && $candidate_ride_start <= $strava_end) {
                     return true;
                 }
-                if ($endo_end >= $strava_start && $endo_end <= $strava_end) {
+                if ($candidate_ride_end >= $strava_start && $candidate_ride_end <= $strava_end) {
                     return true;
                 }
-                if ($strava_start >= $endo_start && $strava_start <= $endo_end) {
+                if ($strava_start >= $candidate_ride_start && $strava_start <= $candidate_ride_end) {
                     return true;
                 }
-                if ($strava_end >= $endo_start && $strava_end <= $endo_end) {
+                if ($strava_end >= $candidate_ride_start && $strava_end <= $candidate_ride_end) {
                     return true;
                 }
             }

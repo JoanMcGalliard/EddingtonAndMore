@@ -23,16 +23,38 @@ class TrackerAbstractTest extends BaseTestClass
         $this->assertEquals(true, $isOvernightRide->invokeArgs($tester, array($start_time, "UTC", $duration)));
         $this->assertEquals(true, $isOvernightRide->invokeArgs($tester, array($start_time, "Australia/Melbourne", $duration)));
         $this->assertEquals(false, $isOvernightRide->invokeArgs($tester, array($start_time, "America/Chicago", $duration)));
-
-
+    }
+    public function testRareDot() {
+        $tester=new Tester(array($this, 'myEcho'));
+        $rareDot = $this->getMethod('rareDot');
+        $this->output="";
+        for ($i=0;$i<3999; $i++) {
+            $rareDot->invokeArgs($tester, array());
+        }
+        $this->assertEquals("...",$this->output);
+        $this->output="";
+        for ($i=0;$i<4000; $i++) {
+            $rareDot->invokeArgs($tester, array());
+        }
+        $this->assertEquals("....",$this->output);
     }
 }
 
 class Tester extends TrackerAbstract {
 
+
+    /**
+     * Tester constructor.
+     */
+    public function __construct($echoCallback=null)
+    {
+        $this->echoCallback = $echoCallback;
+    }
+
     public function isConnected()
     {
     }
+
 
     public function getRides($start_date, $end_date)
     {

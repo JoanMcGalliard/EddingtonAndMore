@@ -98,11 +98,12 @@ abstract class trackerAbstract
     {
         static $rareDotCount;
         if (!isset($rareDotCount)) {
-            $rareDotCount = 0;
+            $rareDotCount = 1;
         }
-        if ($rareDotCount++ > 1000) {
+        $rareDotCount++;
+        if ($rareDotCount > 1000) {
             $this->output('.');
-            $rareDotCount = 0;
+            $rareDotCount = 1;
         }
         flush();
     }

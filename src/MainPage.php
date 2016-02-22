@@ -36,6 +36,7 @@ class MainPage
     private $start_date;
     private $end_date;
     private $googleMaps;
+    private $connectedServices = null;
 
     /**
      * MainPage constructor.
@@ -63,6 +64,7 @@ class MainPage
             $this->output($this->connections());
         }
         $this->output($this->mainForm());
+        $this->output($this->copyForm());
         $this->output("<hr>\n");
         $this->output($this->notes($eddingtonAndMoreVersion));
         if ($this->isConnected()) {
@@ -236,6 +238,8 @@ class MainPage
             $state = "copy_endo_to_strava";
         } else if (array_key_exists("copy_endo_to_rwgps", $_POST) && $this->endomondo->isConnected() && $this->rideWithGps->isConnected()) {
             $state = "copy_endo_to_rwgps";
+        } else if (array_key_exists('copy_rides', $_POST)) {
+            $state = 'copy_rides';
         } else if (array_key_exists("delete_mcl_rides", $_POST) && $this->myCyclingLog->isConnected()) {
             $state = "delete_mcl_rides";
         } else if (array_key_exists("queue_delete_endo_from_strava", $_POST) && $this->strava->isConnected() && $this->endomondo->isConnected()) {
@@ -263,118 +267,9 @@ class MainPage
         $source = "we should never see this value!";
 
         if ($state == "calculate_from_strava" || $state == "calculate_from_mcl" || $state == "calculate_from_endo" || $state == "calculate_from_rwgps") {
-            set_time_limit(300);
-            $this->output("<H3>Calculating....</H3>");
-            date_default_timezone_set($this->preferences->getTimezone());
-            $start_text = "the beginning";
-            $end_text = "today";
-            $activities = [];
-            $timestamp = time();
-            if (isset($_POST["start_date"])) $start_text = $_POST["start_date"];
-            if (isset($_POST["end_date"])) $end_text = $_POST["end_date"];
-            if ($state == "calculate_from_strava") {
-
-                $this->processUploadedGpxFiles($this->strava->getUserId(), $scratchDirectory);
-
-
-                $source = "Strava";
-                $activities = $this->strava->getRides($this->start_date, $this->end_date);
-                if ($this->strava->getError()) {
-                    return ("<br><span style=\"color:red;\">There was a problem getting data from $source.</span><br><em>"
-                        . $this->strava->getError()
-                        . "</em>");
-                }
-
-                $overnight_rides = $this->strava->getOvernightActivities();
-                if ($this->preferences->getStravaSplitRides() && $overnight_rides) {
-                    $str .= $this->askForStravaGpx($overnight_rides, $maxKmFileUploads, "calculate_from_strava", "recalculate your E-Number");
-
-                }
-            } else if ($state == "calculate_from_mcl") {
-                $source = "MyCyclingLog";
-                $activities = $this->myCyclingLog->getRides($this->start_date, $this->end_date);
-            } else if ($state == "calculate_from_endo") {
-                $source = "Endomondo";
-                $activities = $this->endomondo->getRides($this->start_date, $this->end_date);
-                $error = $this->endomondo->getError();
-                if ($error) {
-                    return ("There was a problem getting data from $source:<br>" . $error);
-                }
-            } else if ($state == "calculate_from_rwgps") {
-                $source = "RideWithGPS";
-                $activities = $this->rideWithGps->getRides($this->start_date, $this->end_date);
-                $error = $this->rideWithGps->getError();
-                if ($error) {
-                    $str .= "<br>There was a problem getting data from $source:<br>" . $error . "<br>";
-                }
-            }
-            if (!$this->start_date) {
-                if (sizeof($activities) == 0) {
-                    $this->start_date = time();
-                } else {
-                    $days=array_keys($activities);
-                    sort($days);
-                    $this->start_date = strtotime($days[0]);
-                }
-            }
-            if (!$this->end_date) {
-                $this->end_date = time();
-            }
-            $days = $this->sumActivities($activities);
-            $str .= "<p>According to $source, for the period from $start_text to $end_text, "
-                . round(($this->end_date - $this->start_date) / self::TWENTY_FOUR_HOURS)
-                . " elapsed days</p>\n";
-            uasort($days, function ($a, $b) {
-                if ($a == $b) return 0; else return ($a > $b) ? -1 : 1;
-            });
-
-            $eddington_imperial = $this->calculateEddington($days, $result, self::METRE_TO_MILE);
-
-            $table_imperial = '<table id="imperial" class="w3-table-all w3-right-align"  style="width:60%"><tr><th>Count</th><th>Date </th><th class="w3-right-align">Distance</th></tr>';
-            for ($i = 1; $i <= $eddington_imperial; $i++) {
-                $day = array_keys($result)[$i - 1];
-                $actual_distance = $result[$day];
-                $table_imperial .= "<tr><td> $i </td><td> $day</td><td class=\"w3-right-align\">$actual_distance miles</td></tr>";
-            }
-            $table_imperial .= "</table>";
-            $str .= "<br><a href=\"#imperial\">Your imperial Eddington Number</a> is <strong>$eddington_imperial</strong>.<br>\n";
-            if ($end_text == "today") {
-                $goals = $this->nextGoals($eddington_imperial);
-                foreach ($goals as $goal) {
-                    $num = $this->numberOfDaysToGoal($goal, $days, self::METRE_TO_MILE);
-                    $str .= "You need to do $num ride(s) of at least $goal to increase it to $goal.<br>\n";
-                }
-            }
-            $eddington_metric = $this->calculateEddington($days, $result, self::METRE_TO_KM);
-            $table_metric = '<table id="metric" class="w3-table-all w3-right-align"  style="width:60%"><tr><th>Count</th><th>Date </th><th class="w3-right-align">Distance</th></tr>';
-            for ($i = 1; $i <= $eddington_metric; $i++) {
-                $date = array_keys($result)[$i - 1];
-                $distance = $result[$date];
-                $table_metric .= "<tr><td> $i </td><td>$date</td><td class=\"w3-right-align\">$distance km</td></tr>";
-
-            }
-
-            $table_metric .= "</table>";
-            $str .= "<br><a href=\"#metric\">Your metric Eddington Number</a> is <strong>$eddington_metric</strong><br>\n";
-            if ($end_text == "today") {
-                $goals = $this->nextGoals($eddington_metric);
-                foreach ($goals as $goal) {
-                    $num = $this->numberOfDaysToGoal($goal, $days, self::METRE_TO_KM);
-                    $str .= "You need to do $num ride(s) of at least $goal to increase it to $goal.<br>\n";
-                }
-            }
-
-            $str .= '<br><a href="#eddington_chart">See a chart of how your Eddington number has grown over the years.</a><br>';
-            $str .= "<p><em>Run time " . (time() - $timestamp) . " seconds.</em></p>\n";
-
-            $str .= $table_imperial;
-            $str .= $table_metric;
-            $imperial_history = $this->eddingtonHistory($days, self::METRE_TO_MILE);
-            $metric_history = $this->eddingtonHistory($days, self::METRE_TO_KM);
-
-            $str .= $this->buildChart($imperial_history, $metric_history);
-
-
+            $str .= $this->calculate($state);
+        } else if ($state == 'copy_rides') {
+            $str .= $this->copy($_POST['copySource'], $_POST['copyDestination'], $this->start_date, $this->end_date);
         } else if ($state == "copy_strava_to_mcl") {
             $this->processUploadedGpxFiles($this->strava->getUserId(), $scratchDirectory);
             $this->output("<H3>Copying data from Strava to MyCyclingLog...</H3>");
@@ -414,6 +309,7 @@ class MainPage
                                 if ($this->compareDistance($mcl_day_total + $distance, $strava_day_total) >= 0) {
                                     //this ride will make our day total on MCL bigger than strava
                                     $distance = $strava_day_total - $mcl_day_total;
+                                    $ride['distance'] = $distance;
                                 }
                                 $message = "Ride with id " . $ride['strava_id'] . " on $date, distance " . round($distance * self::METRE_TO_MILE, 1) . " miles/" . round($distance * self::METRE_TO_KM, 1) . " kms. ";
                                 $bike = $this->strava->getBike($ride["bike"]);
@@ -467,7 +363,7 @@ class MainPage
                         if (!$distance || $distance < 300) {
                             $message .= "Skipping, too short: $distance metres";
                         } else {
-                            if ($this->isDuplicateRide($ride, $this->strava_rides)) {
+                            if ($this->isDuplicateRide($ride, $this->strava_rides, 'endo_id')) {
                                 $message = "";
                                 $this->output(".");
                             } else {
@@ -631,7 +527,7 @@ class MainPage
                         if (!$distance || $distance < 300) {
                             $message .= "Skipping, too short: $distance metres";
                         } else {
-                            if ($this->isDuplicateRide($ride, $rwgps_rides)) {
+                            if ($this->isDuplicateRide($ride, $rwgps_rides, 'endo_id')) {
                                 $message = ".";
                             } else {
                                 $path = $scratchDirectory . DIRECTORY_SEPARATOR . "endomondo+" . $ride['endo_id'] . ".gpx";
@@ -1186,19 +1082,30 @@ class MainPage
         return $num;
     }
 
-    private function isDuplicateRide($candidate_ride, $rides, $key='endo_id')
+    /**
+     * @param $candidate_ride
+     * @param $rides
+     * @param $foreignKey - is literal string 'endo_id', 'strava_id' etc
+     * @param bool $use_start_time - mycyclinglog does not record start time, so we can find duplicates using it.
+     * @return bool
+     */
+    private function isDuplicateRide($candidate_ride, $rides, $foreignKey, $use_start_time = true)
     {
         $candidate_ride_start = strtotime($candidate_ride['start_time']);
         $candidate_ride_end = $candidate_ride_start + $candidate_ride['elapsed_time'];
+        $candidate_fk= isset($candidate_ride[$foreignKey]) ? $candidate_ride[$foreignKey] : null;
         if (!$rides) {
             return false;
         }
+
         foreach ($rides as $date => $ride_list) {
 
             foreach ($ride_list as $ride) {
-
-                if (isset($ride[$key]) && $ride[$key] == $candidate_ride[$key]) {
+                if ($candidate_fk && isset($ride[$foreignKey]) && $ride[$foreignKey] == $candidate_ride[$foreignKey]) {
                     return true;
+                }
+                if (!$use_start_time) {
+                    continue;
                 }
                 $strava_start = strtotime($ride['start_time']);
                 $strava_end = $strava_start + $ride['elapsed_time'];
@@ -1427,10 +1334,241 @@ class MainPage
      */
     private function isConnected()
     {
-        return $this->myCyclingLog->isConnected() || $this->strava->isConnected() || $this->rideWithGps->isConnected() || $this->endomondo->isConnected();
+        return sizeof($this->connectedServices()) > 0;
     }
 
+    private function connectedServices()
+    {
+        $services = [];
+        if ($this->myCyclingLog->isConnected()) {
+            $services[] = "MyCyclingLog";
+        }
+        if ($this->strava->isConnected()) {
+            $services[] = "Strava";
+        }
+        if ($this->rideWithGps->isConnected()) {
+            $services[] = "RideWithGps";
+        }
+        if ($this->endomondo->isConnected()) {
+            $services[] = "Endomondo";
+        }
+        return $services;
+    }
 
+    private function copyForm()
+    {
+        if (sizeof($this->connectedServices()) <= 1) {
+            return "";
+        }
+        $list = "";
+        foreach ($this->connectedServices() as $service) {
+            $list .= "<option>$service</option>\n";
+        }
+        $str = "<hr><H3>Copy rides....</H3>";
+        $str .= "<form action=\"$this->here\" method=\"post\" name=\"copy_rides_form\">\n";
+        $str .= "<table><tr><td>";
+        $str .= "<select name=\"copySource\" >\n";
+        $str .= "<option value=''>From</option>\n";
+        $str .= "$list\n</select>";
+        $str .= "</td><td>";
+        $str .= "<select name=\"copyDestination\" >\n";
+        $str .= "<option value=''>To</option>\n";
+        $str .= "$list\n</select>";
+        $str .= "</td><td>";
+        $str .= "<input type=\"submit\" name=\"copy_rides\" value=\"Go\"/>  ";
+        $str .= "</form>";
+        $str .= "</td></tr></table>";
+
+        return $str;
+    }
+
+    private function calculate($state)
+    {
+        global $scratchDirectory, $maxKmFileUploads;
+        $str = "";
+        set_time_limit(300);
+        $this->output("<H3>Calculating....</H3>");
+        date_default_timezone_set($this->preferences->getTimezone());
+        $start_text = "the beginning";
+        $end_text = "today";
+        $activities = [];
+        $timestamp = time();
+        if (isset($_POST["start_date"])) $start_text = $_POST["start_date"];
+        if (isset($_POST["end_date"])) $end_text = $_POST["end_date"];
+        if ($state == "calculate_from_strava") {
+
+            $this->processUploadedGpxFiles($this->strava->getUserId(), $scratchDirectory);
+
+
+            $source = "Strava";
+            $activities = $this->strava->getRides($this->start_date, $this->end_date);
+            if ($this->strava->getError()) {
+                return ("<br><span style=\"color:red;\">There was a problem getting data from $source.</span><br><em>"
+                    . $this->strava->getError()
+                    . "</em>");
+            }
+
+            $overnight_rides = $this->strava->getOvernightActivities();
+            if ($this->preferences->getStravaSplitRides() && $overnight_rides) {
+                $str .= $this->askForStravaGpx($overnight_rides, $maxKmFileUploads, "calculate_from_strava", "recalculate your E-Number");
+
+            }
+        } else if ($state == "calculate_from_mcl") {
+            $source = "MyCyclingLog";
+            $activities = $this->myCyclingLog->getRides($this->start_date, $this->end_date);
+        } else if ($state == "calculate_from_endo") {
+            $source = "Endomondo";
+            $activities = $this->endomondo->getRides($this->start_date, $this->end_date);
+            $error = $this->endomondo->getError();
+            if ($error) {
+                return ("There was a problem getting data from $source:<br>" . $error);
+            }
+        } else if ($state == "calculate_from_rwgps") {
+            $source = "RideWithGPS";
+            $activities = $this->rideWithGps->getRides($this->start_date, $this->end_date);
+            $error = $this->rideWithGps->getError();
+            if ($error) {
+                $str .= "<br>There was a problem getting data from $source:<br>" . $error . "<br>";
+            }
+        }
+        if (!$this->start_date) {
+            if (sizeof($activities) == 0) {
+                $this->start_date = time();
+            } else {
+                $days = array_keys($activities);
+                sort($days);
+                $this->start_date = strtotime($days[0]);
+            }
+        }
+        if (!$this->end_date) {
+            $this->end_date = time();
+        }
+        $days = $this->sumActivities($activities);
+        $str .= "<p>According to $source, for the period from $start_text to $end_text, "
+            . round(($this->end_date - $this->start_date) / self::TWENTY_FOUR_HOURS)
+            . " elapsed days</p>\n";
+        uasort($days, function ($a, $b) {
+            if ($a == $b) return 0; else return ($a > $b) ? -1 : 1;
+        });
+
+        $eddington_imperial = $this->calculateEddington($days, $result, self::METRE_TO_MILE);
+
+        $table_imperial = '<table id="imperial" class="w3-table-all w3-right-align"  style="width:60%"><tr><th>Count</th><th>Date </th><th class="w3-right-align">Distance</th></tr>';
+        for ($i = 1; $i <= $eddington_imperial; $i++) {
+            $day = array_keys($result)[$i - 1];
+            $actual_distance = $result[$day];
+            $table_imperial .= "<tr><td> $i </td><td> $day</td><td class=\"w3-right-align\">$actual_distance miles</td></tr>";
+        }
+        $table_imperial .= "</table>";
+        $str .= "<br><a href=\"#imperial\">Your imperial Eddington Number</a> is <strong>$eddington_imperial</strong>.<br>\n";
+        if ($end_text == "today") {
+            $goals = $this->nextGoals($eddington_imperial);
+            foreach ($goals as $goal) {
+                $num = $this->numberOfDaysToGoal($goal, $days, self::METRE_TO_MILE);
+                $str .= "You need to do $num ride(s) of at least $goal to increase it to $goal.<br>\n";
+            }
+        }
+        $eddington_metric = $this->calculateEddington($days, $result, self::METRE_TO_KM);
+        $table_metric = '<table id="metric" class="w3-table-all w3-right-align"  style="width:60%"><tr><th>Count</th><th>Date </th><th class="w3-right-align">Distance</th></tr>';
+        for ($i = 1; $i <= $eddington_metric; $i++) {
+            $date = array_keys($result)[$i - 1];
+            $distance = $result[$date];
+            $table_metric .= "<tr><td> $i </td><td>$date</td><td class=\"w3-right-align\">$distance km</td></tr>";
+
+        }
+
+        $table_metric .= "</table>";
+        $str .= "<br><a href=\"#metric\">Your metric Eddington Number</a> is <strong>$eddington_metric</strong><br>\n";
+        if ($end_text == "today") {
+            $goals = $this->nextGoals($eddington_metric);
+            foreach ($goals as $goal) {
+                $num = $this->numberOfDaysToGoal($goal, $days, self::METRE_TO_KM);
+                $str .= "You need to do $num ride(s) of at least $goal to increase it to $goal.<br>\n";
+            }
+        }
+
+        $str .= '<br><a href="#eddington_chart">See a chart of how your Eddington number has grown over the years.</a><br>';
+        $str .= "<p><em>Run time " . (time() - $timestamp) . " seconds.</em></p>\n";
+
+        $str .= $table_imperial;
+        $str .= $table_metric;
+        $imperial_history = $this->eddingtonHistory($days, self::METRE_TO_MILE);
+        $metric_history = $this->eddingtonHistory($days, self::METRE_TO_KM);
+
+        $str .= $this->buildChart($imperial_history, $metric_history);
+        return $str;
+
+
+    }
+
+    private function copy($copySource, $copyDestination, $start_date, $end_date)
+    {
+        // if $copySource or $copyDestination aren't valid, just return nothing.
+        $str = "";
+        if ($copySource == 'Strava') {
+            $source = $this->strava;
+            $foreign_key = 'strava_id';
+        } else if ($copySource == 'MyCyclingLog') {
+            $source = $this->myCyclingLog;
+            $foreign_key = 'mcl_id';
+        } else if ($copySource == 'Endomondo') {
+            $source = $this->endomondo;
+            $foreign_key = 'endo_id';
+        } else if ($copySource == 'RideWithGps') {
+            $source = $this->rideWithGps;
+            $foreign_key = 'rwgps_id';
+        } else {
+            return $str;
+        }
+        if ($copyDestination == 'Strava') {
+            $destination = $this->strava;
+        } else if ($copyDestination == 'MyCyclingLog') {
+            $destination = $this->myCyclingLog;
+        } else if ($copyDestination == 'Endomondo') {
+            $destination = $this->endomondo;
+        } else if ($copyDestination == 'RideWithGps') {
+            $destination = $this->rideWithGps;
+        } else {
+            return $str;
+        }
+//        $includeGpx=true;
+//        if ($destination=='MyCyclingLog' || $source == 'Strava' || $source == 'MyCyclingLog') {
+//            $includeGpx=false;
+//        }
+        $this->output("<H3>Copying data from $copySource to $copyDestination...</H3>");
+        $sourceRides = $source->getRides($start_date, $end_date);
+        $destinationRides = $destination->getRides($start_date, $end_date);
+        $count = 0;
+        $useStartTime = true;
+        if ($source == 'MyCyclingLog' || $copyDestination == 'MyCyclingLog') {
+            // MCL doesn't record start times, so duplicate rides can only be detected by "foreign" keys or daily total.
+            $useStartTime = false;
+        }
+        foreach ($sourceRides as $date => $rides) {
+            $sourceDay = $this->sumDay($rides);
+            $destinationDay = isset($destinationRides[$date]) ? $this->sumDay($destinationRides[$date]) : 0;
+
+            if ($this->compareDistance($sourceDay, $destinationDay) > 0) {
+                foreach ($rides as $ride) {
+                    if ($this->compareDistance($sourceDay, $destinationDay) <= 0) {
+                        break;
+                    }
+
+                    $isDuplicateRide = $this->isDuplicateRide($ride, $destinationRides, $foreign_key, $useStartTime);
+
+                    if (!$isDuplicateRide) {
+                        if ($this->compareDistance($sourceDay, $destinationDay + $ride['distance']) <= 0) {
+                            $ride['distance'] = $sourceDay - $destinationDay;
+                        }
+                        $destination->addRide($date, $ride);
+                        $count++;
+                        $destinationDay += $ride['distance'];
+                    }
+                }
+            }
+        }
+        return "<br>$count rides added.<br>\n";
+    }
 }
 
 

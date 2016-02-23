@@ -777,9 +777,10 @@ class MainPageTest extends JoanMcGalliard\EddingtonAndMore\BaseTestClass
 
         $preferences = $this->getMockBuilder('Preferences')->disableOriginalConstructor()
             ->setMethods(array('getStravaSplitRides'))->getMock();
-        $strava = $this->getMockBuilder('trackerAbstract')
-            ->setMethods(array('getUserId', 'getRides', 'getError', 'getOvernightActivities', 'getBike'))->getMock();
-        $mcl = $this->getMockBuilder('trackerAbstract')->setMethods(array('getRides', 'getBike', 'bikeMatch', 'addRide'))->getMock();
+        $builder = $this->getMockBuilder('trackerAbstract')
+            ->setMethods(array('getUserId', 'getRides', 'getError', 'getOvernightActivities', 'getBike','bikeMatch','addRide'));
+        $strava=$builder->getMock();
+        $mcl=$builder->getMock();
         $this->setProperty('strava', $strava, $this->mainPage);
         $this->setProperty('myCyclingLog', $mcl, $this->mainPage);
         $this->setProperty('preferences', $preferences, $this->mainPage);
@@ -789,61 +790,86 @@ class MainPageTest extends JoanMcGalliard\EddingtonAndMore\BaseTestClass
         $strava->expects($this->any())->method('getBike')->willReturn(null);
 
         // strava and MCL return exactly the same list of rides
-        $mcl->expects($this->at(0))->method('getRides')->willReturn($rides);
-        $strava->expects($this->at(1))->method('getRides')->willReturn($rides);
+        $strava=$builder->getMock();
+        $mcl=$builder->getMock();
+        $this->setProperty('strava', $strava, $this->mainPage);
+        $this->setProperty('myCyclingLog', $mcl, $this->mainPage);
+        $mcl->expects($this->any())->method('getRides')->willReturn($rides);
+        $strava->expects($this->any())->method('getRides')->willReturn($rides);
         $this->output = "";
         $this->assertEquals("<br>0 rides added.<br>\n", $execute->invokeArgs($this->mainPage, array("copy_strava_to_mcl")));
         $this->assertEquals("<H3>Copying data from Strava to MyCyclingLog...</H3>", $this->output);
 
         // no rides coming from Strava
-        $mcl->expects($this->at(0))->method('getRides')->willReturn($rides);
-        $strava->expects($this->at(1))->method('getRides')->willReturn([]);
+        $strava=$builder->getMock();
+        $mcl=$builder->getMock();
+        $this->setProperty('strava', $strava, $this->mainPage);
+        $this->setProperty('myCyclingLog', $mcl, $this->mainPage);
+        $mcl->expects($this->any())->method('getRides')->willReturn($rides);
+        $strava->expects($this->any())->method('getRides')->willReturn([]);
         $this->output = "";
         $this->assertEquals("<br>0 rides added.<br>\n", $execute->invokeArgs($this->mainPage, array("copy_strava_to_mcl")));
         $this->assertEquals("<H3>Copying data from Strava to MyCyclingLog...</H3>", $this->output);
 
         //MCL has a ride strava doesn't
+        $strava=$builder->getMock();
+        $mcl=$builder->getMock();
+        $this->setProperty('strava', $strava, $this->mainPage);
+        $this->setProperty('myCyclingLog', $mcl, $this->mainPage);
         $this->output = "";
-        $mcl->expects($this->at(0))->method('getRides')->willReturn($rides);
-        $strava->expects($this->at(1))->method('getRides')->willReturn($oneLessRides);
+        $mcl->expects($this->any())->method('getRides')->willReturn($rides);
+        $strava->expects($this->any())->method('getRides')->willReturn($oneLessRides);
         $this->output = "";
         $this->assertEquals("<br>0 rides added.<br>\n", $execute->invokeArgs($this->mainPage, array("copy_strava_to_mcl")));
         $this->assertEquals("<H3>Copying data from Strava to MyCyclingLog...</H3>", $this->output);
 
         //Strava has a ride MCL doesn't
+        $strava=$builder->getMock();
+        $mcl=$builder->getMock();
+        $this->setProperty('strava', $strava, $this->mainPage);
+        $this->setProperty('myCyclingLog', $mcl, $this->mainPage);
         $this->output = "";
-        $mcl->expects($this->at(0))->method('getRides')->willReturn($oneLessRides);
-        $strava->expects($this->at(1))->method('getRides')->willReturn($rides);
+        $mcl->expects($this->any())->method('getRides')->willReturn($oneLessRides);
+        $strava->expects($this->any())->method('getRides')->willReturn($rides);
         $ride = array('distance' => 5268.5, 'name' => 'Evening Ride', 'strava_id' => 464768505,
             'start_time' => '2016-01-06T19:44:25Z', 'moving_time' => 1210,
             'elapsed_time' => 3833, 'total_elevation_gain' => 0, 'max_speed' => 8,
             'timezone' => 'Europe/London', 'kudos_count' => 0, 'comment_count' => 0,
             'endo_id' => NULL, 'bike' => NULL);
-        $mcl->expects($this->at(2))->method('addRide')->with('2016-01-06', $ride)->willReturn("999999");
+        $mcl->expects($this->any())->method('addRide')->with('2016-01-06', $ride)->willReturn("999999");
         $this->output = "";
         $this->assertEquals("<br>1 rides added.<br>\n", $execute->invokeArgs($this->mainPage, array("copy_strava_to_mcl")));
         $this->assertEquals("<H3>Copying data from Strava to MyCyclingLog...</H3>.Ride with id 464768505 on 2016-01-06, distance 3.3 miles/5.3 kms. Added new ride, id: 999999 <br>", $this->output);
 
 
         //Same, but bike ids match
+        $strava=$builder->getMock();
+        $mcl=$builder->getMock();
+        $this->setProperty('strava', $strava, $this->mainPage);
+        $this->setProperty('myCyclingLog', $mcl, $this->mainPage);
         $this->output = "";
-        $mcl->expects($this->at(0))->method('getRides')->willReturn($oneLessRides);
+        $mcl->expects($this->any())->method('getRides')->willReturn($oneLessRides);
         $mcl->expects($this->any())->method('bikeMatch')->willReturn("b121212");
-        $strava->expects($this->at(1))->method('getRides')->willReturn($rides);
+        $strava->expects($this->any())->method('getRides')->willReturn($rides);
         $ride = array('distance' => 5268.5, 'name' => 'Evening Ride', 'strava_id' => 464768505,
             'start_time' => '2016-01-06T19:44:25Z', 'moving_time' => 1210,
             'elapsed_time' => 3833, 'total_elevation_gain' => 0, 'max_speed' => 8,
             'timezone' => 'Europe/London', 'kudos_count' => 0, 'comment_count' => 0,
             'endo_id' => NULL, 'bike' => 'b121212');
-        $mcl->expects($this->at(2))->method('addRide')->with('2016-01-06', $ride)->willReturn("8888");
+        $mcl->expects($this->at(3))->method('addRide')->with('2016-01-06', $ride)->willReturn("8888");
         $this->output = "";
         $this->assertEquals("<br>1 rides added.<br>\n", $execute->invokeArgs($this->mainPage, array("copy_strava_to_mcl")));
         $this->assertEquals("<H3>Copying data from Strava to MyCyclingLog...</H3>.Ride with id 464768505 on 2016-01-06, distance 3.3 miles/5.3 kms. Added new ride, id: 8888 <br>", $this->output);
 
         //Strava has a ride MCL doesn't that doesn't upload the first two times
+        $strava=$builder->getMock();
+        $mcl=$builder->getMock();
+        $this->setProperty('strava', $strava, $this->mainPage);
+        $this->setProperty('myCyclingLog', $mcl, $this->mainPage);
         $this->output = "";
-        $mcl->expects($this->at(0))->method('getRides')->willReturn($oneLessRides);
-        $strava->expects($this->at(1))->method('getRides')->willReturn($rides);
+        $mcl->expects($this->any())->method('getRides')->willReturn($oneLessRides);
+        $mcl->expects($this->any())->method('bikeMatch')->willReturn("b121212");
+        $strava->expects($this->any())->method('getRides')->willReturn($rides);
         $ride = array('distance' => 5268.5, 'name' => 'Evening Ride', 'strava_id' => 464768505,
             'start_time' => '2016-01-06T19:44:25Z', 'moving_time' => 1210,
             'elapsed_time' => 3833, 'total_elevation_gain' => 0, 'max_speed' => 8,
@@ -860,10 +886,14 @@ class MainPageTest extends JoanMcGalliard\EddingtonAndMore\BaseTestClass
 
 
         //MCL is missing a whole day that's in strava
+        $strava=$builder->getMock();
+        $mcl=$builder->getMock();
+        $this->setProperty('strava', $strava, $this->mainPage);
+        $this->setProperty('myCyclingLog', $mcl, $this->mainPage);
         $this->output = "";
-        $mcl->expects($this->at(0))->method('getRides')->willReturn($oneDayLessRides);
+        $mcl->expects($this->any())->method('getRides')->willReturn($oneDayLessRides);
         $mcl->expects($this->any())->method('bikeMatch')->willReturn("b121212");
-        $strava->expects($this->at(1))->method('getRides')->willReturn($rides);
+        $strava->expects($this->any())->method('getRides')->willReturn($rides);
         $ride = array(
             'distance' => 2975.5,
             'name' => 'Afternoon Ride',
@@ -878,7 +908,7 @@ class MainPageTest extends JoanMcGalliard\EddingtonAndMore\BaseTestClass
             'comment_count' => 0,
             'endo_id' => NULL, 'bike' => 'b121212'
         );
-        $mcl->expects($this->at(2))->method('addRide')->with('2016-01-08', $ride)->willReturn("6666");
+        $mcl->expects($this->at(3))->method('addRide')->with('2016-01-08', $ride)->willReturn("6666");
         $ride = array(
             'distance' => 2919,
             'name' => 'Evening Ride',
@@ -893,17 +923,21 @@ class MainPageTest extends JoanMcGalliard\EddingtonAndMore\BaseTestClass
             'comment_count' => 0,
             'endo_id' => NULL, 'bike' => 'b121212'
         );
-        $mcl->expects($this->at(4))->method('addRide')->with('2016-01-08', $ride)->willReturn("7777");
+        $mcl->expects($this->at(5))->method('addRide')->with('2016-01-08', $ride)->willReturn("7777");
         $this->output = "";
         $this->assertEquals("<br>2 rides added.<br>\n", $execute->invokeArgs($this->mainPage, array("copy_strava_to_mcl")));
         $this->assertEquals("<H3>Copying data from Strava to MyCyclingLog...</H3>Ride with id 470171383 on 2016-01-08, distance 1.8 miles/3 kms. Added new ride, id: 6666 <br>Ride with id 470166379 on 2016-01-08, distance 1.8 miles/2.9 kms. Added new ride, id: 7777 <br>", $this->output);
 
 
         //They have the same number of rides on the same dates, but one is shorter on MCL
+        $strava=$builder->getMock();
+        $mcl=$builder->getMock();
+        $this->setProperty('strava', $strava, $this->mainPage);
+        $this->setProperty('myCyclingLog', $mcl, $this->mainPage);
         $this->output = "";
-        $mcl->expects($this->at(0))->method('getRides')->willReturn($oneShorterRides);
+        $mcl->expects($this->any())->method('getRides')->willReturn($oneShorterRides);
         $mcl->expects($this->any())->method('bikeMatch')->willReturn("b121212");
-        $strava->expects($this->at(1))->method('getRides')->willReturn($rides);
+        $strava->expects($this->any())->method('getRides')->willReturn($rides);
         $ride = array(
             'distance' => 7124.8,
             'name' => 'Afternoon Ride',
@@ -919,16 +953,20 @@ class MainPageTest extends JoanMcGalliard\EddingtonAndMore\BaseTestClass
             'endo_id' => 650970286,
             'bike' => 'b121212'
         );
-        $mcl->expects($this->at(2))->method('addRide')->with('2016-01-01', $ride)->willReturn("8888");
+        $mcl->expects($this->at(3))->method('addRide')->with('2016-01-01', $ride)->willReturn("8888");
         $this->output = "";
         $this->assertEquals("<br>1 rides added.<br>\n", $execute->invokeArgs($this->mainPage, array("copy_strava_to_mcl")));
         $this->assertEquals("<H3>Copying data from Strava to MyCyclingLog...</H3>..Ride with id 494647884 on 2016-01-01, distance 4.4 miles/7.1 kms. Added new ride, id: 8888 <br>", $this->output);
 
 
         //No rides on MCL
+        $strava=$builder->getMock();
+        $mcl=$builder->getMock();
+        $this->setProperty('strava', $strava, $this->mainPage);
+        $this->setProperty('myCyclingLog', $mcl, $this->mainPage);
         $this->output = "";
-        $mcl->expects($this->at(0))->method('getRides')->willReturn([]);
-        $strava->expects($this->at(1))->method('getRides')->willReturn($shortListOfRides);
+        $mcl->expects($this->any())->method('getRides')->willReturn([]);
+        $strava->expects($this->any())->method('getRides')->willReturn($shortListOfRides);
         $mcl->expects($this->any())->method('addRide')->willReturnOnConsecutiveCalls(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12);
         $this->output = "";
         $this->assertEquals("<br>7 rides added.<br>\n", $execute->invokeArgs($this->mainPage, array("copy_strava_to_mcl")));
@@ -936,16 +974,20 @@ class MainPageTest extends JoanMcGalliard\EddingtonAndMore\BaseTestClass
             $this->output);
 
         //overnight rides
+        $strava=$builder->getMock();
+        $mcl=$builder->getMock();
+        $this->setProperty('strava', $strava, $this->mainPage);
+        $this->setProperty('myCyclingLog', $mcl, $this->mainPage);
         $_POST = array(
             'start_date' => '01-01-2015',
             'end_date' => '31-12-2015',
         );
         $this->output = "";
-        $mcl = $this->getMockBuilder('trackerAbstract')->setMethods(array('getRides', 'getBike', 'bikeMatch', 'addRide'))->getMock();
         $mcl->expects($this->any())->method('getError')->willReturn(null);
-        $mcl->expects($this->at(0))->method('getRides')->willReturn([]);
+        $strava->expects($this->any())->method('getError')->willReturn(null);
+        $mcl->expects($this->any())->method('getRides')->willReturn([]);
         $this->setProperty('myCyclingLog', $mcl, $this->mainPage);
-        $strava->expects($this->at(1))->method('getRides')->willReturn($shortListOfRides);
+        $strava->expects($this->any())->method('getRides')->willReturn($shortListOfRides);
         $strava->expects($this->any())->method('getOvernightActivities')->willReturn(include('data/input/overnightActivity.php'));
         $preferences->expects($this->any())->method('getStravaSplitRides')->willReturn(true);
         $mcl->expects($this->any())->method('addRide')->willReturnOnConsecutiveCalls(1, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12);

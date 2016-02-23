@@ -271,80 +271,8 @@ class MainPage
         } else if ($state == 'copy_rides') {
             $str .= $this->copy($_POST['copySource'], $_POST['copyDestination'], $this->start_date, $this->end_date);
         } else if ($state == "copy_strava_to_mcl") {
-            $this->processUploadedGpxFiles($this->strava->getUserId(), $scratchDirectory);
-            $this->output("<H3>Copying data from Strava to MyCyclingLog...</H3>");
-            set_time_limit(300);
-
-            $strava_rides_to_add = $this->strava->getRides($this->start_date, $this->end_date);
-            if ($this->strava->getError()) {
-                return ("<br>There was a problem getting data from Strava.<br>" . $this->strava->getError() .
-                    "\n<br>Please try again\n");
-            } else {
-                $count = 0;
-                $overnightRidesNeeded = [];  // these are unsplit overnight rides that haven't already been added to MCL
-                $rides_to_retry = [];
-                for ($i = 0; $i < 5; $i++) {
-                    $mcl_rides = $this->myCyclingLog->getRides($this->start_date, $this->end_date);
-                    $strava_ids_in_mcl_rides = $this->extractStravaIds($mcl_rides);
-                    $overnight_rides = $this->strava->getOvernightActivities();
-                    foreach ($strava_rides_to_add as $date => $ride_list) {
-                        $strava_day_total = $this->sumDay($ride_list);
-                        $mcl_day_total = isset($mcl_rides[$date]) ? $this->sumDay($mcl_rides[$date]) : 0;
-                        if ($this->compareDistance($mcl_day_total, $strava_day_total) >= 0) {
-                            continue; //there is at least this many miles for this day already in strava
-                        }
-                        foreach ($ride_list as $ride) {
-
-                            if ($this->compareDistance($mcl_day_total, $strava_day_total) >= 0) {
-                                break;
-                            }
-
-                            $distance = $ride['distance'];
-                            if (!in_array($ride['strava_id'], $strava_ids_in_mcl_rides)) { // not an already copied strava ride
-                                if ($this->preferences->getStravaSplitRides() && isset($overnight_rides[$ride['strava_id']])) {
-                                    $overnightRidesNeeded[$ride['strava_id']] = $overnight_rides[$ride['strava_id']];
-                                    continue; // this is an unsplit overnight ride
-                                }
-
-                                if ($this->compareDistance($mcl_day_total + $distance, $strava_day_total) >= 0) {
-                                    //this ride will make our day total on MCL bigger than strava
-                                    $distance = $strava_day_total - $mcl_day_total;
-                                    $ride['distance'] = $distance;
-                                }
-                                $message = "Ride with id " . $ride['strava_id'] . " on $date, distance " . round($distance * self::METRE_TO_MILE, 1) . " miles/" . round($distance * self::METRE_TO_KM, 1) . " kms. ";
-                                $bike = $this->strava->getBike($ride["bike"]);
-                                $mcl_bike_id = $this->myCyclingLog->bikeMatch($bike['brand'], $bike['model'], $ride['bike']);
-                                $ride['bike'] = $mcl_bike_id;
-                                $new_id = $this->myCyclingLog->addRide($date, $ride);
-                                if (strlen($new_id) == 0) {
-                                    $message = $message . "Appears to be a problem. Queued to retry.";
-                                    $rides_to_retry[$date][] = $ride;
-                                } else {
-                                    $message = $message . "Added new ride, id: $new_id";
-                                    $mcl_rides[$date][] = $ride; // in case strava gives us duplicates, we won't post them twice
-                                    $count++;
-                                }
-                                $this->output("$message <br>");
-                                flush();
-                            } else {
-                                $this->output('.');
-                            }
-
-                        }
-                    }
-                    if (sizeof($rides_to_retry) == 0) {
-                        break;
-                    }
-                    $strava_rides_to_add = $rides_to_retry;
-                    $rides_to_retry = [];
-                }
-                $str .= "<br>$count rides added.<br>\n";
-                if (sizeof($rides_to_retry) != 0) {
-                    $str .= "Some rides failed to be added.  See above.<br>\n";
-                }
-
-                $str .= $this->askForStravaGpx($overnightRidesNeeded, $maxKmFileUploads, "copy_strava_to_mcl", "add to MyCyclingLog");
-            }
+            $str.=$this->processUploadedGpxFiles($this->strava->getUserId(), $scratchDirectory);
+            $str.=$this->copy('Strava', 'MyCyclingLog', $this->start_date, $this->end_date, $splitOvernight=$this->preferences->getStravaSplitRides());
         } else if ($state == "copy_endo_to_strava") {
             $this->output("<H3>Copying rides from Endomondo to Strava...</H3>");
             set_time_limit(300);
@@ -1501,44 +1429,46 @@ class MainPage
 
     }
 
-    private function copy($copySource, $copyDestination, $start_date, $end_date, $splitOvernight=false)
+    private function copy($sourceName, $destinationName, $start_date, $end_date, $splitOvernight=false)
     {
         global $maxKmFileUploads;
         // if $copySource or $copyDestination aren't valid, just return nothing.
         $str = "";
         $manual_download=false;
-        if ($copySource == 'Strava') {
+        if ($sourceName == 'Strava') {
             $source = $this->strava;
             $foreign_key = 'strava_id';
             $manual_download=true;
-        } else if ($copySource == 'MyCyclingLog') {
+        } else if ($sourceName == 'MyCyclingLog') {
             $source = $this->myCyclingLog;
             $foreign_key = 'mcl_id';
-        } else if ($copySource == 'Endomondo') {
+        } else if ($sourceName == 'Endomondo') {
             $source = $this->endomondo;
             $foreign_key = 'endo_id';
-        } else if ($copySource == 'RideWithGps') {
+        } else if ($sourceName == 'RideWithGps') {
             $source = $this->rideWithGps;
             $foreign_key = 'rwgps_id';
         } else {
+            $str.="Sorry, I don't know how to copy rides from $sourceName<br>";
             return $str;
         }
-        if ($copyDestination == 'Strava') {
+        if ($destinationName == 'Strava') {
             $destination = $this->strava;
-        } else if ($copyDestination == 'MyCyclingLog') {
+        } else if ($destinationName == 'MyCyclingLog') {
             $destination = $this->myCyclingLog;
-        } else if ($copyDestination == 'Endomondo') {
+        } else if ($destinationName == 'Endomondo') {
             $destination = $this->endomondo;
-        } else if ($copyDestination == 'RideWithGps') {
+        } else if ($destinationName == 'RideWithGps') {
             $destination = $this->rideWithGps;
         } else {
+            $str.="Sorry, I don't know how to copy rides to $destinationName<br>";
             return $str;
         }
 //        $includeGpx=true;
 //        if ($destination=='MyCyclingLog' || $source == 'Strava' || $source == 'MyCyclingLog') {
 //            $includeGpx=false;
 //        }
-        $this->output("<H3>Copying data from $copySource to $copyDestination...</H3>");
+        $this->output("<H3>Copying data from $sourceName to $destinationName...</H3>");
 
 
         set_time_limit(300);
@@ -1551,12 +1481,12 @@ class MainPage
         $overnightRidesNeeded=[];
         if ($destination->getError()) { // if there is an error, we may not have all the rides from destination,
                                         // so may inadvertantly create duplicates.
-            return ("<br>There was a problem getting data from $copyDestination.<br>" . $destination->getError() .
+            return ("<br>There was a problem getting data from $destinationName.<br>" . $destination->getError() .
                 "\n<br>Please try again\n");
         }
         $count = 0;
         $useStartTime = true;
-        if ($source == 'MyCyclingLog' || $copyDestination == 'MyCyclingLog') {
+        if ($sourceName == 'MyCyclingLog' || $destinationName == 'MyCyclingLog') {
             // MCL doesn't record start times, so duplicate rides can only be detected by "foreign" keys or daily total.
             $useStartTime = false;
         }

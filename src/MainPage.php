@@ -314,7 +314,7 @@ class MainPage
                                 $message = "Ride with id " . $ride['strava_id'] . " on $date, distance " . round($distance * self::METRE_TO_MILE, 1) . " miles/" . round($distance * self::METRE_TO_KM, 1) . " kms. ";
                                 $bike = $this->strava->getBike($ride["bike"]);
                                 $mcl_bike_id = $this->myCyclingLog->bikeMatch($bike['brand'], $bike['model'], $ride['bike']);
-                                $ride['mcl_bid'] = $mcl_bike_id;
+                                $ride['bike'] = $mcl_bike_id;
                                 $new_id = $this->myCyclingLog->addRide($date, $ride);
                                 if (strlen($new_id) == 0) {
                                     $message = $message . "Appears to be a problem. Queued to retry.";
@@ -1501,13 +1501,16 @@ class MainPage
 
     }
 
-    private function copy($copySource, $copyDestination, $start_date, $end_date)
+    private function copy($copySource, $copyDestination, $start_date, $end_date, $splitOvernight=false)
     {
+        global $maxKmFileUploads;
         // if $copySource or $copyDestination aren't valid, just return nothing.
         $str = "";
+        $manual_download=false;
         if ($copySource == 'Strava') {
             $source = $this->strava;
             $foreign_key = 'strava_id';
+            $manual_download=true;
         } else if ($copySource == 'MyCyclingLog') {
             $source = $this->myCyclingLog;
             $foreign_key = 'mcl_id';
@@ -1536,14 +1539,28 @@ class MainPage
 //            $includeGpx=false;
 //        }
         $this->output("<H3>Copying data from $copySource to $copyDestination...</H3>");
+
+
+        set_time_limit(300);
         $sourceRides = $source->getRides($start_date, $end_date);
         $destinationRides = $destination->getRides($start_date, $end_date);
+        $overnightRides=[];
+        if  ($splitOvernight) {
+            $overnightRides=$source->getOvernightActivities();
+        }
+        $overnightRidesNeeded=[];
+        if ($destination->getError()) { // if there is an error, we may not have all the rides from destination,
+                                        // so may inadvertantly create duplicates.
+            return ("<br>There was a problem getting data from $copyDestination.<br>" . $destination->getError() .
+                "\n<br>Please try again\n");
+        }
         $count = 0;
         $useStartTime = true;
         if ($source == 'MyCyclingLog' || $copyDestination == 'MyCyclingLog') {
             // MCL doesn't record start times, so duplicate rides can only be detected by "foreign" keys or daily total.
             $useStartTime = false;
         }
+        $retries=[];
         foreach ($sourceRides as $date => $rides) {
             $sourceDay = $this->sumDay($rides);
             $destinationDay = isset($destinationRides[$date]) ? $this->sumDay($destinationRides[$date]) : 0;
@@ -1553,21 +1570,60 @@ class MainPage
                     if ($this->compareDistance($sourceDay, $destinationDay) <= 0) {
                         break;
                     }
+                    if (!$this->isDuplicateRide($ride, $destinationRides, $foreign_key, $useStartTime)) {
+                        if (in_array($ride[$foreign_key], array_keys($overnightRides))) {
+                            $overnightRidesNeeded[$ride[$foreign_key]]=$overnightRides[$ride[$foreign_key]];
+                        } else {
+                            if ($this->compareDistance($sourceDay, $destinationDay + $ride['distance']) <= 0) {
+                                $ride['distance'] = $sourceDay - $destinationDay;
+                            }
 
-                    $isDuplicateRide = $this->isDuplicateRide($ride, $destinationRides, $foreign_key, $useStartTime);
+                            $this->output("Ride with id " . $ride[$foreign_key] . " on $date, distance " .
+                                round($ride['distance'] * self::METRE_TO_MILE, 1) . " miles/"
+                                . round($ride['distance'] * self::METRE_TO_KM, 1) . " kms. ");
+                            $bike = $source->getBike($ride["bike"]);
+                            $ride['bike'] = $destination->bikeMatch($bike['brand'], $bike['model'], $ride['bike']);
 
-                    if (!$isDuplicateRide) {
-                        if ($this->compareDistance($sourceDay, $destinationDay + $ride['distance']) <= 0) {
-                            $ride['distance'] = $sourceDay - $destinationDay;
+                            $new_id = $destination->addRide($date, $ride);
+                            if ($new_id) {
+                                $this->output("Added new ride, id: $new_id <br>");
+                                $destinationDay += $ride['distance'];
+                                $count++;
+                            } else {
+                                $this->output("Appears to be a problem. Queued to retry. <br>");
+                                $retries[$date][] = $ride;
+                            }
                         }
-                        $destination->addRide($date, $ride);
-                        $count++;
-                        $destinationDay += $ride['distance'];
+                    } else {
+                        $this->output('.');
                     }
                 }
             }
         }
-        return "<br>$count rides added.<br>\n";
+
+
+        foreach ($retries as $date => $rides) {
+            foreach ($rides as $ride) {
+                for ($i = 0; $i < 2; $i++) {
+                    $this->output("Ride with id " . $ride[$foreign_key] . " on $date, distance " .
+                        round($ride['distance'] * self::METRE_TO_MILE, 1) . " miles/"
+                        . round($ride['distance'] * self::METRE_TO_KM, 1) . " kms. ");
+                    $new_id=$destination->addRide($date, $ride);
+                    if ($new_id) {
+                        $this->output("Added new ride, id: $new_id <br>");
+                        $count++;
+                    } else {
+                        $this->output("Appears to be a problem. Queued to retry. <br>");
+                    }
+
+                }
+            }
+        }
+
+        $str .= "<br>$count rides added.<br>\n";
+        $str .= $this->askForStravaGpx($overnightRidesNeeded, $maxKmFileUploads, "copy_strava_to_mcl", "add to MyCyclingLog");
+
+        return $str;
     }
 }
 

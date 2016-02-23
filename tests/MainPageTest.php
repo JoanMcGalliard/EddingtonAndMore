@@ -17,35 +17,195 @@ class MainPageTest extends JoanMcGalliard\EddingtonAndMore\BaseTestClass
         $this->mainPage = new MainPage(array($this, 'myEcho'));
     }
 
-    public function testCopy()     {
+    public function testCopy()
+    {
+        $copy = $this->getMethod('copy');
 
-        $copy = $this->getMethod('copy');;
         $rides = include('data/input/getRides.php');
         $oneLessRides = include('data/input/getRides1.php');
+        $oneDayLessRides = include('data/input/getRides4.php');
         $oneShorterRides = include('data/input/getRides2.php');
         $shortListOfRides = include('data/input/getRides3.php');
-
 
         $preferences = $this->getMockBuilder('Preferences')->disableOriginalConstructor()
             ->setMethods(array('getStravaSplitRides'))->getMock();
         $strava = $this->getMockBuilder('trackerAbstract')
-            ->setMethods(array('getRides', 'getError', 'getOvernightActivities', 'getBike'))->getMock();
-        $mcl = $this->getMockBuilder('trackerAbstract')->setMethods(array('getRides', 'getBike', 'bikeMatch', 'addRide'))->getMock();
+            ->setMethods(array('getUserId', 'getRides','getError',  'getOvernightActivities', 'getBike'))->getMock();
+        $mcl = $this->getMockBuilder('trackerAbstract')->setMethods(array('getRides', 'getError', 'getBike', 'bikeMatch', 'addRide'))->getMock();
         $this->setProperty('strava', $strava, $this->mainPage);
         $this->setProperty('myCyclingLog', $mcl, $this->mainPage);
         $this->setProperty('preferences', $preferences, $this->mainPage);
         $this->setProperty('noEcho', false, $this->mainPage);
-
         $mcl->expects($this->any())->method('getBike')->willReturn(null);
+        $mcl->expects($this->any())->method('getError')->willReturn(null);
         $strava->expects($this->any())->method('getBike')->willReturn(null);
 
-        //  strava and MCL return exactly the same list of rides
+        // strava and MCL return exactly the same list of rides
         $mcl->expects($this->at(0))->method('getRides')->willReturn($rides);
         $strava->expects($this->at(0))->method('getRides')->willReturn($rides);
+        $this->output = "";
+
+        $this->assertEquals("<br>0 rides added.<br>\n", $copy->invokeArgs($this->mainPage, array("Strava","MyCyclingLog",null,null)));
+        $this->assertEquals("<H3>Copying data from Strava to MyCyclingLog...</H3>", $this->output);
+
+        // no rides coming from Strava
+        $mcl->expects($this->at(0))->method('getRides')->willReturn($rides);
+        $strava->expects($this->at(0))->method('getRides')->willReturn([]);
         $this->output = "";
         $this->assertEquals("<br>0 rides added.<br>\n", $copy->invokeArgs($this->mainPage, array("Strava","MyCyclingLog",null,null)));
         $this->assertEquals("<H3>Copying data from Strava to MyCyclingLog...</H3>", $this->output);
 
+        //MCL has a ride strava doesn't
+        $this->output = "";
+        $mcl->expects($this->at(0))->method('getRides')->willReturn($rides);
+        $strava->expects($this->at(0))->method('getRides')->willReturn($oneLessRides);
+        $this->output = "";
+        $this->assertEquals("<br>0 rides added.<br>\n", $copy->invokeArgs($this->mainPage, array("Strava","MyCyclingLog",null,null)));
+        $this->assertEquals("<H3>Copying data from Strava to MyCyclingLog...</H3>", $this->output);
+
+        //Strava has a ride MCL doesn't
+        $this->output = "";
+        $mcl->expects($this->at(0))->method('getRides')->willReturn($oneLessRides);
+        $strava->expects($this->at(0))->method('getRides')->willReturn($rides);
+        $ride = array('distance' => 5268.5, 'name' => 'Evening Ride', 'strava_id' => 464768505,
+            'start_time' => '2016-01-06T19:44:25Z', 'moving_time' => 1210,
+            'elapsed_time' => 3833, 'total_elevation_gain' => 0, 'max_speed' => 8,
+            'timezone' => 'Europe/London', 'kudos_count' => 0, 'comment_count' => 0,
+            'endo_id' => NULL, 'bike' => NULL);
+        $mcl->expects($this->at(3))->method('addRide')->with('2016-01-06', $ride)->willReturn("999999");
+        $this->output = "";
+        $this->assertEquals("<br>1 rides added.<br>\n", $copy->invokeArgs($this->mainPage, array("Strava","MyCyclingLog",null,null)));
+        $this->assertEquals("<H3>Copying data from Strava to MyCyclingLog...</H3>.Ride with id 464768505 on 2016-01-06, distance 3.3 miles/5.3 kms. Added new ride, id: 999999 <br>", $this->output);
+
+
+        //Same, but bike ids match
+        $this->output = "";
+        $mcl->expects($this->at(0))->method('getRides')->willReturn($oneLessRides);
+        $mcl->expects($this->any())->method('bikeMatch')->willReturn("b121212");
+        $strava->expects($this->at(0))->method('getRides')->willReturn($rides);
+        $ride = array('distance' => 5268.5, 'name' => 'Evening Ride', 'strava_id' => 464768505,
+            'start_time' => '2016-01-06T19:44:25Z', 'moving_time' => 1210,
+            'elapsed_time' => 3833, 'total_elevation_gain' => 0, 'max_speed' => 8,
+            'timezone' => 'Europe/London', 'kudos_count' => 0, 'comment_count' => 0,
+            'endo_id' => NULL, 'bike' => 'b121212');
+        $mcl->expects($this->at(3))->method('addRide')->with('2016-01-06', $ride)->willReturn("8888");
+        $this->output = "";
+        $this->assertEquals("<br>1 rides added.<br>\n", $copy->invokeArgs($this->mainPage, array("Strava","MyCyclingLog",null,null)));
+        $this->assertEquals("<H3>Copying data from Strava to MyCyclingLog...</H3>.Ride with id 464768505 on 2016-01-06, distance 3.3 miles/5.3 kms. Added new ride, id: 8888 <br>", $this->output);
+
+        //Strava has a ride MCL doesn't that doesn't upload the first two times
+        $this->output = "";
+        $mcl->expects($this->at(0))->method('getRides')->willReturn($oneLessRides);
+        $strava->expects($this->at(0))->method('getRides')->willReturn($rides);
+        $ride = array('distance' => 5268.5, 'name' => 'Evening Ride', 'strava_id' => 464768505,
+            'start_time' => '2016-01-06T19:44:25Z',  'moving_time' => 1210,
+            'elapsed_time' => 3833, 'total_elevation_gain' => 0, 'max_speed' => 8,
+            'timezone' => 'Europe/London', 'kudos_count' => 0, 'comment_count' => 0,
+            'endo_id' => NULL, 'bike' => 'b121212');
+        $mcl->expects($this->any())->method('addRide')->with('2016-01-06', $ride)->willReturnOnConsecutiveCalls('', '', 123456);
+        $this->output = "";
+        $this->assertEquals("<br>1 rides added.<br>\n", $copy->invokeArgs($this->mainPage, array("Strava","MyCyclingLog",null,null)));
+        $this->assertEquals("<H3>Copying data from Strava to MyCyclingLog...</H3>.Ride with id 464768505 on 2016-01-06, distance 3.3 miles/5.3 kms. Appears to be a problem. Queued to retry. <br>Ride with id 464768505 on 2016-01-06, distance 3.3 miles/5.3 kms. Appears to be a problem. Queued to retry. <br>Ride with id 464768505 on 2016-01-06, distance 3.3 miles/5.3 kms. Added new ride, id: 123456 <br>", $this->output);
+        //cleanup
+        $mcl = $this->getMockBuilder('trackerAbstract')->setMethods(array('getRides', 'getBike', 'getError', 'bikeMatch', 'addRide'))->getMock();
+        $mcl->expects($this->any())->method('getError')->willReturn(null);
+        $this->setProperty('myCyclingLog', $mcl, $this->mainPage);
+
+
+        //MCL is missing a whole day that's in strava
+        $this->output = "";
+        $mcl->expects($this->at(0))->method('getRides')->willReturn($oneDayLessRides);
+        $mcl->expects($this->any())->method('bikeMatch')->willReturn("b121212");
+        $strava->expects($this->at(0))->method('getRides')->willReturn($rides);
+        $ride = array(
+            'distance' => 2975.5,
+            'name' => 'Afternoon Ride',
+            'strava_id' => 470171383,
+            'start_time' => '2016-01-08T13:20:00Z',
+            'moving_time' => 599,
+            'elapsed_time' => 599,
+            'total_elevation_gain' => 0,
+            'max_speed' => 5.5,
+            'timezone' => 'Europe/London',
+            'kudos_count' => 0,
+            'comment_count' => 0,
+            'endo_id' => NULL, 'bike' => 'b121212'
+        );
+        $mcl->expects($this->at(3))->method('addRide')->with('2016-01-08', $ride)->willReturn("6666");
+        $ride = array(
+            'distance' => 2919,
+            'name' => 'Evening Ride',
+            'strava_id' => 470166379,
+            'start_time' => '2016-01-08T20:30:00Z',
+            'moving_time' => 600,
+            'elapsed_time' => 600,
+            'total_elevation_gain' => 0,
+            'max_speed' => 5.2000000000000002,
+            'timezone' => 'Europe/London',
+            'kudos_count' => 0,
+            'comment_count' => 0,
+            'endo_id' => NULL, 'bike' => 'b121212'
+        );
+        $mcl->expects($this->at(5))->method('addRide')->with('2016-01-08', $ride)->willReturn("7777");
+        $this->output = "";
+        $this->assertEquals("<br>2 rides added.<br>\n", $copy->invokeArgs($this->mainPage, array("Strava","MyCyclingLog",null,null)));
+        $this->assertEquals("<H3>Copying data from Strava to MyCyclingLog...</H3>Ride with id 470171383 on 2016-01-08, distance 1.8 miles/3 kms. Added new ride, id: 6666 <br>Ride with id 470166379 on 2016-01-08, distance 1.8 miles/2.9 kms. Added new ride, id: 7777 <br>", $this->output);
+
+
+        //They have the same number of rides on the same dates, but one is shorter on MCL
+        $this->output = "";
+        $mcl->expects($this->at(0))->method('getRides')->willReturn($oneShorterRides);
+        $mcl->expects($this->any())->method('bikeMatch')->willReturn("b121212");
+        $strava->expects($this->at(0))->method('getRides')->willReturn($rides);
+        $ride = array(
+            'distance' => 7124.8,
+            'name' => 'Afternoon Ride',
+            'strava_id' => 494647884,
+            'start_time' => '2016-01-01T15:59:17Z',
+            'moving_time' => 3800,
+            'elapsed_time' => 6897,
+            'total_elevation_gain' => 114.9,
+            'max_speed' => 8.9,
+            'timezone' => 'Europe/London',
+            'kudos_count' => 0,
+            'comment_count' => 0,
+            'endo_id' => 650970286,
+            'bike' => 'b121212'
+        );
+        $mcl->expects($this->at(3))->method('addRide')->with('2016-01-01', $ride)->willReturn("8888");
+        $this->output = "";
+        $this->assertEquals("<br>1 rides added.<br>\n", $copy->invokeArgs($this->mainPage, array("Strava","MyCyclingLog",null,null)));
+        $this->assertEquals("<H3>Copying data from Strava to MyCyclingLog...</H3>..Ride with id 494647884 on 2016-01-01, distance 4.4 miles/7.1 kms. Added new ride, id: 8888 <br>", $this->output);
+
+
+        //No rides on MCL
+        $this->output = "";
+        $mcl->expects($this->at(0))->method('getRides')->willReturn([]);
+        $strava->expects($this->at(0))->method('getRides')->willReturn($shortListOfRides);
+        $mcl->expects($this->any())->method('addRide')->willReturnOnConsecutiveCalls(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12);
+        $this->output = "";
+        $this->assertEquals("<br>7 rides added.<br>\n", $copy->invokeArgs($this->mainPage, array("Strava","MyCyclingLog",null,null)));
+        $this->assertEquals('<H3>Copying data from Strava to MyCyclingLog...</H3>Ride with id 460839170 on 2016-01-01, distance 3.1 miles/5 kms. Added new ride, id: 1 <br>Ride with id 460839481 on 2016-01-01, distance 2.5 miles/4 kms. Added new ride, id: 2 <br>Ride with id 494647884 on 2016-01-01, distance 10.6 miles/17.1 kms. Added new ride, id: 3 <br>Ride with id 464768504 on 2016-01-06, distance 1.4 miles/2.3 kms. Added new ride, id: 4 <br>Ride with id 464768505 on 2016-01-06, distance 3.3 miles/5.3 kms. Added new ride, id: 5 <br>Ride with id 470171383 on 2016-01-08, distance 1.8 miles/3 kms. Added new ride, id: 6 <br>Ride with id 470166379 on 2016-01-08, distance 1.8 miles/2.9 kms. Added new ride, id: 7 <br>',
+            $this->output);
+
+        //overnight rides
+        $_POST = array(
+            'start_date' => '01-01-2015',
+            'end_date' => '31-12-2015',
+        );
+        $this->output = "";
+        $mcl = $this->getMockBuilder('trackerAbstract')->setMethods(array('getRides', 'getBike', 'getError', 'bikeMatch', 'addRide'))->getMock();
+        $mcl->expects($this->any())->method('getError')->willReturn(null);
+        $mcl->expects($this->at(0))->method('getRides')->willReturn([]);
+        $this->setProperty('myCyclingLog', $mcl, $this->mainPage);
+        $strava->expects($this->any())->method('getRides')->willReturn($shortListOfRides);
+        $strava->expects($this->any())->method('getOvernightActivities')->willReturn(include('data/input/overnightActivity.php'));
+        $preferences->expects($this->any())->method('getStravaSplitRides')->willReturn(true);
+        $mcl->expects($this->any())->method('addRide')->willReturnOnConsecutiveCalls(1, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12);
+        $this->output = "";
+        $this->assertEquals("<br>6 rides added.<br>\n".include('data/expected/askForStravaGpx2.php'), $copy->invokeArgs($this->mainPage, array("Strava","MyCyclingLog",null,null, true)));
+        $this->assertEquals('<H3>Copying data from Strava to MyCyclingLog...</H3>Ride with id 460839170 on 2016-01-01, distance 3.1 miles/5 kms. Added new ride, id: 1 <br>Ride with id 494647884 on 2016-01-01, distance 10.6 miles/17.1 kms. Added new ride, id: 3 <br>Ride with id 464768504 on 2016-01-06, distance 1.4 miles/2.3 kms. Added new ride, id: 4 <br>Ride with id 464768505 on 2016-01-06, distance 3.3 miles/5.3 kms. Added new ride, id: 5 <br>Ride with id 470171383 on 2016-01-08, distance 1.8 miles/3 kms. Added new ride, id: 6 <br>Ride with id 470166379 on 2016-01-08, distance 1.8 miles/2.9 kms. Added new ride, id: 7 <br>',
+            $this->output);
 
     }
 
@@ -131,7 +291,6 @@ class MainPageTest extends JoanMcGalliard\EddingtonAndMore\BaseTestClass
         $mockNotConnected->expects($this->any())->method('getError')->willReturn("");
         $mockNotConnected->expects($this->any())->method('isConnected')->willReturn(false);
         $mockNotConnected->expects($this->any())->method('writeScope')->willReturn(false);
-
 
 
         $this->setProperty('strava', $mockConnectedWriteScope, $this->mainPage);
@@ -385,7 +544,7 @@ class MainPageTest extends JoanMcGalliard\EddingtonAndMore\BaseTestClass
             'start_time' => '2016-02-09 23:25:09 UTC',
             'name' => '',
         );
-        $this->assertEquals(490216193, $isDuplicateRide->invokeArgs($this->mainPage, array($ride, include("data/input/duplicateCandidateRides.php"),'endo_id')));
+        $this->assertEquals(490216193, $isDuplicateRide->invokeArgs($this->mainPage, array($ride, include("data/input/duplicateCandidateRides.php"), 'endo_id')));
 
         // not taking place on a day with other rides.
         $ride = array(
@@ -397,7 +556,7 @@ class MainPageTest extends JoanMcGalliard\EddingtonAndMore\BaseTestClass
             'start_time' => '2016-02-10 23:25:09 UTC',
             'name' => '',
         );
-        $this->assertFalse($isDuplicateRide->invokeArgs($this->mainPage, array($ride, include("data/input/duplicateCandidateRides.php"),'endo_id')));
+        $this->assertFalse($isDuplicateRide->invokeArgs($this->mainPage, array($ride, include("data/input/duplicateCandidateRides.php"), 'endo_id')));
 
         // ride takes place completely within another ride
 
@@ -410,7 +569,7 @@ class MainPageTest extends JoanMcGalliard\EddingtonAndMore\BaseTestClass
             'start_time' => '2016-02-09T23:25:09 UTC',
             'name' => '',
         );
-        $this->assertTrue($isDuplicateRide->invokeArgs($this->mainPage, array($ride, include("data/input/duplicateCandidateRides.php"),'endo_id')));
+        $this->assertTrue($isDuplicateRide->invokeArgs($this->mainPage, array($ride, include("data/input/duplicateCandidateRides.php"), 'endo_id')));
 
         // starts before a ride, and finishes after it finishes.
         $ride = array(
@@ -422,7 +581,7 @@ class MainPageTest extends JoanMcGalliard\EddingtonAndMore\BaseTestClass
             'start_time' => '2016-02-09T23:25:00 UTC',
             'name' => '',
         );
-        $this->assertTrue($isDuplicateRide->invokeArgs($this->mainPage, array($ride, include("data/input/duplicateCandidateRides.php"),'endo_id')));
+        $this->assertTrue($isDuplicateRide->invokeArgs($this->mainPage, array($ride, include("data/input/duplicateCandidateRides.php"), 'endo_id')));
 
         // starts before a ride, and finishes during it.
         $ride = array(
@@ -434,7 +593,7 @@ class MainPageTest extends JoanMcGalliard\EddingtonAndMore\BaseTestClass
             'start_time' => '2016-02-09T23:25:00 UTC',
             'name' => '',
         );
-        $this->assertTrue($isDuplicateRide->invokeArgs($this->mainPage, array($ride, include("data/input/duplicateCandidateRides.php"),'endo_id')));
+        $this->assertTrue($isDuplicateRide->invokeArgs($this->mainPage, array($ride, include("data/input/duplicateCandidateRides.php"), 'endo_id')));
 
 
         // starts after a ride starts, and finishes during it.
@@ -447,7 +606,7 @@ class MainPageTest extends JoanMcGalliard\EddingtonAndMore\BaseTestClass
             'start_time' => '2016-02-09T23:25:20 UTC',
             'name' => '',
         );
-        $this->assertTrue($isDuplicateRide->invokeArgs($this->mainPage, array($ride, include("data/input/duplicateCandidateRides.php"),'endo_id')));
+        $this->assertTrue($isDuplicateRide->invokeArgs($this->mainPage, array($ride, include("data/input/duplicateCandidateRides.php"), 'endo_id')));
 
 
         // Identical with existing ride, but don't share IDs
@@ -461,7 +620,7 @@ class MainPageTest extends JoanMcGalliard\EddingtonAndMore\BaseTestClass
             'name' => 'Night Ride',
         );
 
-        $this->assertTrue($isDuplicateRide->invokeArgs($this->mainPage, array($ride, include("data/input/duplicateCandidateRides.php"),'endo_id')));
+        $this->assertTrue($isDuplicateRide->invokeArgs($this->mainPage, array($ride, include("data/input/duplicateCandidateRides.php"), 'endo_id')));
 
         // starts after a ride starts, and finishes after it finishes it.
         $ride = array(
@@ -473,7 +632,7 @@ class MainPageTest extends JoanMcGalliard\EddingtonAndMore\BaseTestClass
             'start_time' => '2016-02-08T15:40:51 UTC',
             'name' => '',
         );
-        $this->assertTrue($isDuplicateRide->invokeArgs($this->mainPage, array($ride, include("data/input/duplicateCandidateRides.php"),'endo_id')));
+        $this->assertTrue($isDuplicateRide->invokeArgs($this->mainPage, array($ride, include("data/input/duplicateCandidateRides.php"), 'endo_id')));
 
 
         //finishes 1 second before another ride starts
@@ -486,11 +645,11 @@ class MainPageTest extends JoanMcGalliard\EddingtonAndMore\BaseTestClass
             'start_time' => '2016-02-08T15:26:49 UTC',
             'name' => '',
         );
-        $this->assertFalse($isDuplicateRide->invokeArgs($this->mainPage, array($ride, include("data/input/duplicateCandidateRides.php"),'endo_id')));
+        $this->assertFalse($isDuplicateRide->invokeArgs($this->mainPage, array($ride, include("data/input/duplicateCandidateRides.php"), 'endo_id')));
 
         //the above, starting 2 seconds later
         $ride['start_time'] = '2016-02-08T15:26:51 UTC';
-        $this->assertTrue($isDuplicateRide->invokeArgs($this->mainPage, array($ride, include("data/input/duplicateCandidateRides.php"),'endo_id')));
+        $this->assertTrue($isDuplicateRide->invokeArgs($this->mainPage, array($ride, include("data/input/duplicateCandidateRides.php"), 'endo_id')));
 
 
     }
@@ -605,16 +764,16 @@ class MainPageTest extends JoanMcGalliard\EddingtonAndMore\BaseTestClass
         $source = 'RideWithGPS';
         $this->assertEquals(include('data/expected/calculateFromSourceWithEndDate.php'), $execute->invokeArgs($this->mainPage, array("calculate_from_rwgps")));
     }
+
     public function test_copy_strava_to_mcl()
     {
-
-        $execute = $this->getMethod('execute');;
-        $rides = include('data/input/getRides.php');
         $oneLessRides = include('data/input/getRides1.php');
         $oneDayLessRides = include('data/input/getRides4.php');
         $oneShorterRides = include('data/input/getRides2.php');
         $shortListOfRides = include('data/input/getRides3.php');
 
+        $execute = $this->getMethod('execute');;
+        $rides = include('data/input/getRides.php');
 
         $preferences = $this->getMockBuilder('Preferences')->disableOriginalConstructor()
             ->setMethods(array('getStravaSplitRides'))->getMock();
@@ -625,8 +784,8 @@ class MainPageTest extends JoanMcGalliard\EddingtonAndMore\BaseTestClass
         $this->setProperty('myCyclingLog', $mcl, $this->mainPage);
         $this->setProperty('preferences', $preferences, $this->mainPage);
         $this->setProperty('noEcho', false, $this->mainPage);
-
         $mcl->expects($this->any())->method('getBike')->willReturn(null);
+        $mcl->expects($this->any())->method('getError')->willReturn(null);
         $strava->expects($this->any())->method('getBike')->willReturn(null);
 
         // strava and MCL return exactly the same list of rides
@@ -656,15 +815,14 @@ class MainPageTest extends JoanMcGalliard\EddingtonAndMore\BaseTestClass
         $mcl->expects($this->at(0))->method('getRides')->willReturn($oneLessRides);
         $strava->expects($this->at(1))->method('getRides')->willReturn($rides);
         $ride = array('distance' => 5268.5, 'name' => 'Evening Ride', 'strava_id' => 464768505,
-            'start_time' => '2016-01-06T19:44:25Z', 'bike' => 'b267883', 'moving_time' => 1210,
+            'start_time' => '2016-01-06T19:44:25Z', 'moving_time' => 1210,
             'elapsed_time' => 3833, 'total_elevation_gain' => 0, 'max_speed' => 8,
             'timezone' => 'Europe/London', 'kudos_count' => 0, 'comment_count' => 0,
-            'endo_id' => NULL, 'mcl_bid' => NULL);
+            'endo_id' => NULL, 'bike' => NULL);
         $mcl->expects($this->at(2))->method('addRide')->with('2016-01-06', $ride)->willReturn("999999");
         $this->output = "";
         $this->assertEquals("<br>1 rides added.<br>\n", $execute->invokeArgs($this->mainPage, array("copy_strava_to_mcl")));
         $this->assertEquals("<H3>Copying data from Strava to MyCyclingLog...</H3>.Ride with id 464768505 on 2016-01-06, distance 3.3 miles/5.3 kms. Added new ride, id: 999999 <br>", $this->output);
-
 
 
         //Same, but bike ids match
@@ -673,10 +831,10 @@ class MainPageTest extends JoanMcGalliard\EddingtonAndMore\BaseTestClass
         $mcl->expects($this->any())->method('bikeMatch')->willReturn("b121212");
         $strava->expects($this->at(1))->method('getRides')->willReturn($rides);
         $ride = array('distance' => 5268.5, 'name' => 'Evening Ride', 'strava_id' => 464768505,
-            'start_time' => '2016-01-06T19:44:25Z', 'bike' => 'b267883', 'moving_time' => 1210,
+            'start_time' => '2016-01-06T19:44:25Z', 'moving_time' => 1210,
             'elapsed_time' => 3833, 'total_elevation_gain' => 0, 'max_speed' => 8,
             'timezone' => 'Europe/London', 'kudos_count' => 0, 'comment_count' => 0,
-            'endo_id' => NULL, 'mcl_bid' => 'b121212');
+            'endo_id' => NULL, 'bike' => 'b121212');
         $mcl->expects($this->at(2))->method('addRide')->with('2016-01-06', $ride)->willReturn("8888");
         $this->output = "";
         $this->assertEquals("<br>1 rides added.<br>\n", $execute->invokeArgs($this->mainPage, array("copy_strava_to_mcl")));
@@ -687,17 +845,18 @@ class MainPageTest extends JoanMcGalliard\EddingtonAndMore\BaseTestClass
         $mcl->expects($this->at(0))->method('getRides')->willReturn($oneLessRides);
         $strava->expects($this->at(1))->method('getRides')->willReturn($rides);
         $ride = array('distance' => 5268.5, 'name' => 'Evening Ride', 'strava_id' => 464768505,
-            'start_time' => '2016-01-06T19:44:25Z', 'bike' => 'b267883', 'moving_time' => 1210,
+            'start_time' => '2016-01-06T19:44:25Z', 'moving_time' => 1210,
             'elapsed_time' => 3833, 'total_elevation_gain' => 0, 'max_speed' => 8,
             'timezone' => 'Europe/London', 'kudos_count' => 0, 'comment_count' => 0,
-            'endo_id' => NULL, 'mcl_bid' => 'b121212');
-        $mcl->expects($this->any())->method('addRide')->with('2016-01-06', $ride)->willReturnOnConsecutiveCalls('','',123456);
+            'endo_id' => NULL, 'bike' => 'b121212');
+        $mcl->expects($this->any())->method('addRide')->with('2016-01-06', $ride)->willReturnOnConsecutiveCalls('', '', 123456);
         $this->output = "";
         $this->assertEquals("<br>1 rides added.<br>\n", $execute->invokeArgs($this->mainPage, array("copy_strava_to_mcl")));
         $this->assertEquals("<H3>Copying data from Strava to MyCyclingLog...</H3>.Ride with id 464768505 on 2016-01-06, distance 3.3 miles/5.3 kms. Appears to be a problem. Queued to retry. <br>Ride with id 464768505 on 2016-01-06, distance 3.3 miles/5.3 kms. Appears to be a problem. Queued to retry. <br>Ride with id 464768505 on 2016-01-06, distance 3.3 miles/5.3 kms. Added new ride, id: 123456 <br>", $this->output);
         //cleanup
         $mcl = $this->getMockBuilder('trackerAbstract')->setMethods(array('getRides', 'getBike', 'bikeMatch', 'addRide'))->getMock();
         $this->setProperty('myCyclingLog', $mcl, $this->mainPage);
+        $mcl->expects($this->any())->method('getError')->willReturn(null);
 
 
         //MCL is missing a whole day that's in strava
@@ -705,12 +864,11 @@ class MainPageTest extends JoanMcGalliard\EddingtonAndMore\BaseTestClass
         $mcl->expects($this->at(0))->method('getRides')->willReturn($oneDayLessRides);
         $mcl->expects($this->any())->method('bikeMatch')->willReturn("b121212");
         $strava->expects($this->at(1))->method('getRides')->willReturn($rides);
-        $ride =           array (
+        $ride = array(
             'distance' => 2975.5,
             'name' => 'Afternoon Ride',
             'strava_id' => 470171383,
             'start_time' => '2016-01-08T13:20:00Z',
-            'bike' => 'b267883',
             'moving_time' => 599,
             'elapsed_time' => 599,
             'total_elevation_gain' => 0,
@@ -718,25 +876,24 @@ class MainPageTest extends JoanMcGalliard\EddingtonAndMore\BaseTestClass
             'timezone' => 'Europe/London',
             'kudos_count' => 0,
             'comment_count' => 0,
-            'endo_id' => NULL,'mcl_bid' => 'b121212'
+            'endo_id' => NULL, 'bike' => 'b121212'
         );
         $mcl->expects($this->at(2))->method('addRide')->with('2016-01-08', $ride)->willReturn("6666");
-          $ride =                     array (
-              'distance' => 2919,
-              'name' => 'Evening Ride',
-              'strava_id' => 470166379,
-              'start_time' => '2016-01-08T20:30:00Z',
-              'bike' => 'b267883',
-              'moving_time' => 600,
-              'elapsed_time' => 600,
-              'total_elevation_gain' => 0,
-              'max_speed' => 5.2000000000000002,
-              'timezone' => 'Europe/London',
-              'kudos_count' => 0,
-              'comment_count' => 0,
-              'endo_id' => NULL,'mcl_bid' => 'b121212'
-          );
-      $mcl->expects($this->at(4))->method('addRide')->with('2016-01-08', $ride)->willReturn("7777");
+        $ride = array(
+            'distance' => 2919,
+            'name' => 'Evening Ride',
+            'strava_id' => 470166379,
+            'start_time' => '2016-01-08T20:30:00Z',
+            'moving_time' => 600,
+            'elapsed_time' => 600,
+            'total_elevation_gain' => 0,
+            'max_speed' => 5.2000000000000002,
+            'timezone' => 'Europe/London',
+            'kudos_count' => 0,
+            'comment_count' => 0,
+            'endo_id' => NULL, 'bike' => 'b121212'
+        );
+        $mcl->expects($this->at(4))->method('addRide')->with('2016-01-08', $ride)->willReturn("7777");
         $this->output = "";
         $this->assertEquals("<br>2 rides added.<br>\n", $execute->invokeArgs($this->mainPage, array("copy_strava_to_mcl")));
         $this->assertEquals("<H3>Copying data from Strava to MyCyclingLog...</H3>Ride with id 470171383 on 2016-01-08, distance 1.8 miles/3 kms. Added new ride, id: 6666 <br>Ride with id 470166379 on 2016-01-08, distance 1.8 miles/2.9 kms. Added new ride, id: 7777 <br>", $this->output);
@@ -747,12 +904,11 @@ class MainPageTest extends JoanMcGalliard\EddingtonAndMore\BaseTestClass
         $mcl->expects($this->at(0))->method('getRides')->willReturn($oneShorterRides);
         $mcl->expects($this->any())->method('bikeMatch')->willReturn("b121212");
         $strava->expects($this->at(1))->method('getRides')->willReturn($rides);
-        $ride =     array (
+        $ride = array(
             'distance' => 7124.8,
             'name' => 'Afternoon Ride',
             'strava_id' => 494647884,
             'start_time' => '2016-01-01T15:59:17Z',
-            'bike' => 'b267883',
             'moving_time' => 3800,
             'elapsed_time' => 6897,
             'total_elevation_gain' => 114.9,
@@ -761,7 +917,7 @@ class MainPageTest extends JoanMcGalliard\EddingtonAndMore\BaseTestClass
             'kudos_count' => 0,
             'comment_count' => 0,
             'endo_id' => 650970286,
-            'mcl_bid' => 'b121212'
+            'bike' => 'b121212'
         );
         $mcl->expects($this->at(2))->method('addRide')->with('2016-01-01', $ride)->willReturn("8888");
         $this->output = "";
@@ -773,10 +929,29 @@ class MainPageTest extends JoanMcGalliard\EddingtonAndMore\BaseTestClass
         $this->output = "";
         $mcl->expects($this->at(0))->method('getRides')->willReturn([]);
         $strava->expects($this->at(1))->method('getRides')->willReturn($shortListOfRides);
-        $mcl->expects($this->any())->method('addRide')->willReturnOnConsecutiveCalls(1,2,3,4,5,6,7,8,9,10,11,12);
+        $mcl->expects($this->any())->method('addRide')->willReturnOnConsecutiveCalls(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12);
         $this->output = "";
         $this->assertEquals("<br>7 rides added.<br>\n", $execute->invokeArgs($this->mainPage, array("copy_strava_to_mcl")));
         $this->assertEquals('<H3>Copying data from Strava to MyCyclingLog...</H3>Ride with id 460839170 on 2016-01-01, distance 3.1 miles/5 kms. Added new ride, id: 1 <br>Ride with id 460839481 on 2016-01-01, distance 2.5 miles/4 kms. Added new ride, id: 2 <br>Ride with id 494647884 on 2016-01-01, distance 10.6 miles/17.1 kms. Added new ride, id: 3 <br>Ride with id 464768504 on 2016-01-06, distance 1.4 miles/2.3 kms. Added new ride, id: 4 <br>Ride with id 464768505 on 2016-01-06, distance 3.3 miles/5.3 kms. Added new ride, id: 5 <br>Ride with id 470171383 on 2016-01-08, distance 1.8 miles/3 kms. Added new ride, id: 6 <br>Ride with id 470166379 on 2016-01-08, distance 1.8 miles/2.9 kms. Added new ride, id: 7 <br>',
+            $this->output);
+
+        //overnight rides
+        $_POST = array(
+            'start_date' => '01-01-2015',
+            'end_date' => '31-12-2015',
+        );
+        $this->output = "";
+        $mcl = $this->getMockBuilder('trackerAbstract')->setMethods(array('getRides', 'getBike', 'bikeMatch', 'addRide'))->getMock();
+        $mcl->expects($this->any())->method('getError')->willReturn(null);
+        $mcl->expects($this->at(0))->method('getRides')->willReturn([]);
+        $this->setProperty('myCyclingLog', $mcl, $this->mainPage);
+        $strava->expects($this->at(1))->method('getRides')->willReturn($shortListOfRides);
+        $strava->expects($this->any())->method('getOvernightActivities')->willReturn(include('data/input/overnightActivity.php'));
+        $preferences->expects($this->any())->method('getStravaSplitRides')->willReturn(true);
+        $mcl->expects($this->any())->method('addRide')->willReturnOnConsecutiveCalls(1, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12);
+        $this->output = "";
+        $this->assertEquals("<br>6 rides added.<br>\n".include('data/expected/askForStravaGpx2.php'), $execute->invokeArgs($this->mainPage, array("copy_strava_to_mcl")));
+        $this->assertEquals('<H3>Copying data from Strava to MyCyclingLog...</H3>Ride with id 460839170 on 2016-01-01, distance 3.1 miles/5 kms. Added new ride, id: 1 <br>Ride with id 494647884 on 2016-01-01, distance 10.6 miles/17.1 kms. Added new ride, id: 3 <br>Ride with id 464768504 on 2016-01-06, distance 1.4 miles/2.3 kms. Added new ride, id: 4 <br>Ride with id 464768505 on 2016-01-06, distance 3.3 miles/5.3 kms. Added new ride, id: 5 <br>Ride with id 470171383 on 2016-01-08, distance 1.8 miles/3 kms. Added new ride, id: 6 <br>Ride with id 470166379 on 2016-01-08, distance 1.8 miles/2.9 kms. Added new ride, id: 7 <br>',
             $this->output);
     }
 

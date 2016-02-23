@@ -75,7 +75,7 @@ class MyCyclingLog extends trackerAbstract
         $parameters['max_speed'] = $ride['max_speed'] * 60 * 60 * self::METRE_TO_MILE;
         $parameters['elevation'] = $ride['total_elevation_gain'] * ($this->use_feet_for_elevation ? self::METRE_TO_FOOT : 1);
 //        $parameters['tags'] = $ride[''];
-        $parameters['bid'] = $ride['mcl_bid']; // bid. Optional. Bike ID as returned by New Bike API.
+        $parameters['bid'] = $ride['bike']; // bid. Optional. Bike ID as returned by New Bike API.
         return $this->api->postPage("?method=ride.new", $parameters);
     }
 

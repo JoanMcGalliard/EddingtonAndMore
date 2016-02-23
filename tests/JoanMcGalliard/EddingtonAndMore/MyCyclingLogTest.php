@@ -153,7 +153,7 @@ class MyCyclingLogTest extends BaseTestClass
                 'max_speed' => 7.8,
                 'timezone' => 'Europe/London',
                 'endo_id' => 668479655,
-                'mcl_bid' => '',
+                'bike' => '',
             );
 
         $this->assertEquals("blah", $myCyclingLog->addRide('2016-02-07', $ride));

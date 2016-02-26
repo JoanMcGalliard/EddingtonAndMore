@@ -68,6 +68,13 @@ abstract class trackerAbstract
      */
 
     abstract public function getRides($start_date, $end_date);
+    abstract public function getOvernightActivities();
+    abstract public function getBike($id);
+    abstract public function bikeMatch($brand, $model, $id);
+    abstract public function addRide($date, $ride, $points);
+    abstract public function activityUrl($id);
+//    abstract public function getPoints($id,$tz); // todo
+    abstract public function waitForPendingUploads();
 
     public function getError()
     {
@@ -108,7 +115,10 @@ abstract class trackerAbstract
         flush();
     }
 
-
+    public static function generateEndoExternalId($endoActivityId, $endoUserId)
+    {
+        return "endomondo_{$endoUserId}_{$endoActivityId}";
+    }
 }
 
 ?>

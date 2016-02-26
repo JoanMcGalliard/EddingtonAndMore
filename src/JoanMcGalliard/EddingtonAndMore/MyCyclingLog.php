@@ -55,7 +55,7 @@ class MyCyclingLog extends trackerAbstract
         $this->api->setAuth($auth);
     }
 
-    public function addRide($date, $ride)
+    public function addRide($date, $ride, $points)
     {
         $parameters = [];
         $parameters['event_date'] = date("m/d/Y", strtotime($date));
@@ -260,6 +260,25 @@ class MyCyclingLog extends trackerAbstract
     }
 
 
+    public function getOvernightActivities()
+    {
+        // TODO: Implement getOvernightActivities() method.
+    }
+
+    public function getBike($id)
+    {
+        // TODO: Implement getBike() method.
+    }
+
+    public function activityUrl($id)
+    {
+        // TODO: Implement activityUrl() method.
+    }
+
+    public function waitForPendingUploads()
+    {
+        // TODO: Implement waitForPendingUploads() method.
+    }
 }
 
 ?>

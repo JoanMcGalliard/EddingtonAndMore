@@ -59,4 +59,34 @@ class Tester extends TrackerAbstract {
     public function getRides($start_date, $end_date)
     {
     }
+
+    public function getOvernightActivities()
+    {
+        // TODO: Implement getOvernightActivities() method.
+    }
+
+    public function getBike($id)
+    {
+        // TODO: Implement getBike() method.
+    }
+
+    public function bikeMatch($brand, $model, $id)
+    {
+        // TODO: Implement bikeMatch() method.
+    }
+
+    public function addRide($date, $ride, $points)
+    {
+        // TODO: Implement addRide() method.
+    }
+
+    public function activityUrl($id)
+    {
+        // TODO: Implement activityUrl() method.
+    }
+
+    public function waitForPendingUploads()
+    {
+        // TODO: Implement waitForPendingUploads() method.
+    }
 }

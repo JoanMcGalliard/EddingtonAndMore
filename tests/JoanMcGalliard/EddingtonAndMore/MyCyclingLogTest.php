@@ -156,7 +156,7 @@ class MyCyclingLogTest extends BaseTestClass
                 'bike' => '',
             );
 
-        $this->assertEquals("blah", $myCyclingLog->addRide('2016-02-07', $ride));
+        $this->assertEquals("blah", $myCyclingLog->addRide('2016-02-07', $ride, null));
     }
 
     public function testDeleteRides()

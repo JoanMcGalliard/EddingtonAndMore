@@ -1514,7 +1514,7 @@ class MainPage
                             $bike = $source->getBike($ride["bike"]);
                             $ride['bike'] = $destination->bikeMatch($bike['brand'], $bike['model'], $ride['bike']);
 
-                            $new_id = $destination->addRide($date, $ride);
+                            $new_id = $destination->addRide($date, $ride, null);
                             if ($new_id) {
                                 $this->output("Added new ride, id: $new_id <br>");
                                 $destinationDay += $ride['distance'];
@@ -1538,7 +1538,7 @@ class MainPage
                     $this->output("Ride with id " . $ride[$foreign_key] . " on $date, distance " .
                         round($ride['distance'] * self::METRE_TO_MILE, 1) . " miles/"
                         . round($ride['distance'] * self::METRE_TO_KM, 1) . " kms. ");
-                    $new_id=$destination->addRide($date, $ride);
+                    $new_id=$destination->addRide($date, $ride,null);
                     if ($new_id) {
                         $this->output("Added new ride, id: $new_id <br>");
                         $count++;

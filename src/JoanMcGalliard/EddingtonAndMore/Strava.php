@@ -370,11 +370,16 @@ class Strava extends trackerAbstract
         }
     }
 
-    public function generateEndoExternalId($endoActivityId, $endoUserId)
+
+    public function bikeMatch($brand, $model, $id)
     {
-        return "endomondo_{$endoUserId}_{$endoActivityId}";
+        // TODO: Implement bikeMatch() method.
     }
 
+    public function addRide($date, $ride,$points)
+    {
+        // TODO: Implement addRide() method.
+    }
 }
 
 ?>

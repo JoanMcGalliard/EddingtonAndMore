@@ -498,4 +498,23 @@ class RideWithGps extends TrackerAbstract
     }
 
 
+    public function getOvernightActivities()
+    {
+        // TODO: Implement getOvernightActivities() method.
+    }
+
+    public function getBike($id)
+    {
+        // TODO: Implement getBike() method.
+    }
+
+    public function bikeMatch($brand, $model, $id)
+    {
+        // TODO: Implement bikeMatch() method.
+    }
+
+    public function addRide($date, $ride,$points)
+    {
+        // TODO: Implement addRide() method.
+    }
 }

@@ -278,6 +278,30 @@ class Endomondo extends trackerAbstract
         return isset($ride->sport) && in_array(intval($ride->sport), [1, 2, 3]) && isset($ride->is_valid) && $ride->is_valid;
     }
 
+    public function getOvernightActivities()
+    {
+        // TODO: Implement getOvernightActivities() method.
+    }
+
+    public function getBike($id)
+    {
+        return null; //Endomondo doesn't support bikes
+    }
+
+    public function bikeMatch($brand, $model, $id)
+    {
+        return null; //Endomondo doesn't support bikes
+    }
+
+    public function addRide($date, $ride, $points)
+    {
+        // TODO: Implement addRide() method.
+    }
+
+    public function waitForPendingUploads()
+    {
+        // TODO: Implement waitForPendingUploads() method.
+    }
 }
 
 ?>

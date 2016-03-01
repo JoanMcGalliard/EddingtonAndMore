@@ -832,6 +832,8 @@ class MainPageTest extends JoanMcGalliard\EddingtonAndMore\BaseTestClass
         $endomondo = $builder->getMock();
         $strava = $builder->getMock();
         $endomondo->expects($this->never())->method('addRide');
+        $strava->expects($this->never())->method('uploadGpx');
+
 
         $strava->expects($this->any())->method('waitForPendingUploads')->willReturn([]);
 
@@ -848,6 +850,7 @@ class MainPageTest extends JoanMcGalliard\EddingtonAndMore\BaseTestClass
         $endomondo = $builder->getMock();
         $strava = $builder->getMock();
         $endomondo->expects($this->never())->method('addRide');
+        $strava->expects($this->any())->method('uploadGpx')->with("/tmp/endomondo+.gpx",null,'Ride with id <a target="_blank" href="activityUrl -xx"></a> on 2016-01-06T19:44:25Z, distance 3.3 miles/5.3 kms. ','Evening Ride','activityUrl -xx')->willReturn(null);
         $endomondo->expects($this->any())->method('activityUrl')->willReturn("activityUrl -xx");
         $strava->expects($this->any())->method('waitForPendingUploads')->willReturn(array(
             'endomondo_2859253_674115438' =>

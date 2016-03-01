@@ -40,7 +40,7 @@ array (
       'distance' => 10000,
       'name' => 'Afternoon Ride',
       'strava_id' => null,
-      'start_time' => '2016-01-01T15:59:17Z',
+      'start_time' => '2016-01-01T17:59:17Z',
       'bike' => 'b267883',
       'moving_time' => 3800,
       'elapsed_time' => 6897,
@@ -49,7 +49,7 @@ array (
       'timezone' => 'Europe/London',
       'kudos_count' => 0,
       'comment_count' => 0,
-      'endo_id' => 650970286,
+      'endo_id' => null,
     ),
   ),
   '2016-01-06' =>

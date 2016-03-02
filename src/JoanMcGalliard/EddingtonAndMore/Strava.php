@@ -243,7 +243,7 @@ class Strava extends trackerAbstract
         return $this->bikes[$id];
     }
 
-    public function uploadGpx($file_path, $external_id, $external_msg, $name, $description)
+    private function uploadGpx($file_path, $external_id, $external_msg, $name, $description)
     {
         $params = ["activity_type" => "ride", "file" => new CURLFile($file_path, 'text', $name),
             "data_type" => "gpx", "external_id" => $external_id,
@@ -378,7 +378,24 @@ class Strava extends trackerAbstract
 
     public function addRide($date, $ride,$points)
     {
-        // TODO: Implement addRide() method.
+       global $scratchDirectory;
+
+        $filename=substr(md5(rand()), 0, 7).".gpx";
+
+        if (isset($ride['endo_id']) && $ride['endo_id'] <> '') {
+            $filename = "endomondo+" . $ride['endo_id'] . ".gpx";
+        }
+        $path = $scratchDirectory . DIRECTORY_SEPARATOR . $filename;
+        /** @var Points $points */
+        file_put_contents($path, $points->gpx());
+
+        $result=$this->uploadGpx($path, $this->generateExternalId($ride), $ride['message'],
+            $ride['name'], $ride['description']);
+        if ($result) {
+            $this->error.=$result;
+            return false;
+        }
+        return true; // can't return id as it's queued for upload
     }
 }
 

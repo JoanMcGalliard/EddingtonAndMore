@@ -305,10 +305,12 @@ class MainPage
 
                                 } else {
                                     file_put_contents($path, $points->gpx());
-                                    $error = $this->strava->uploadGpx($path, $this->strava->generateEndoExternalId($ride['endo_id'], $this->endomondo->getUserId()), $message,
-                                        $ride['name'], $this->endomondo->activityUrl($ride['endo_id']));
-                                    if ($error) {
-                                        $message = $message . '<span style="color:red;">Failed: </span>' . $error;
+                                    $ride['message']=$message;
+                                    $ride['description']=$this->endomondo->activityUrl($ride['endo_id']);
+                                    $result=$this->strava->addRide($date,$ride,$points);
+
+                                    if (!$result) {
+                                        $message = $message . '<span style="color:red;">Failed: </span>' . $this->strava->getError();
                                     } else {
                                         $message = $message . 'Queued for upload.';
                                     }

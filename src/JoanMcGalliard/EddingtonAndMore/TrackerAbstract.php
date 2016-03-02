@@ -71,6 +71,13 @@ abstract class trackerAbstract
     abstract public function getOvernightActivities();
     abstract public function getBike($id);
     abstract public function bikeMatch($brand, $model, $id);
+
+    /**
+     * @param $date - string
+     * @param $ride - object
+     * @param $points - instance of Points class (or null)
+     * @return string - id of new activity added, or null if error.
+     */
     abstract public function addRide($date, $ride, $points);
     abstract public function activityUrl($id);
 //    abstract public function getPoints($id,$tz); // todo
@@ -115,9 +122,12 @@ abstract class trackerAbstract
         flush();
     }
 
-    public static function generateEndoExternalId($endoActivityId, $endoUserId)
+    public static function generateExternalId($ride)
     {
-        return "endomondo_{$endoUserId}_{$endoActivityId}";
+        if (isset($ride['endo_id'])) {
+        return "endomondo_".$ride['endo_id'];
+        }
+        return null;
     }
 }
 

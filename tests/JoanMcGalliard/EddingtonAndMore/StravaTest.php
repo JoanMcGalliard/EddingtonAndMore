@@ -254,6 +254,7 @@ The server didn\'t respond in time.
     {
         $mock = $this->getMockBuilder('StravaApi')->setMethods(array('post'))->getMock();
         $strava = new Strava("", "", array($this, 'myEcho'), $mock);
+        $uploadGpx=$this->getMethod('uploadGpx');
 
         $pending = $this->getProperty('pending_uploads');
 
@@ -261,14 +262,14 @@ The server didn\'t respond in time.
         $mock->expects($this->at(0))->method('post')
             ->willReturn(json_decode('{"id":546529071,"external_id":"endomondo_2859253_672012172.gpx","error":"Improperly formatted data.","status":"There was an error processing your activity.","activity_id":null}
 '));
-        $this->assertEquals("Improperly formatted data.", $strava->uploadGpx("FILE", "EXTERNAL_ID", "EXTERNAL MESSAGE", "NAME", "DESCRIPTION"));
+        $this->assertEquals("Improperly formatted data.", $uploadGpx->invokeArgs($strava,array("FILE", "EXTERNAL_ID", "EXTERNAL MESSAGE", "NAME", "DESCRIPTION")));
         $pending = $this->getProperty('pending_uploads');
         $this->assertEquals(0, sizeof($pending->getValue($strava)));
 
         //uploaded OK, so return null and add it to pending queue
         $mock->expects($this->at(0))->method('post')
             ->willReturn(json_decode('{"id":546495227,"external_id":"endomondo_2859253_672012172.gpx","error":null,"status":"Your activity is still being processed.","activity_id":null}'));
-        $this->assertNull($strava->uploadGpx("FILE", "EXTERNAL_ID", "EXTERNAL MESSAGE", "NAME", "DESCRIPTION"));
+        $this->assertNull($uploadGpx->invokeArgs($strava,array("FILE", "EXTERNAL_ID", "EXTERNAL MESSAGE", "NAME", "DESCRIPTION")));
         $this->assertEquals(1, sizeof($pending->getValue($strava)));
         $this->assertEquals(array(546495227 => (object)array('message' => 'EXTERNAL MESSAGE', 'external_id' => 'EXTERNAL_ID', 'file' => "FILE")), $pending->getValue($strava));
 
@@ -380,5 +381,6 @@ The server didn\'t respond in time.
         $this->assertEquals($expected, $result);
         $this->assertEquals([], $this->getProperty('pending_uploads')->getValue($strava));
     }
+
 }
 ?>

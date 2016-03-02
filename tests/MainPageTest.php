@@ -782,7 +782,7 @@ class MainPageTest extends JoanMcGalliard\EddingtonAndMore\BaseTestClass
         $points = $this->getMockBuilder('Points')->setMethods(array('gpxBad', 'gpx'))->getMock();
         $builder = $this->getMockBuilder('TrackerAbstract')
             ->setMethods(array('getUserId', 'getRides', 'getError', 'activityUrl', 'getPoints',
-                'waitForPendingUploads', 'getOvernightActivities','generateEndoExternalId',  'getBike', 'uploadGpx', 'bikeMatch', 'addRide'));
+                'waitForPendingUploads', 'getOvernightActivities', 'generateEndoExternalId', 'getBike', 'bikeMatch', 'addRide'));
         $endomondo = $builder->getMock();
         $strava = $builder->getMock();
         $endomondo->expects($this->any())->method('activityUrl')->willReturn("activityUrl");
@@ -804,7 +804,7 @@ class MainPageTest extends JoanMcGalliard\EddingtonAndMore\BaseTestClass
         $this->setProperty('endomondo', $endomondo, $this->mainPage);
         $this->setProperty('strava', $strava, $this->mainPage);
         $strava->expects($this->any())->method('getRides')->willReturn($rides);
-        $strava->expects($this->never())->method('uploadGpx');
+        $strava->expects($this->never())->method('addRide');
         $endomondo->expects($this->never())->method('addRide');
         $endomondo->expects($this->any())->method('getRides')->willReturn($rides);
         $strava->expects($this->any())->method('waitForPendingUploads')->willReturn([]);
@@ -815,7 +815,7 @@ class MainPageTest extends JoanMcGalliard\EddingtonAndMore\BaseTestClass
         // no rides coming from Endomondo
         $endomondo = $builder->getMock();
         $strava = $builder->getMock();
-        $strava->expects($this->never())->method('uploadGpx');
+        $strava->expects($this->never())->method('addRide');
         $endomondo->expects($this->never())->method('addRide');
 
         $strava->expects($this->any())->method('waitForPendingUploads')->willReturn([]);
@@ -832,7 +832,7 @@ class MainPageTest extends JoanMcGalliard\EddingtonAndMore\BaseTestClass
         $endomondo = $builder->getMock();
         $strava = $builder->getMock();
         $endomondo->expects($this->never())->method('addRide');
-        $strava->expects($this->never())->method('uploadGpx');
+        $strava->expects($this->never())->method('addRide');
 
 
         $strava->expects($this->any())->method('waitForPendingUploads')->willReturn([]);
@@ -850,7 +850,24 @@ class MainPageTest extends JoanMcGalliard\EddingtonAndMore\BaseTestClass
         $endomondo = $builder->getMock();
         $strava = $builder->getMock();
         $endomondo->expects($this->never())->method('addRide');
-        $strava->expects($this->once())->method('uploadGpx')->with("/tmp/endomondo+.gpx",null,'Ride with id <a target="_blank" href="activityUrl -xx"></a> on 2016-01-06T19:44:25Z, distance 3.3 miles/5.3 kms. ','Evening Ride','activityUrl -xx')->willReturn(null);
+        $ride = array(
+            'distance' => 5268.5,
+            'name' => 'Evening Ride',
+            'strava_id' => 464768505,
+            'start_time' => '2016-01-06T19:44:25Z',
+            'bike' => 'b267883',
+            'moving_time' => 1210,
+            'elapsed_time' => 3833,
+            'total_elevation_gain' => 0,
+            'max_speed' => 8,
+            'timezone' => 'Europe/London',
+            'kudos_count' => 0,
+            'comment_count' => 0,
+            'endo_id' => NULL,
+            'message' => 'Ride with id <a target="_blank" href="activityUrl -xx"></a> on 2016-01-06T19:44:25Z, distance 3.3 miles/5.3 kms. ',
+            'description' => 'activityUrl -xx'
+        );
+        $strava->expects($this->once())->method('addRide')->with("2016-01-06", $ride, $points)->willReturn(true);
         $endomondo->expects($this->any())->method('activityUrl')->willReturn("activityUrl -xx");
         $strava->expects($this->any())->method('waitForPendingUploads')->willReturn(array(
             'endomondo_2859253_674115438' =>
@@ -868,7 +885,7 @@ class MainPageTest extends JoanMcGalliard\EddingtonAndMore\BaseTestClass
         $this->output = "";
         $strava->expects($this->any())->method('getRides')->willReturn($oneLessRides);
         $endomondo->expects($this->any())->method('getRides')->willReturn($rides);
-        $ride = array('distance' => 5268.5, 'name' => 'Evening Ride', 'endomondo_id' => 464768505,
+        $ride = array('distance' => 5268.5, 'name' => 'Evening Ride',
             'start_time' => '2016-01-06T19:44:25Z', 'moving_time' => 1210,
             'elapsed_time' => 3833, 'total_elevation_gain' => 0, 'max_speed' => 8,
             'timezone' => 'Europe/London', 'kudos_count' => 0, 'comment_count' => 0,
@@ -882,7 +899,24 @@ class MainPageTest extends JoanMcGalliard\EddingtonAndMore\BaseTestClass
         $endomondo = $builder->getMock();
         $strava = $builder->getMock();
         $endomondo->expects($this->any())->method('activityUrl')->willReturn("activityUrl");
-        $strava->expects($this->once())->method('uploadGpx')->with("/tmp/endomondo+.gpx",null,'Ride with id <a target="_blank" href="activityUrl"></a> on 2016-01-06T19:44:25Z, distance 3.3 miles/5.3 kms. ','Evening Ride','activityUrl')->willReturn(null);
+        $ride = array(
+            'distance' => 5268.5,
+            'name' => 'Evening Ride',
+            'strava_id' => 464768505,
+            'start_time' => '2016-01-06T19:44:25Z',
+            'bike' => 'b267883',
+            'moving_time' => 1210,
+            'elapsed_time' => 3833,
+            'total_elevation_gain' => 0,
+            'max_speed' => 8,
+            'timezone' => 'Europe/London',
+            'kudos_count' => 0,
+            'comment_count' => 0,
+            'endo_id' => NULL,
+            'message' => 'Ride with id <a target="_blank" href="activityUrl"></a> on 2016-01-06T19:44:25Z, distance 3.3 miles/5.3 kms. '
+        , 'description' => 'activityUrl'
+        );
+        $strava->expects($this->once())->method('addRide')->with("2016-01-06", $ride, $points)->willReturn(true);
 
         $strava->expects($this->any())->method('waitForPendingUploads')->willReturn(array(
             'endomondo_2859253_674115438' =>
@@ -901,11 +935,6 @@ class MainPageTest extends JoanMcGalliard\EddingtonAndMore\BaseTestClass
         $strava->expects($this->any())->method('getRides')->willReturn($oneLessRides);
         $strava->expects($this->any())->method('bikeMatch')->willReturn("b121212");
         $endomondo->expects($this->any())->method('getRides')->willReturn($rides);
-        $ride = array('distance' => 5268.5, 'name' => 'Evening Ride', 'endomondo_id' => 464768505,
-            'start_time' => '2016-01-06T19:44:25Z', 'moving_time' => 1210,
-            'elapsed_time' => 3833, 'total_elevation_gain' => 0, 'max_speed' => 8,
-            'timezone' => 'Europe/London', 'kudos_count' => 0, 'comment_count' => 0,
-            'endo_id' => NULL, 'bike' => 'b121212');
         $this->output = "";
         $this->assertEquals("<br>1 rides added.<br>\n", $execute->invokeArgs($this->mainPage, array("copy_endo_to_strava")));
         $this->assertEquals("<H3>Copying rides from Endomondo to Strava...</H3>....<br>Ride with id <a target=\"_blank\" href=\"activityUrl\"></a> on 2016-01-06T19:44:25Z, distance 3.3 miles/5.3 kms. Queued for upload. ........................................<br>Ride with id 674115438 on 2016-02-18 15:54:22 UTC, distance 1.9 miles/3.1 kms.  Uploaded successfully, id: <a target=\"_blank\" href=\"\">501116906</a>.", $this->output);
@@ -914,7 +943,24 @@ class MainPageTest extends JoanMcGalliard\EddingtonAndMore\BaseTestClass
         $endomondo = $builder->getMock();
         $strava = $builder->getMock();
         $endomondo->expects($this->any())->method('activityUrl')->willReturn("activityUrl");
-        $strava->expects($this->once())->method('uploadGpx')->with("/tmp/endomondo+.gpx",null,'Ride with id <a target="_blank" href="activityUrl"></a> on 2016-01-06T19:44:25Z, distance 3.3 miles/5.3 kms. ','Evening Ride','activityUrl')->willReturn(null);
+        $ride = array(
+            'distance' => 5268.5,
+            'name' => 'Evening Ride',
+            'strava_id' => 464768505,
+            'start_time' => '2016-01-06T19:44:25Z',
+            'bike' => 'b267883',
+            'moving_time' => 1210,
+            'elapsed_time' => 3833,
+            'total_elevation_gain' => 0,
+            'max_speed' => 8,
+            'timezone' => 'Europe/London',
+            'kudos_count' => 0,
+            'comment_count' => 0,
+            'endo_id' => NULL,
+            'message' => 'Ride with id <a target="_blank" href="activityUrl"></a> on 2016-01-06T19:44:25Z, distance 3.3 miles/5.3 kms. '
+        , 'description' => 'activityUrl'
+        );
+        $strava->expects($this->once())->method('addRide')->with('2016-01-06', $ride, $points)->willReturn(true);
 
         $strava->expects($this->any())->method('waitForPendingUploads')->willReturn(array(
             'endomondo_2859253_674115438' =>
@@ -933,12 +979,16 @@ class MainPageTest extends JoanMcGalliard\EddingtonAndMore\BaseTestClass
         $strava->expects($this->any())->method('getRides')->willReturn($oneLessRides);
         $strava->expects($this->any())->method('bikeMatch')->willReturn("b121212");
         $endomondo->expects($this->any())->method('getRides')->willReturn($rides);
-        $ride = array('distance' => 5268.5, 'name' => 'Evening Ride', 'endomondo_id' => 464768505,
+        $ride = array('distance' => 5268.5, 'name' => 'Evening Ride',
             'start_time' => '2016-01-06T19:44:25Z', 'moving_time' => 1210,
             'elapsed_time' => 3833, 'total_elevation_gain' => 0, 'max_speed' => 8,
             'timezone' => 'Europe/London', 'kudos_count' => 0, 'comment_count' => 0,
-            'endo_id' => NULL, 'bike' => 'b121212');
-        $strava->expects($this->any())->method('addRide')->with('2016-01-06', $ride)->willReturnOnConsecutiveCalls('', '', 123456);
+            'endo_id' => NULL, 'bike' => 'b267883',
+            'strava_id' => 464768505,
+            'message' => 'Ride with id <a target="_blank" href="activityUrl"></a> on 2016-01-06T19:44:25Z, distance 3.3 miles/5.3 kms. '
+        , 'description' => 'activityUrl'
+        );
+        $strava->expects($this->any())->method('addRide')->with('2016-01-06', $ride, $points)->willReturnOnConsecutiveCalls('', '', 123456);
         $this->output = "";
         $this->assertEquals("<br>1 rides added.<br>\n", $execute->invokeArgs($this->mainPage, array("copy_endo_to_strava")));
         $this->assertEquals("<H3>Copying rides from Endomondo to Strava...</H3>....<br>Ride with id <a target=\"_blank\" href=\"activityUrl\"></a> on 2016-01-06T19:44:25Z, distance 3.3 miles/5.3 kms. Queued for upload. ........................................<br>Ride with id 674115438 on 2016-02-18 15:54:22 UTC, distance 1.9 miles/3.1 kms.  Uploaded successfully, id: <a target=\"_blank\" href=\"\">501116906</a>.", $this->output);
@@ -951,8 +1001,41 @@ class MainPageTest extends JoanMcGalliard\EddingtonAndMore\BaseTestClass
         //STRAVA is missing a whole day that's in endomondo
         $endomondo = $builder->getMock();
         $strava = $builder->getMock();
-        $strava->expects($this->at(3))->method('uploadGpx')->with("/tmp/endomondo+.gpx",null,'Ride with id <a target="_blank" href="activityUrl"></a> on 2016-01-08T13:20:00Z, distance 1.8 miles/3 kms. ','Afternoon Ride','activityUrl')->willReturn(null);
-        $strava->expects($this->at(5))->method('uploadGpx')->with("/tmp/endomondo+.gpx",null,'Ride with id <a target="_blank" href="activityUrl"></a> on 2016-01-08T20:30:00Z, distance 1.8 miles/2.9 kms. ','Evening Ride','activityUrl')->willReturn(null);
+        $ride = array(
+            'distance' => 2975.5,
+            'name' => 'Afternoon Ride',
+            'start_time' => '2016-01-08T13:20:00Z',
+            'moving_time' => 599,
+            'elapsed_time' => 599,
+            'total_elevation_gain' => 0,
+            'max_speed' => 5.5,
+            'timezone' => 'Europe/London',
+            'kudos_count' => 0,
+            'comment_count' => 0,
+            'endo_id' => NULL, 'bike' => 'b267883',
+            'strava_id' => 470171383,
+            'message' => 'Ride with id <a target="_blank" href="activityUrl"></a> on 2016-01-08T13:20:00Z, distance 1.8 miles/3 kms. '
+        , 'description' => 'activityUrl'
+        );
+        $strava->expects($this->at(2))->method('addRide')->with("2016-01-08", $ride, $points)->willReturn(true);
+        $ride = array(
+            'distance' => 2919,
+            'name' => 'Evening Ride',
+            'start_time' => '2016-01-08T20:30:00Z',
+            'moving_time' => 600,
+            'elapsed_time' => 600,
+            'total_elevation_gain' => 0,
+            'max_speed' => 5.2000000000000002,
+            'timezone' => 'Europe/London',
+            'kudos_count' => 0,
+            'comment_count' => 0,
+            'endo_id' => null,
+            'bike' => 'b267883',
+            'strava_id' => 470166379,
+            'message' => 'Ride with id <a target="_blank" href="activityUrl"></a> on 2016-01-08T20:30:00Z, distance 1.8 miles/2.9 kms. ',
+            'description' => 'activityUrl'
+        );
+        $strava->expects($this->at(3))->method('addRide')->with("2016-01-08", $ride, $points)->willReturn(true);
 
         $endomondo->expects($this->any())->method('activityUrl')->willReturn("activityUrl");
         $strava->expects($this->any())->method('waitForPendingUploads')->willReturn(array(
@@ -982,7 +1065,6 @@ class MainPageTest extends JoanMcGalliard\EddingtonAndMore\BaseTestClass
         $ride = array(
             'distance' => 2975.5,
             'name' => 'Afternoon Ride',
-            'endomondo_id' => 470171383,
             'start_time' => '2016-01-08T13:20:00Z',
             'moving_time' => 599,
             'elapsed_time' => 599,
@@ -996,7 +1078,6 @@ class MainPageTest extends JoanMcGalliard\EddingtonAndMore\BaseTestClass
         $ride = array(
             'distance' => 2919,
             'name' => 'Evening Ride',
-            'endomondo_id' => 470166379,
             'start_time' => '2016-01-08T20:30:00Z',
             'moving_time' => 600,
             'elapsed_time' => 600,
@@ -1015,7 +1096,25 @@ class MainPageTest extends JoanMcGalliard\EddingtonAndMore\BaseTestClass
         //They have the same number of rides on the same dates, but one is shorter on STRAVA
         $endomondo = $builder->getMock();
         $strava = $builder->getMock();
-        $strava->expects($this->once())->method('uploadGpx')->with('/tmp/endomondo+650970286.gpx',null,'Ride with id <a target="_blank" href="activityUrl">650970286</a> on 2016-01-01T15:59:17Z, distance 10.6 miles/17.1 kms. ','Afternoon Ride','activityUrl')->willReturn(null);
+        $ride = array(
+            'distance' => 17124.799999999999,
+            'name' => 'Afternoon Ride',
+            'strava_id' => 494647884,
+            'start_time' => '2016-01-01T15:59:17Z',
+            'bike' => 'b267883',
+            'moving_time' => 3800,
+            'elapsed_time' => 6897,
+            'total_elevation_gain' => 114.90000000000001,
+            'max_speed' => 8.9000000000000004,
+            'timezone' => 'Europe/London',
+            'kudos_count' => 0,
+            'comment_count' => 0,
+            'endo_id' => 650970286,
+            'message' => 'Ride with id <a target="_blank" href="activityUrl">650970286</a> on 2016-01-01T15:59:17Z, distance 10.6 miles/17.1 kms. ', 'description' => 'activityUrl'
+
+        );
+        $strava->expects($this->once())->method('addRide')->with("2016-01-01", $ride, $points)->willReturn(true);  //todo this functionality needs fixing.  We are currently uploading the whole ride when we really only need 7km
+
 
         $endomondo->expects($this->any())->method('activityUrl')->willReturn("activityUrl");
         $strava->expects($this->any())->method('waitForPendingUploads')->willReturn(array(
@@ -1043,13 +1142,152 @@ class MainPageTest extends JoanMcGalliard\EddingtonAndMore\BaseTestClass
         //No rides on STRAVA
         $endomondo = $builder->getMock();
         $strava = $builder->getMock();
-        $strava->expects($this->at(3))->method('uploadGpx')->with("/tmp/endomondo+.gpx",null,'Ride with id <a target="_blank" href="activityUrl"></a> on 2016-01-01T13:10:18Z, distance 3.1 miles/5 kms. ','Afternoon Ride','activityUrl')->willReturn(null);
-        $strava->expects($this->at(5))->method('uploadGpx')->with("/tmp/endomondo+.gpx",null,'Ride with id <a target="_blank" href="activityUrl"></a> on 2016-01-01T14:32:17Z, distance 2.5 miles/4 kms. ','Afternoon Ride','activityUrl')->willReturn(null);
-        $strava->expects($this->at(7))->method('uploadGpx')->with("/tmp/endomondo+650970286.gpx",null,'Ride with id <a target="_blank" href="activityUrl">650970286</a> on 2016-01-01T15:59:17Z, distance 10.6 miles/17.1 kms. ','Afternoon Ride','activityUrl')->willReturn(null);
-        $strava->expects($this->at(9))->method('uploadGpx')->with("/tmp/endomondo+.gpx",null,'Ride with id <a target="_blank" href="activityUrl"></a> on 2016-01-06T13:30:58Z, distance 1.4 miles/2.3 kms. ','Afternoon Ride','activityUrl')->willReturn(null);
-        $strava->expects($this->at(11))->method('uploadGpx')->with("/tmp/endomondo+.gpx",null,'Ride with id <a target="_blank" href="activityUrl"></a> on 2016-01-06T19:44:25Z, distance 3.3 miles/5.3 kms. ','Evening Ride','activityUrl')->willReturn(null);
-        $strava->expects($this->at(13))->method('uploadGpx')->with("/tmp/endomondo+.gpx",null,'Ride with id <a target="_blank" href="activityUrl"></a> on 2016-01-08T13:20:00Z, distance 1.8 miles/3 kms. ','Afternoon Ride','activityUrl')->willReturn(null);
-        $strava->expects($this->at(15))->method('uploadGpx')->with("/tmp/endomondo+.gpx",null,'Ride with id <a target="_blank" href="activityUrl"></a> on 2016-01-08T20:30:00Z, distance 1.8 miles/2.9 kms. ','Evening Ride','activityUrl')->willReturn(null);
+        $ride = array(
+
+            'distance' => 5031.1999999999998,
+            'name' => 'Afternoon Ride',
+            'strava_id' => 460839170,
+            'start_time' => '2016-01-01T13:10:18Z',
+            'bike' => 'x267883',
+            'moving_time' => 920,
+            'elapsed_time' => 1651,
+            'total_elevation_gain' => 0,
+            'max_speed' => 8.3000000000000007,
+            'timezone' => 'Europe/London',
+            'kudos_count' => 0,
+            'comment_count' => 0,
+            'endo_id' => null,
+            'message' => 'Ride with id <a target="_blank" href="activityUrl"></a> on 2016-01-01T13:10:18Z, distance 3.1 miles/5 kms. ',
+            'description' => 'activityUrl'
+        );
+        $strava->expects($this->at(2))->method('addRide')->with("2016-01-01", $ride, $points)->willReturn(true);
+        $ride = array(
+            'distance' => 3992.1999999999998,
+            'name' => 'Afternoon Ride',
+            'strava_id' => 460839481,
+            'start_time' => '2016-01-01T14:32:17Z',
+            'bike' => 'x267883',
+            'moving_time' => 792,
+            'elapsed_time' => 1566,
+            'total_elevation_gain' => 0,
+            'max_speed' => 8.5,
+            'timezone' => 'Europe/London',
+            'kudos_count' => 0,
+            'comment_count' => 0,
+            'endo_id' => null,
+            'message' => 'Ride with id <a target="_blank" href="activityUrl"></a> on 2016-01-01T14:32:17Z, distance 2.5 miles/4 kms. ',
+            'description' => 'activityUrl'
+        );
+        $strava->expects($this->at(3))->method('addRide')->with("2016-01-01", $ride, $points)->willReturn(true);
+        $ride = array(
+
+            'distance' => 17124.799999999999,
+            'name' => 'Afternoon Ride',
+            'strava_id' => 494647884,
+            'start_time' => '2016-01-01T15:59:17Z',
+            'bike' => 'x267883',
+            'moving_time' => 3800,
+            'elapsed_time' => 6897,
+            'total_elevation_gain' => 114.90000000000001,
+            'max_speed' => 8.9000000000000004,
+            'timezone' => 'Europe/London',
+            'kudos_count' => 0,
+            'comment_count' => 0,
+            'endo_id' => 650970286,
+            'message' => 'Ride with id <a target="_blank" href="activityUrl">650970286</a> on 2016-01-01T15:59:17Z, distance 10.6 miles/17.1 kms. ',
+            'description' => 'activityUrl',
+        );
+
+        $strava->expects($this->at(4))->method('addRide')->with("2016-01-01", $ride, $points)->willReturn(true);
+        $ride = array(
+            'distance' => 2313.0999999999999,
+            'name' => 'Afternoon Ride',
+            'strava_id' => 464768504,
+            'start_time' => '2016-01-06T13:30:58Z',
+            'bike' => 'x267883',
+            'moving_time' => 732,
+            'elapsed_time' => 8312,
+            'total_elevation_gain' => 0,
+            'max_speed' => 8,
+            'timezone' => 'Europe/London',
+            'kudos_count' => 0,
+            'comment_count' => 0,
+            'endo_id' => null,
+            'message' => 'Ride with id <a target="_blank" href="activityUrl"></a> on 2016-01-06T13:30:58Z, distance 1.4 miles/2.3 kms. '
+        , 'description' => 'activityUrl'
+        );
+
+        $strava->expects($this->at(5))->method('addRide')->with("2016-01-06", $ride, $points)->willReturn(true);
+        $ride = array('distance' => 5268.5,
+            'name' => 'Evening Ride',
+            'strava_id' => 464768505,
+            'start_time' => '2016-01-06T19:44:25Z',
+            'bike' => 'x267883',
+            'moving_time' => 1210,
+            'elapsed_time' => 3833,
+            'total_elevation_gain' => 0,
+            'max_speed' => 8,
+            'timezone' => 'Europe/London',
+            'kudos_count' => 0,
+            'comment_count' => 0,
+            'endo_id' => null,
+            'message' => 'Ride with id <a target="_blank" href="activityUrl"></a> on 2016-01-06T19:44:25Z, distance 3.3 miles/5.3 kms. ',
+            'description' => 'activityUrl',
+        );
+        $strava->expects($this->at(6))->method('addRide')->with("2016-01-06", $ride, $points)->willReturn(true);
+        $ride = array(
+            'distance' => 2975.5,
+            'name' => 'Afternoon Ride',
+            'strava_id' => 470171383,
+            'start_time' => '2016-01-08T13:20:00Z',
+            'bike' => 'x267883',
+            'moving_time' => 599,
+            'elapsed_time' => 599,
+            'total_elevation_gain' => 0,
+            'max_speed' => 5.5,
+            'timezone' => 'Europe/London',
+            'kudos_count' => 0,
+            'comment_count' => 0,
+            'endo_id' => null,
+            'message' => 'Ride with id <a target="_blank" href="activityUrl"></a> on 2016-01-08T13:20:00Z, distance 1.8 miles/3 kms. '
+        , 'description' => 'activityUrl'
+        );
+        $strava->expects($this->at(7))->method('addRide')->with("2016-01-08", $ride, $points)->willReturn(true);
+        $ride = array(
+            'distance' => 2919,
+            'name' => 'Evening Ride',
+            'strava_id' => 470166379,
+            'start_time' => '2016-01-08T20:30:00Z',
+            'bike' => 'x267883',
+            'moving_time' => 600,
+            'elapsed_time' => 600,
+            'total_elevation_gain' => 0,
+            'max_speed' => 5.2000000000000002,
+            'timezone' => 'Europe/London',
+            'kudos_count' => 0,
+            'comment_count' => 0,
+            'endo_id' => null,
+            'message' => 'Ride with id <a target="_blank" href="activityUrl"></a> on 2016-01-08T20:30:00Z, distance 1.8 miles/2.9 kms. ',
+            'description' => 'activityUrl'
+        );
+        $strava->expects($this->at(8))->method('addRide')->with("2016-01-08", $ride, $points)->willReturn(true);
+        $ride = array(
+            'distance' => 3992.1999999999998,
+            'name' => 'Afternoon Ride',
+            'strava_id' => 460839481,
+            'start_time' => '2016-01-01T14:32:17Z',
+            'bike' => 'x267883',
+            'moving_time' => 792,
+            'elapsed_time' => 1566,
+            'total_elevation_gain' => 0,
+            'max_speed' => 8.5,
+            'timezone' => 'Europe/London',
+            'kudos_count' => 0,
+            'comment_count' => 0,
+            'endo_id' => null,
+            'message' => 'Ride with id <a target="_blank" href="activityUrl"></a> on 2016-01-01T14:32:17Z, distance 2.5 miles/4 kms. ',
+            'description' => 'activityUrl'
+        );
 
         $endomondo->expects($this->any())->method('activityUrl')->willReturn("activityUrl");
         $strava->expects($this->any())->method('waitForPendingUploads')->willReturn(array(
@@ -1191,7 +1429,7 @@ class MainPageTest extends JoanMcGalliard\EddingtonAndMore\BaseTestClass
         $preferences->expects($this->any())->method('getEndomondoSplitRides')->willReturn(true);
         $strava->expects($this->any())->method('addRide')->willReturnOnConsecutiveCalls(1, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12);
         $this->output = "";
-        $this->assertEquals("<br>6 rides added.<br>\n" , $execute->invokeArgs($this->mainPage, array("copy_endo_to_strava")));
+        $this->assertEquals("<br>6 rides added.<br>\n", $execute->invokeArgs($this->mainPage, array("copy_endo_to_strava")));
         $this->assertEquals("<H3>Copying rides from Endomondo to Strava...</H3><br>Ride with id <a target=\"_blank\" href=\"activityUrl\"></a> on 2016-01-01T13:10:18Z, distance 3.1 miles/5 kms. Queued for upload. <br>Ride with id <a target=\"_blank\" href=\"activityUrl\"></a> on 2016-01-01T14:32:17Z, distance 2.5 miles/4 kms. Queued for upload. <br>Ride with id <a target=\"_blank\" href=\"activityUrl\">650970286</a> on 2016-01-01T15:59:17Z, distance 10.6 miles/17.1 kms. Queued for upload. <br>Ride with id <a target=\"_blank\" href=\"activityUrl\"></a> on 2016-01-06T13:30:58Z, distance 1.4 miles/2.3 kms. Queued for upload. <br>Ride with id <a target=\"_blank\" href=\"activityUrl\"></a> on 2016-01-06T19:44:25Z, distance 3.3 miles/5.3 kms. Queued for upload. <br>Ride with id <a target=\"_blank\" href=\"activityUrl\"></a> on 2016-01-08T13:20:00Z, distance 1.8 miles/3 kms. Queued for upload. <br>Ride with id <a target=\"_blank\" href=\"activityUrl\"></a> on 2016-01-08T20:30:00Z, distance 1.8 miles/2.9 kms. Queued for upload. <br>Ride with id 674115438 on 2016-02-18 15:54:22 UTC, distance 1.9 miles/3.1 kms.  Uploaded successfully, id: <a target=\"_blank\" href=\"\">501116906</a>.<br>Ride with id 674115438 on 2016-02-18 15:54:22 UTC, distance 1.9 miles/3.1 kms.  Uploaded successfully, id: <a target=\"_blank\" href=\"\">501116906</a>.<br>Ride with id 674115438 on 2016-02-18 15:54:22 UTC, distance 1.9 miles/3.1 kms.  Uploaded successfully, id: <a target=\"_blank\" href=\"\">501116906</a>.<br>Ride with id 674115438 on 2016-02-18 15:54:22 UTC, distance 1.9 miles/3.1 kms.  Uploaded successfully, id: <a target=\"_blank\" href=\"\">501116906</a>.<br>Ride with id 674115438 on 2016-02-18 15:54:22 UTC, distance 1.9 miles/3.1 kms.  Uploaded successfully, id: <a target=\"_blank\" href=\"\">501116906</a>.<br>Ride with id 674115438 on 2016-02-18 15:54:22 UTC, distance 1.9 miles/3.1 kms.  Uploaded successfully, id: <a target=\"_blank\" href=\"\">501116906</a>.",
             $this->output);
     }

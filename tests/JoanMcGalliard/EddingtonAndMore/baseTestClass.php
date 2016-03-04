@@ -58,4 +58,11 @@ abstract class BaseTestClass extends PHPUnit_Framework_TestCase
         parent::setUp();
         date_default_timezone_set('UTC');
     }
+    protected function captureArg( &$arg ) {
+        return $this->callback( function( $argToMock ) use ( &$arg ) {
+            $arg = $argToMock;
+            return true;
+        } );
+    }
+
 }

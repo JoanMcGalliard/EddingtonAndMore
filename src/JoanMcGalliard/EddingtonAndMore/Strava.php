@@ -389,8 +389,11 @@ class Strava extends trackerAbstract
         /** @var Points $points */
         file_put_contents($path, $points->gpx());
 
-        $result=$this->uploadGpx($path, $this->generateExternalId($ride), $ride['message'],
-            $ride['name'], $ride['description']);
+        $message = isset($ride['message']) ? $ride['message'] : "";
+        $name = isset($ride['name']) ? $ride['name'] : "name";
+        $description = isset($ride['description']) ? $ride['description'] : "description";
+        $result=$this->uploadGpx($path, $this->generateExternalId($ride), $message,
+            $name, $description);
         if ($result) {
             $this->error.=$result;
             return false;

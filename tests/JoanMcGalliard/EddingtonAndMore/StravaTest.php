@@ -254,22 +254,21 @@ The server didn\'t respond in time.
     {
         $mock = $this->getMockBuilder('StravaApi')->setMethods(array('post'))->getMock();
         $strava = new Strava("", "", array($this, 'myEcho'), $mock);
-        $uploadGpx=$this->getMethod('uploadGpx');
+        $uploadGpx = $this->getMethod('uploadGpx');
 
-        $pending = $this->getProperty('pending_uploads');
 
         // bad file upload, return the error and don't put anything on the queue
         $mock->expects($this->at(0))->method('post')
             ->willReturn(json_decode('{"id":546529071,"external_id":"endomondo_2859253_672012172.gpx","error":"Improperly formatted data.","status":"There was an error processing your activity.","activity_id":null}
 '));
-        $this->assertEquals("Improperly formatted data.", $uploadGpx->invokeArgs($strava,array("FILE", "EXTERNAL_ID", "EXTERNAL MESSAGE", "NAME", "DESCRIPTION")));
+        $this->assertEquals("Improperly formatted data.", $uploadGpx->invokeArgs($strava, array("FILE", "EXTERNAL_ID", "EXTERNAL MESSAGE", "NAME", "DESCRIPTION")));
         $pending = $this->getProperty('pending_uploads');
         $this->assertEquals(0, sizeof($pending->getValue($strava)));
 
         //uploaded OK, so return null and add it to pending queue
         $mock->expects($this->at(0))->method('post')
             ->willReturn(json_decode('{"id":546495227,"external_id":"endomondo_2859253_672012172.gpx","error":null,"status":"Your activity is still being processed.","activity_id":null}'));
-        $this->assertNull($uploadGpx->invokeArgs($strava,array("FILE", "EXTERNAL_ID", "EXTERNAL MESSAGE", "NAME", "DESCRIPTION")));
+        $this->assertNull($uploadGpx->invokeArgs($strava, array("FILE", "EXTERNAL_ID", "EXTERNAL MESSAGE", "NAME", "DESCRIPTION")));
         $this->assertEquals(1, sizeof($pending->getValue($strava)));
         $this->assertEquals(array(546495227 => (object)array('message' => 'EXTERNAL MESSAGE', 'external_id' => 'EXTERNAL_ID', 'file' => "FILE")), $pending->getValue($strava));
 
@@ -281,9 +280,9 @@ The server didn\'t respond in time.
         $timeout = 0.1;
         $sleep = 0.035;
 
-        $complete="{\"id\":546638063,\"external_id\":\"endomondo_2859253_663547599.gpx\",\"error\":null,\"status\":\"Your activity is ready.\",\"activity_id\":##STRAVA_ID##}";
+        $complete = "{\"id\":546638063,\"external_id\":\"endomondo_2859253_663547599.gpx\",\"error\":null,\"status\":\"Your activity is ready.\",\"activity_id\":##STRAVA_ID##}";
         $inProgress = '{"id":546637956,"external_id":"endomondo_2859253_664423790.gpx","error":null,"status":"Your activity is still being processed.","activity_id":null}';
-        $failed='{"id":546650766,"external_id":"endomondo_2859253_330886943.gpx","error":"##ERROR_MSG##","status":"There was an error processing your activity.","activity_id":null}';
+        $failed = '{"id":546650766,"external_id":"endomondo_2859253_330886943.gpx","error":"##ERROR_MSG##","status":"There was an error processing your activity.","activity_id":null}';
 
         $mock = $this->getMockBuilder('StravaApi')->setMethods(array('get'))->getMock();
         $strava = new Strava("", "", array($this, 'myEcho'), $mock);
@@ -314,7 +313,7 @@ The server didn\'t respond in time.
         $this->setProperty('fileUploadTimeout', $timeout, $strava);
         $mock->expects($this->at(0))->method('get')->with('uploads/546495227')->willReturn(json_decode($inProgress));
         $mock->expects($this->at(1))->method('get')->with('uploads/546495227')->willReturn(json_decode($inProgress));
-        $mock->expects($this->at(2))->method('get')->with('uploads/546495227')->willReturn(json_decode(str_replace('##STRAVA_ID##',654321,$complete)));
+        $mock->expects($this->at(2))->method('get')->with('uploads/546495227')->willReturn(json_decode(str_replace('##STRAVA_ID##', 654321, $complete)));
         $result = $strava->waitForPendingUploads($sleep);
         $this->assertEquals(array('EXTERNAL_ID' => (object)array('message' => 'EXTERNAL MESSAGE', 'external_id' => 'EXTERNAL_ID', 'file' => "FILE",
             'strava_id' => 654321,
@@ -329,7 +328,7 @@ The server didn\'t respond in time.
         $mock->expects($this->at(0))->method('get')->with('uploads/546495227')->willReturn(json_decode($inProgress));
         $mock->expects($this->at(1))->method('get')->with('uploads/546495227')->willReturn(json_decode($inProgress));
         $mock->expects($this->at(2))->method('get')->with('uploads/546495227')
-            ->willReturn(json_decode(str_replace('##ERROR_MSG##',"endomondo_2859253_330886943.gpx duplicate of an uploading activity (546649053)",$failed)));
+            ->willReturn(json_decode(str_replace('##ERROR_MSG##', "endomondo_2859253_330886943.gpx duplicate of an uploading activity (546649053)", $failed)));
         $result = $strava->waitForPendingUploads($sleep);
         $this->assertEquals(array('EXTERNAL_ID' => (object)array('message' => 'EXTERNAL MESSAGE', 'external_id' => 'EXTERNAL_ID', 'file' => "FILE",
             'status' => 'There was an error processing your activity.', 'error' => 'endomondo_2859253_330886943.gpx duplicate of an uploading activity (546649053)'
@@ -368,19 +367,84 @@ The server didn\'t respond in time.
         );
         $this->setProperty('pending_uploads', $pendingList, $strava);
         $this->setProperty('fileUploadTimeout', $timeout, $strava);
-        $mock->expects($this->at(0))->method('get')->with('uploads/111111')->willReturn(json_decode(str_replace('##STRAVA_ID##','654321',$complete)));
+        $mock->expects($this->at(0))->method('get')->with('uploads/111111')->willReturn(json_decode(str_replace('##STRAVA_ID##', '654321', $complete)));
         $mock->expects($this->at(1))->method('get')->with('uploads/222222')->willReturn(json_decode($inProgress));
         $mock->expects($this->at(2))->method('get')->with('uploads/333333')->willReturn(json_decode($inProgress));
         $mock->expects($this->at(3))->method('get')->with('uploads/444444')->willReturn(json_decode($inProgress));
-        $mock->expects($this->at(4))->method('get')->with('uploads/222222')->willReturn(json_decode(str_replace('##ERROR_MSG##',"ERROR MSG",$failed)));
+        $mock->expects($this->at(4))->method('get')->with('uploads/222222')->willReturn(json_decode(str_replace('##ERROR_MSG##', "ERROR MSG", $failed)));
         $mock->expects($this->at(5))->method('get')->with('uploads/333333')->willReturn(json_decode($inProgress));
         $mock->expects($this->at(6))->method('get')->with('uploads/444444')->willReturn(json_decode($inProgress));
-        $mock->expects($this->at(7))->method('get')->with('uploads/333333')->willReturn(json_decode(str_replace('##STRAVA_ID##','12345',$complete)));
+        $mock->expects($this->at(7))->method('get')->with('uploads/333333')->willReturn(json_decode(str_replace('##STRAVA_ID##', '12345', $complete)));
         $mock->expects($this->at(8))->method('get')->with('uploads/444444')->willReturn(json_decode($inProgress));
         $result = $strava->waitForPendingUploads($sleep);
         $this->assertEquals($expected, $result);
         $this->assertEquals([], $this->getProperty('pending_uploads')->getValue($strava));
     }
 
+    public function testAddRide()
+    {
+        global $scratchDirectory;
+        $scratchDirectory = ".";
+        $mock = $this->getMockBuilder('StravaApi')->setMethods(array('post'))->getMock();
+        $cFile = new \CURLFile('./8719eb8.gpx', 'text', 'name');
+        $mock->expects($this->at(0))->method('post')->with("uploads", $this->captureArg($params))
+            ->willReturn(json_decode('{"id":546495227,"external_id":"endomondo_2859253_672012172.gpx","error":null,"status":"Your activity is still being processed.","activity_id":null}'));
+        $points = $this->getMockBuilder('Points')->setMethods(array('gpx'))->getMock();
+        $points->expects($this->any())->method('gpx')->with()->willReturn("A load of text");
+        $strava = new Strava("", "", array($this, 'myEcho'), $mock);
+
+        $ride = [];
+        $this->assertTrue($strava->addRide("date", $ride, $points));
+
+        $this->assertEquals('ride', $params['activity_type']);
+        $this->assertEquals('gpx', $params['data_type']);
+        $this->assertNull($params['external_id']);
+        $this->assertEquals('name', $params['name']);
+        $this->assertEquals('description', $params['description']);
+
+        $this->assertInstanceOf("\\CURLFile", $params['file']);
+        $this->assertEquals('text', $params['file']->mime);
+        $this->assertEquals('name', $params['file']->postname);
+        $this->assertFileExists($params['file']->name);
+        $this->assertEquals("A load of text", file_get_contents($params['file']->name));
+
+
+        $ride = array (
+            'distance' => 3107.219934463501,
+            'elapsed_time' => 1266,
+            'max_speed' => 8.5481944444444444,
+            'endo_id' => 674115438,
+            'ascent' => 38,
+            'start_time' => '2016-02-18 15:54:22 UTC',
+            'name' => 'ENDO NAME',
+            'message' => 'Ride with id 674115438 on 2016-02-18 15:54:22 UTC, distance 1.9 miles/3.1 kms. ',
+            'description' => 'https://www.endomondo.com/users/2859253/workouts/674115438',
+        );
+        $mock->expects($this->at(0))->method('post')->with("uploads", $this->captureArg($params))
+            ->willReturn(json_decode('{"id":546495227,"external_id":"endomondo_2859253_672012172.gpx","error":null,"status":"Your activity is still being processed.","activity_id":null}'));
+        $this->assertTrue($strava->addRide("date", $ride, $points));
+
+        $this->assertEquals('ride', $params['activity_type']);
+        $this->assertEquals('gpx', $params['data_type']);
+        $this->assertEquals("endomondo_674115438", $params['external_id']);
+        $this->assertEquals('ENDO NAME', $params['name']);
+        $this->assertEquals('https://www.endomondo.com/users/2859253/workouts/674115438', $params['description']);
+
+        $this->assertInstanceOf("\\CURLFile", $params['file']);
+        $this->assertEquals('text', $params['file']->mime);
+        $this->assertEquals('ENDO NAME', $params['file']->postname);
+        $this->assertEquals("./endomondo+674115438.gpx",$params['file']->name);
+        $this->assertFileExists($params['file']->name);
+        $this->assertEquals("A load of text", file_get_contents($params['file']->name));
+
+
+        //failure at api returns false.
+        $mock->expects($this->at(0))->method('post')
+            ->willReturn(json_decode('{"id":546529071,"external_id":"endomondo_2859253_672012172.gpx","error":"Improperly formatted data.","status":"There was an error processing your activity.","activity_id":null}
+'));
+        $this->assertFalse($strava->addRide("date", $ride, $points));
+        $this->assertEquals("Improperly formatted data.",$strava->getError());
+    }
 }
+
 ?>

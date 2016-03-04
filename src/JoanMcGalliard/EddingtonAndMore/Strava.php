@@ -266,12 +266,12 @@ class Strava extends trackerAbstract
         return "http://www.strava.com/activities/$activityId";
     }
 
-    public function waitForPendingUploads($sleep=1)
+    public function waitForPendingUploads($sleep = 1)
     {
         $timestamp = microtime(true);
         $results = [];
 
-        $count=0;
+        $count = 0;
         while ((microtime(true) - $timestamp < $this->fileUploadTimeout) && $this->pending_uploads) {
             foreach ($this->pending_uploads as $pending_id => $queued) {
                 /** @var object $response */
@@ -289,7 +289,7 @@ class Strava extends trackerAbstract
                 }
             }
             $this->output('.');
-            usleep($sleep *1000000);
+            usleep($sleep * 1000000);
         }
         foreach ($this->pending_uploads as $pending_id => $queued) {
             $queued->error = "Timed out waiting for confirmation of upload after $this->fileUploadTimeout seconds";
@@ -354,7 +354,7 @@ class Strava extends trackerAbstract
 
     public function deleteActivity($id)
     {
-        $this->error="";
+        $this->error = "";
         $response = $this->api->delete("activities/$id");
         if ($response === '') {
             return true;
@@ -376,11 +376,11 @@ class Strava extends trackerAbstract
         // TODO: Implement bikeMatch() method.
     }
 
-    public function addRide($date, $ride,$points)
+    public function addRide($date, $ride, $points)
     {
-       global $scratchDirectory;
+        global $scratchDirectory;
 
-        $filename=substr(md5(rand()), 0, 7).".gpx";
+        $filename = substr(md5(rand()), 0, 7) . ".gpx";
 
         if (isset($ride['endo_id']) && $ride['endo_id'] <> '') {
             $filename = "endomondo+" . $ride['endo_id'] . ".gpx";
@@ -392,10 +392,10 @@ class Strava extends trackerAbstract
         $message = isset($ride['message']) ? $ride['message'] : "";
         $name = isset($ride['name']) ? $ride['name'] : "name";
         $description = isset($ride['description']) ? $ride['description'] : "description";
-        $result=$this->uploadGpx($path, $this->generateExternalId($ride), $message,
+        $result = $this->uploadGpx($path, $this->generateExternalId($ride), $message,
             $name, $description);
         if ($result) {
-            $this->error.=$result;
+            $this->error .= $result;
             return false;
         }
         return true; // can't return id as it's queued for upload

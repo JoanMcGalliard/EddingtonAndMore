@@ -17,9 +17,9 @@ class MainPageTest extends JoanMcGalliard\EddingtonAndMore\BaseTestClass
         $this->mainPage = new MainPage(array($this, 'myEcho'));
     }
 
-    public function test_queue_delete_endo_from_strava()
+    public function testDeleteEndoRidesFromStrava()
     {
-        $execute = $this->getMethod('execute');
+        $deleteEndoRidesFromStrava = $this->getMethod('deleteEndoRidesFromStrava');
         $this->setProperty('noEcho', false, $this->mainPage);
         $strava = $this->getMockBuilder('trackerAbstract')
             ->setMethods(array('getUserId', 'getActivityDescription', 'getRides', 'getError', 'getOvernightActivities',
@@ -29,7 +29,6 @@ class MainPageTest extends JoanMcGalliard\EddingtonAndMore\BaseTestClass
                 'setUseFeetForElevation', 'setSplitOvernightRides', 'activityUrl', 'getWorkout', 'setWriteScope', 'setAuth', 'setAccessToken'))->getMock();
         $this->setProperty('strava', $strava, $this->mainPage);
         $this->setProperty('endomondo', $endo, $this->mainPage);
-
 
         // ride is from endomondo
         $rides = array('2016-01-01' =>
@@ -45,7 +44,7 @@ class MainPageTest extends JoanMcGalliard\EddingtonAndMore\BaseTestClass
         $this->output = "";
         $expected = '<br>As listed above, the following rides seem to have been copied from Endomondo, and can be deleted from Strava (and then re-added, if you choose).<br><ol>
 <li><a target="_blank" href="\">494647884</a></li></ol><form action="" method="post" name="delete_strava_rides_form"><input type="submit" name="delete_from_strava" value="Delete these rides from Strava?"/><input type="hidden" name="activity_numbers" value="494647884,"></form>';
-        $this->assertEquals($expected, $execute->invokeArgs($this->mainPage, array("queue_delete_endo_from_strava")));
+        $this->assertEquals($expected, $deleteEndoRidesFromStrava->invokeArgs($this->mainPage, array()));
         $this->assertEquals('<br><a target="_blank" href="\">494647884</a> (<a target="_blank" href="endo activity URL\">99999999</a>) queued for deletion<br>', $this->output);
 
         // ride has no endo_id
@@ -58,7 +57,7 @@ class MainPageTest extends JoanMcGalliard\EddingtonAndMore\BaseTestClass
         $strava->expects($this->at(0))->method('getRides')->willReturn($rides);
         $endo->expects($this->at(0))->method('activityUrl')->willReturn('endo activity URL');
         $this->output = "";
-        $this->assertEquals('', $execute->invokeArgs($this->mainPage, array("queue_delete_endo_from_strava")));
+        $this->assertEquals('', $deleteEndoRidesFromStrava->invokeArgs($this->mainPage, array()));
         $this->assertEquals('.', $this->output);
         // ride has  endo_id, but the description does not include activity URL
         $rides = array('2016-01-01' =>
@@ -70,7 +69,7 @@ class MainPageTest extends JoanMcGalliard\EddingtonAndMore\BaseTestClass
         $strava->expects($this->at(0))->method('getRides')->willReturn($rides);
         $endo->expects($this->at(0))->method('activityUrl')->willReturn('endo activity URL');
         $this->output = "";
-        $this->assertEquals('', $execute->invokeArgs($this->mainPage, array("queue_delete_endo_from_strava")));
+        $this->assertEquals('', $deleteEndoRidesFromStrava->invokeArgs($this->mainPage, array()));
         $this->assertEquals('.', $this->output);
 
         // ride has  endo_id, needs to get description from strava
@@ -88,10 +87,10 @@ class MainPageTest extends JoanMcGalliard\EddingtonAndMore\BaseTestClass
         $this->output = "";
         $expected = '<br>As listed above, the following rides seem to have been copied from Endomondo, and can be deleted from Strava (and then re-added, if you choose).<br><ol>
 <li><a target="_blank" href="\">494647884</a></li></ol><form action="" method="post" name="delete_strava_rides_form"><input type="submit" name="delete_from_strava" value="Delete these rides from Strava?"/><input type="hidden" name="activity_numbers" value="494647884,"></form>';
-        $this->assertEquals($expected, $execute->invokeArgs($this->mainPage, array("queue_delete_endo_from_strava")));
+        $this->assertEquals($expected, $deleteEndoRidesFromStrava->invokeArgs($this->mainPage, array()));
         $this->assertEquals('<br><a target="_blank" href="\">494647884</a> (<a target="_blank" href="endo activity URL\">99999999</a>) queued for deletion<br>', $this->output);
 
-        // ride has  endo_id, needs to get description from strava which doesn't include URL
+           // ride has  endo_id, needs to get description from strava which doesn't include URL
         $rides = array('2016-01-01' =>
             array(array('distance' => 17124.799999999999,
                 'name' => 'Afternoon Ride', 'strava_id' => 494647884, 'start_time' => '2016-01-01T15:59:17Z',
@@ -104,7 +103,7 @@ class MainPageTest extends JoanMcGalliard\EddingtonAndMore\BaseTestClass
         $endo->expects($this->at(1))->method('activityUrl')->willReturn('endo activity URL');
         $endo->expects($this->at(2))->method('getWorkout')->willReturn((object)array('distance' => 17125, 'startTime' => 1451663957, 'id' => 9));
         $this->output = "";
-        $this->assertEquals('', $execute->invokeArgs($this->mainPage, array("queue_delete_endo_from_strava")));
+        $this->assertEquals('', $deleteEndoRidesFromStrava->invokeArgs($this->mainPage, array()));
         $this->assertEquals('', $this->output);
 
         // ride has matching endo id, but has been deleted from endomondo
@@ -119,7 +118,7 @@ class MainPageTest extends JoanMcGalliard\EddingtonAndMore\BaseTestClass
         $endo->expects($this->at(1))->method('activityUrl')->willReturn('endo activity URL');
         $endo->expects($this->at(2))->method('getWorkout')->willReturn(null);
         $this->output = "";
-        $this->assertEquals('', $execute->invokeArgs($this->mainPage, array("queue_delete_endo_from_strava")));
+        $this->assertEquals('', $deleteEndoRidesFromStrava->invokeArgs($this->mainPage, array()));
         $this->assertEquals('<br>Skipping <a target="_blank" href="\">494647884</a> (<a target="_blank" href="endo activity URL\">99999999</a>) because the associated endo ride has issues: <br>', $this->output);
 
 
@@ -138,7 +137,7 @@ class MainPageTest extends JoanMcGalliard\EddingtonAndMore\BaseTestClass
         $this->output = "";
         $expected = '<br>As listed above, the following rides seem to have been copied from Endomondo, and can be deleted from Strava (and then re-added, if you choose).<br><ol>
 <li><a target="_blank" href="\">494647884</a></li></ol><form action="" method="post" name="delete_strava_rides_form"><input type="submit" name="delete_from_strava" value="Delete these rides from Strava?"/><input type="hidden" name="activity_numbers" value="494647884,"></form>';
-        $this->assertEquals($expected, $execute->invokeArgs($this->mainPage, array("queue_delete_endo_from_strava")));
+        $this->assertEquals($expected, $deleteEndoRidesFromStrava->invokeArgs($this->mainPage, array()));
         $this->assertEquals('<br><a target="_blank" href="\">494647884</a> (<a target="_blank" href="endo activity URL\">99999999</a>) queued for deletion<br>', $this->output);
 
       // ride starts 30 minutes, 1 seconds earlier
@@ -153,7 +152,7 @@ class MainPageTest extends JoanMcGalliard\EddingtonAndMore\BaseTestClass
         $endo->expects($this->at(1))->method('activityUrl')->willReturn('endo activity URL');
         $endo->expects($this->at(2))->method('getWorkout')->willReturn((object)array('distance' => 17125, 'startTime' => 1451662156, 'id' => 9));
         $this->output = "";
-        $this->assertEquals('', $execute->invokeArgs($this->mainPage, array("queue_delete_endo_from_strava")));
+        $this->assertEquals('', $deleteEndoRidesFromStrava->invokeArgs($this->mainPage, array()));
         $this->assertEquals('<br>Skipping <a target="_blank" href="\">494647884</a> (<a target="_blank" href="endo activity URL\">99999999</a>) because the associated endo ride didn\'t start within 30 minutes of this ride <br>', $this->output);
 
         // ride starts 29 minutes, 59 seconds later
@@ -170,7 +169,7 @@ class MainPageTest extends JoanMcGalliard\EddingtonAndMore\BaseTestClass
         $this->output = "";
         $expected = '<br>As listed above, the following rides seem to have been copied from Endomondo, and can be deleted from Strava (and then re-added, if you choose).<br><ol>
 <li><a target="_blank" href="\">494647884</a></li></ol><form action="" method="post" name="delete_strava_rides_form"><input type="submit" name="delete_from_strava" value="Delete these rides from Strava?"/><input type="hidden" name="activity_numbers" value="494647884,"></form>';
-        $this->assertEquals($expected, $execute->invokeArgs($this->mainPage, array("queue_delete_endo_from_strava")));
+        $this->assertEquals($expected, $deleteEndoRidesFromStrava->invokeArgs($this->mainPage, array()));
         $this->assertEquals('<br><a target="_blank" href="\">494647884</a> (<a target="_blank" href="endo activity URL\">99999999</a>) queued for deletion<br>', $this->output);
 
 
@@ -186,7 +185,7 @@ class MainPageTest extends JoanMcGalliard\EddingtonAndMore\BaseTestClass
         $endo->expects($this->at(1))->method('activityUrl')->willReturn('endo activity URL');
         $endo->expects($this->at(2))->method('getWorkout')->willReturn((object)array('distance' => 17125, 'startTime' => 1451665758, 'id' => 9));
         $this->output = "";
-        $this->assertEquals('', $execute->invokeArgs($this->mainPage, array("queue_delete_endo_from_strava")));
+        $this->assertEquals('', $deleteEndoRidesFromStrava->invokeArgs($this->mainPage, array()));
         $this->assertEquals('<br>Skipping <a target="_blank" href="\">494647884</a> (<a target="_blank" href="endo activity URL\">99999999</a>) because the associated endo ride didn\'t start within 30 minutes of this ride <br>', $this->output);
 
 
@@ -201,7 +200,7 @@ class MainPageTest extends JoanMcGalliard\EddingtonAndMore\BaseTestClass
         $endo->expects($this->at(0))->method('activityUrl')->willReturn('endo activity URL');
         $endo->expects($this->at(1))->method('activityUrl')->willReturn('endo activity URL');
         $this->output = "";
-        $this->assertEquals('', $execute->invokeArgs($this->mainPage, array("queue_delete_endo_from_strava")));
+        $this->assertEquals('', $deleteEndoRidesFromStrava->invokeArgs($this->mainPage, array()));
         $this->assertEquals('<br>Skipping <a target="_blank" href="\">494647884</a> (<a target="_blank" href="endo activity URL\">99999999</a>) because it has 1 kudo(s)<br>', $this->output);
 
        // ride has photos
@@ -215,7 +214,7 @@ class MainPageTest extends JoanMcGalliard\EddingtonAndMore\BaseTestClass
         $endo->expects($this->at(0))->method('activityUrl')->willReturn('endo activity URL');
         $endo->expects($this->at(1))->method('activityUrl')->willReturn('endo activity URL');
         $this->output = "";
-        $this->assertEquals('', $execute->invokeArgs($this->mainPage, array("queue_delete_endo_from_strava")));
+        $this->assertEquals('', $deleteEndoRidesFromStrava->invokeArgs($this->mainPage, array()));
         $this->assertEquals('<br>Skipping <a target="_blank" href="\">494647884</a> (<a target="_blank" href="endo activity URL\">99999999</a>) because it has 3 photo(s)<br>', $this->output);
 
        // ride has comments
@@ -229,8 +228,36 @@ class MainPageTest extends JoanMcGalliard\EddingtonAndMore\BaseTestClass
         $endo->expects($this->at(0))->method('activityUrl')->willReturn('endo activity URL');
         $endo->expects($this->at(1))->method('activityUrl')->willReturn('endo activity URL');
         $this->output = "";
-        $this->assertEquals('', $execute->invokeArgs($this->mainPage, array("queue_delete_endo_from_strava")));
+        $this->assertEquals('', $deleteEndoRidesFromStrava->invokeArgs($this->mainPage, array()));
         $this->assertEquals('<br>Skipping <a target="_blank" href="\">494647884</a> (<a target="_blank" href="endo activity URL\">99999999</a>) because it has 2 comment(s)<br>', $this->output);
+
+
+        // multiple rides, the ones with endo ids should be deleted.
+        $rides = include('data/input/getRides5.php');
+        $strava->expects($this->at(0))->method('getRides')->willReturn($rides);
+        $strava->expects($this->any())->method('getActivityDescription')->willReturn('endo activity URL');
+        $endo->expects($this->any())->method('activityUrl')->willReturn('endo activity URL');
+        $endo->expects($this->any())->method('getWorkout')->willReturn((object)array('distance' => 17125, 'startTime' => 1451658737, 'id' => 9));
+        $this->output = "";
+        $expected = '<br>As listed above, the following rides seem to have been copied from Endomondo, and can be deleted from Strava (and then re-added, if you choose).<br><ol>
+<li><a target="_blank" href="\">494647884</a></li>
+<li><a target="_blank" href="\">494647784</a></li>
+<li><a target="_blank" href="\">494647777</a></li>
+<li><a target="_blank" href="\">494647768</a></li>
+<li><a target="_blank" href="\">494647748</a></li>
+<li><a target="_blank" href="\">494647728</a></li>
+<li><a target="_blank" href="\">494647725</a></li>
+<li><a target="_blank" href="\">494647711</a></li>
+<li><a target="_blank" href="\">494647705</a></li>
+<li><a target="_blank" href="\">494661555</a></li>
+<li><a target="_blank" href="\">494661550</a></li>
+<li><a target="_blank" href="\">494661538</a></li>
+<li><a target="_blank" href="\">494661520</a></li>
+<li><a target="_blank" href="\">494661502</a></li>
+<li><a target="_blank" href="\">494661491</a></li></ol><form action="" method="post" name="delete_strava_rides_form"><input type="submit" name="delete_from_strava" value="Delete these rides from Strava?"/><input type="hidden" name="activity_numbers" value="494647884,494647784,494647777,494647768,494647748,494647728,494647725,494647711,494647705,494661555,494661550,494661538,494661520,494661502,494661491,"></form>';
+        $this->assertEquals($expected, $deleteEndoRidesFromStrava->invokeArgs($this->mainPage, array()));
+        $this->assertEquals('..<br><a target="_blank" href="\">494647884</a> (<a target="_blank" href="endo activity URL\">650970286</a>) queued for deletion<br>.........<br><a target="_blank" href="\">494647784</a> (<a target="_blank" href="endo activity URL\">656519664</a>) queued for deletion<br><br><a target="_blank" href="\">494647777</a> (<a target="_blank" href="endo activity URL\">656716916</a>) queued for deletion<br><br><a target="_blank" href="\">494647768</a> (<a target="_blank" href="endo activity URL\">657505835</a>) queued for deletion<br><br><a target="_blank" href="\">494647748</a> (<a target="_blank" href="endo activity URL\">657480811</a>) queued for deletion<br><br><a target="_blank" href="\">494647728</a> (<a target="_blank" href="endo activity URL\">657554078</a>) queued for deletion<br><br><a target="_blank" href="\">494647725</a> (<a target="_blank" href="endo activity URL\">658323900</a>) queued for deletion<br><br><a target="_blank" href="\">494647711</a> (<a target="_blank" href="endo activity URL\">658434723</a>) queued for deletion<br><br><a target="_blank" href="\">494647705</a> (<a target="_blank" href="endo activity URL\">658500404</a>) queued for deletion<br>..............<br><a target="_blank" href="\">494661555</a> (<a target="_blank" href="endo activity URL\">668479655</a>) queued for deletion<br><br><a target="_blank" href="\">494661550</a> (<a target="_blank" href="endo activity URL\">668574585</a>) queued for deletion<br><br><a target="_blank" href="\">494661538</a> (<a target="_blank" href="endo activity URL\">668663527</a>) queued for deletion<br><br><a target="_blank" href="\">494661520</a> (<a target="_blank" href="endo activity URL\">668841147</a>) queued for deletion<br><br><a target="_blank" href="\">494661502</a> (<a target="_blank" href="endo activity URL\">669119895</a>) queued for deletion<br><br><a target="_blank" href="\">494661491</a> (<a target="_blank" href="endo activity URL\">669286757</a>) queued for deletion<br>.....', $this->output);
+
 
     }
 

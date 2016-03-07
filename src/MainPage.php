@@ -328,7 +328,7 @@ class MainPage
                     }
                     $minutes = 30;
                     if (abs($endoWorkout->startTime - strtotime($ride['start_time'])) > $minutes * 60) {
-                        $this->output("<br>Skipping $stravaLink ($endoLink) because the associated endo ride didn't start within $minutes of this ride <br>");
+                        $this->output("<br>Skipping $stravaLink ($endoLink) because the associated endo ride didn't start within $minutes minutes of this ride <br>");
                         continue;
                     }
 

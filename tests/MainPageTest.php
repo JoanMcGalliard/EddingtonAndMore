@@ -17,6 +17,224 @@ class MainPageTest extends JoanMcGalliard\EddingtonAndMore\BaseTestClass
         $this->mainPage = new MainPage(array($this, 'myEcho'));
     }
 
+    public function test_queue_delete_endo_from_strava()
+    {
+        $execute = $this->getMethod('execute');
+        $this->setProperty('noEcho', false, $this->mainPage);
+        $strava = $this->getMockBuilder('trackerAbstract')
+            ->setMethods(array('getUserId', 'getActivityDescription', 'getRides', 'getError', 'getOvernightActivities',
+                'setUseFeetForElevation', 'setSplitOvernightRides', 'activityUrl', 'setWriteScope', 'setAuth', 'setAccessToken'))->getMock();
+        $endo = $this->getMockBuilder('trackerAbstract')
+            ->setMethods(array('getUserId', 'getRides', 'getError', 'getOvernightActivities',
+                'setUseFeetForElevation', 'setSplitOvernightRides', 'activityUrl', 'getWorkout', 'setWriteScope', 'setAuth', 'setAccessToken'))->getMock();
+        $this->setProperty('strava', $strava, $this->mainPage);
+        $this->setProperty('endomondo', $endo, $this->mainPage);
+
+
+        // ride is from endomondo
+        $rides = array('2016-01-01' =>
+            array(array('distance' => 17124.799999999999,
+                'name' => 'Afternoon Ride', 'strava_id' => 494647884, 'start_time' => '2016-01-01T15:59:17Z',
+                'bike' => 'b267883', 'moving_time' => 3800, 'elapsed_time' => 6897, 'max_speed' => 8.9000000000000004,
+                'total_elevation_gain' => 114.90000000000001, 'timezone' => 'Europe/London', 'kudos_count' => 0,
+                'photo_count' => 0, 'comment_count' => 0, 'description' => 'endo activity URL', 'endo_id' => 99999999)));
+        $strava->expects($this->at(0))->method('getRides')->willReturn($rides);
+        $endo->expects($this->at(0))->method('activityUrl')->willReturn('endo activity URL');
+        $endo->expects($this->at(1))->method('activityUrl')->willReturn('endo activity URL');
+        $endo->expects($this->at(2))->method('getWorkout')->willReturn((object)array('distance' => 17125, 'startTime' => 1451663957, 'id' => 9));
+        $this->output = "";
+        $expected = '<br>As listed above, the following rides seem to have been copied from Endomondo, and can be deleted from Strava (and then re-added, if you choose).<br><ol>
+<li><a target="_blank" href="\">494647884</a></li></ol><form action="" method="post" name="delete_strava_rides_form"><input type="submit" name="delete_from_strava" value="Delete these rides from Strava?"/><input type="hidden" name="activity_numbers" value="494647884,"></form>';
+        $this->assertEquals($expected, $execute->invokeArgs($this->mainPage, array("queue_delete_endo_from_strava")));
+        $this->assertEquals('<br><a target="_blank" href="\">494647884</a> (<a target="_blank" href="endo activity URL\">99999999</a>) queued for deletion<br>', $this->output);
+
+        // ride has no endo_id
+        $rides = array('2016-01-01' =>
+            array(array('distance' => 17124.799999999999,
+                'name' => 'Afternoon Ride', 'strava_id' => 494647884, 'start_time' => '2016-01-01T15:59:17Z',
+                'bike' => 'b267883', 'moving_time' => 3800, 'elapsed_time' => 6897, 'max_speed' => 8.9000000000000004,
+                'total_elevation_gain' => 114.90000000000001, 'timezone' => 'Europe/London', 'kudos_count' => 0,
+                'photo_count' => 0, 'comment_count' => 0, 'description' => 'endo activity URL', 'endo_id' => null)));
+        $strava->expects($this->at(0))->method('getRides')->willReturn($rides);
+        $endo->expects($this->at(0))->method('activityUrl')->willReturn('endo activity URL');
+        $this->output = "";
+        $this->assertEquals('', $execute->invokeArgs($this->mainPage, array("queue_delete_endo_from_strava")));
+        $this->assertEquals('.', $this->output);
+        // ride has  endo_id, but the description does not include activity URL
+        $rides = array('2016-01-01' =>
+            array(array('distance' => 17124.799999999999,
+                'name' => 'Afternoon Ride', 'strava_id' => 494647884, 'start_time' => '2016-01-01T15:59:17Z',
+                'bike' => 'b267883', 'moving_time' => 3800, 'elapsed_time' => 6897, 'max_speed' => 8.9000000000000004,
+                'total_elevation_gain' => 114.90000000000001, 'timezone' => 'Europe/London', 'kudos_count' => 0,
+                'photo_count' => 0, 'comment_count' => 0, 'description' => 'random', 'endo_id' => null)));
+        $strava->expects($this->at(0))->method('getRides')->willReturn($rides);
+        $endo->expects($this->at(0))->method('activityUrl')->willReturn('endo activity URL');
+        $this->output = "";
+        $this->assertEquals('', $execute->invokeArgs($this->mainPage, array("queue_delete_endo_from_strava")));
+        $this->assertEquals('.', $this->output);
+
+        // ride has  endo_id, needs to get description from strava
+        $rides = array('2016-01-01' =>
+            array(array('distance' => 17124.799999999999,
+                'name' => 'Afternoon Ride', 'strava_id' => 494647884, 'start_time' => '2016-01-01T15:59:17Z',
+                'bike' => 'b267883', 'moving_time' => 3800, 'elapsed_time' => 6897, 'max_speed' => 8.9000000000000004,
+                'total_elevation_gain' => 114.90000000000001, 'timezone' => 'Europe/London', 'kudos_count' => 0,
+                'photo_count' => 0, 'comment_count' => 0, 'endo_id' => 99999999)));
+        $strava->expects($this->at(0))->method('getRides')->willReturn($rides);
+        $strava->expects($this->at(2))->method('getActivityDescription')->willReturn('endo activity URL');
+        $endo->expects($this->at(0))->method('activityUrl')->willReturn('endo activity URL');
+        $endo->expects($this->at(1))->method('activityUrl')->willReturn('endo activity URL');
+        $endo->expects($this->at(2))->method('getWorkout')->willReturn((object)array('distance' => 17125, 'startTime' => 1451663957, 'id' => 9));
+        $this->output = "";
+        $expected = '<br>As listed above, the following rides seem to have been copied from Endomondo, and can be deleted from Strava (and then re-added, if you choose).<br><ol>
+<li><a target="_blank" href="\">494647884</a></li></ol><form action="" method="post" name="delete_strava_rides_form"><input type="submit" name="delete_from_strava" value="Delete these rides from Strava?"/><input type="hidden" name="activity_numbers" value="494647884,"></form>';
+        $this->assertEquals($expected, $execute->invokeArgs($this->mainPage, array("queue_delete_endo_from_strava")));
+        $this->assertEquals('<br><a target="_blank" href="\">494647884</a> (<a target="_blank" href="endo activity URL\">99999999</a>) queued for deletion<br>', $this->output);
+
+        // ride has  endo_id, needs to get description from strava which doesn't include URL
+        $rides = array('2016-01-01' =>
+            array(array('distance' => 17124.799999999999,
+                'name' => 'Afternoon Ride', 'strava_id' => 494647884, 'start_time' => '2016-01-01T15:59:17Z',
+                'bike' => 'b267883', 'moving_time' => 3800, 'elapsed_time' => 6897, 'max_speed' => 8.9000000000000004,
+                'total_elevation_gain' => 114.90000000000001, 'timezone' => 'Europe/London', 'kudos_count' => 0,
+                'photo_count' => 0, 'comment_count' => 0, 'endo_id' => 99999999)));
+        $strava->expects($this->at(0))->method('getRides')->willReturn($rides);
+        $strava->expects($this->at(2))->method('getActivityDescription')->willReturn('random description');
+        $endo->expects($this->at(0))->method('activityUrl')->willReturn('endo activity URL');
+        $endo->expects($this->at(1))->method('activityUrl')->willReturn('endo activity URL');
+        $endo->expects($this->at(2))->method('getWorkout')->willReturn((object)array('distance' => 17125, 'startTime' => 1451663957, 'id' => 9));
+        $this->output = "";
+        $this->assertEquals('', $execute->invokeArgs($this->mainPage, array("queue_delete_endo_from_strava")));
+        $this->assertEquals('', $this->output);
+
+        // ride has matching endo id, but has been deleted from endomondo
+        $rides = array('2016-01-01' =>
+            array(array('distance' => 17124.799999999999,
+                'name' => 'Afternoon Ride', 'strava_id' => 494647884, 'start_time' => '2016-01-01T15:59:17Z',
+                'bike' => 'b267883', 'moving_time' => 3800, 'elapsed_time' => 6897, 'max_speed' => 8.9000000000000004,
+                'total_elevation_gain' => 114.90000000000001, 'timezone' => 'Europe/London', 'kudos_count' => 0,
+                'photo_count' => 0, 'comment_count' => 0, 'description' => 'endo activity URL', 'endo_id' => 99999999)));
+        $strava->expects($this->at(0))->method('getRides')->willReturn($rides);
+        $endo->expects($this->at(0))->method('activityUrl')->willReturn('endo activity URL');
+        $endo->expects($this->at(1))->method('activityUrl')->willReturn('endo activity URL');
+        $endo->expects($this->at(2))->method('getWorkout')->willReturn(null);
+        $this->output = "";
+        $this->assertEquals('', $execute->invokeArgs($this->mainPage, array("queue_delete_endo_from_strava")));
+        $this->assertEquals('<br>Skipping <a target="_blank" href="\">494647884</a> (<a target="_blank" href="endo activity URL\">99999999</a>) because the associated endo ride has issues: <br>', $this->output);
+
+
+
+        // ride starts 29 minutes, 59 seconds earlier
+        $rides = array('2016-01-01' =>
+            array(array('distance' => 17124.799999999999,
+                'name' => 'Afternoon Ride', 'strava_id' => 494647884, 'start_time' => '2016-01-01T15:59:17Z',
+                'bike' => 'b267883', 'moving_time' => 3800, 'elapsed_time' => 6897, 'max_speed' => 8.9000000000000004,
+                'total_elevation_gain' => 114.90000000000001, 'timezone' => 'Europe/London', 'kudos_count' => 0,
+                'photo_count' => 0, 'comment_count' => 0, 'description' => 'endo activity URL', 'endo_id' => 99999999)));
+        $strava->expects($this->at(0))->method('getRides')->willReturn($rides);
+        $endo->expects($this->at(0))->method('activityUrl')->willReturn('endo activity URL');
+        $endo->expects($this->at(1))->method('activityUrl')->willReturn('endo activity URL');
+        $endo->expects($this->at(2))->method('getWorkout')->willReturn((object)array('distance' => 17125, 'startTime' => 1451662158, 'id' => 9));
+        $this->output = "";
+        $expected = '<br>As listed above, the following rides seem to have been copied from Endomondo, and can be deleted from Strava (and then re-added, if you choose).<br><ol>
+<li><a target="_blank" href="\">494647884</a></li></ol><form action="" method="post" name="delete_strava_rides_form"><input type="submit" name="delete_from_strava" value="Delete these rides from Strava?"/><input type="hidden" name="activity_numbers" value="494647884,"></form>';
+        $this->assertEquals($expected, $execute->invokeArgs($this->mainPage, array("queue_delete_endo_from_strava")));
+        $this->assertEquals('<br><a target="_blank" href="\">494647884</a> (<a target="_blank" href="endo activity URL\">99999999</a>) queued for deletion<br>', $this->output);
+
+      // ride starts 30 minutes, 1 seconds earlier
+        $rides = array('2016-01-01' =>
+            array(array('distance' => 17124.799999999999,
+                'name' => 'Afternoon Ride', 'strava_id' => 494647884, 'start_time' => '2016-01-01T15:59:17Z',
+                'bike' => 'b267883', 'moving_time' => 3800, 'elapsed_time' => 6897, 'max_speed' => 8.9000000000000004,
+                'total_elevation_gain' => 114.90000000000001, 'timezone' => 'Europe/London', 'kudos_count' => 0,
+                'photo_count' => 0, 'comment_count' => 0, 'description' => 'endo activity URL', 'endo_id' => 99999999)));
+        $strava->expects($this->at(0))->method('getRides')->willReturn($rides);
+        $endo->expects($this->at(0))->method('activityUrl')->willReturn('endo activity URL');
+        $endo->expects($this->at(1))->method('activityUrl')->willReturn('endo activity URL');
+        $endo->expects($this->at(2))->method('getWorkout')->willReturn((object)array('distance' => 17125, 'startTime' => 1451662156, 'id' => 9));
+        $this->output = "";
+        $this->assertEquals('', $execute->invokeArgs($this->mainPage, array("queue_delete_endo_from_strava")));
+        $this->assertEquals('<br>Skipping <a target="_blank" href="\">494647884</a> (<a target="_blank" href="endo activity URL\">99999999</a>) because the associated endo ride didn\'t start within 30 minutes of this ride <br>', $this->output);
+
+        // ride starts 29 minutes, 59 seconds later
+        $rides = array('2016-01-01' =>
+            array(array('distance' => 17124.799999999999,
+                'name' => 'Afternoon Ride', 'strava_id' => 494647884, 'start_time' => '2016-01-01T15:59:17Z',
+                'bike' => 'b267883', 'moving_time' => 3800, 'elapsed_time' => 6897, 'max_speed' => 8.9000000000000004,
+                'total_elevation_gain' => 114.90000000000001, 'timezone' => 'Europe/London', 'kudos_count' => 0,
+                'photo_count' => 0, 'comment_count' => 0, 'description' => 'endo activity URL', 'endo_id' => 99999999)));
+        $strava->expects($this->at(0))->method('getRides')->willReturn($rides);
+        $endo->expects($this->at(0))->method('activityUrl')->willReturn('endo activity URL');
+        $endo->expects($this->at(1))->method('activityUrl')->willReturn('endo activity URL');
+        $endo->expects($this->at(2))->method('getWorkout')->willReturn((object)array('distance' => 17125, 'startTime' => 1451665756, 'id' => 9));
+        $this->output = "";
+        $expected = '<br>As listed above, the following rides seem to have been copied from Endomondo, and can be deleted from Strava (and then re-added, if you choose).<br><ol>
+<li><a target="_blank" href="\">494647884</a></li></ol><form action="" method="post" name="delete_strava_rides_form"><input type="submit" name="delete_from_strava" value="Delete these rides from Strava?"/><input type="hidden" name="activity_numbers" value="494647884,"></form>';
+        $this->assertEquals($expected, $execute->invokeArgs($this->mainPage, array("queue_delete_endo_from_strava")));
+        $this->assertEquals('<br><a target="_blank" href="\">494647884</a> (<a target="_blank" href="endo activity URL\">99999999</a>) queued for deletion<br>', $this->output);
+
+
+        // ride starts 30 minutes, 1 seconds later
+        $rides = array('2016-01-01' =>
+            array(array('distance' => 17124.799999999999,
+                'name' => 'Afternoon Ride', 'strava_id' => 494647884, 'start_time' => '2016-01-01T15:59:17Z',
+                'bike' => 'b267883', 'moving_time' => 3800, 'elapsed_time' => 6897, 'max_speed' => 8.9000000000000004,
+                'total_elevation_gain' => 114.90000000000001, 'timezone' => 'Europe/London', 'kudos_count' => 0,
+                'photo_count' => 0, 'comment_count' => 0, 'description' => 'endo activity URL', 'endo_id' => 99999999)));
+        $strava->expects($this->at(0))->method('getRides')->willReturn($rides);
+        $endo->expects($this->at(0))->method('activityUrl')->willReturn('endo activity URL');
+        $endo->expects($this->at(1))->method('activityUrl')->willReturn('endo activity URL');
+        $endo->expects($this->at(2))->method('getWorkout')->willReturn((object)array('distance' => 17125, 'startTime' => 1451665758, 'id' => 9));
+        $this->output = "";
+        $this->assertEquals('', $execute->invokeArgs($this->mainPage, array("queue_delete_endo_from_strava")));
+        $this->assertEquals('<br>Skipping <a target="_blank" href="\">494647884</a> (<a target="_blank" href="endo activity URL\">99999999</a>) because the associated endo ride didn\'t start within 30 minutes of this ride <br>', $this->output);
+
+
+        // ride has kudos
+        $rides = array('2016-01-01' =>
+            array(array('distance' => 17124.799999999999,
+                'name' => 'Afternoon Ride', 'strava_id' => 494647884, 'start_time' => '2016-01-01T15:59:17Z',
+                'bike' => 'b267883', 'moving_time' => 3800, 'elapsed_time' => 6897, 'max_speed' => 8.9000000000000004,
+                'total_elevation_gain' => 114.90000000000001, 'timezone' => 'Europe/London', 'kudos_count' => 1,
+                'photo_count' => 0, 'comment_count' => 0, 'description' => 'endo activity URL', 'endo_id' => 99999999)));
+        $strava->expects($this->at(0))->method('getRides')->willReturn($rides);
+        $endo->expects($this->at(0))->method('activityUrl')->willReturn('endo activity URL');
+        $endo->expects($this->at(1))->method('activityUrl')->willReturn('endo activity URL');
+        $this->output = "";
+        $this->assertEquals('', $execute->invokeArgs($this->mainPage, array("queue_delete_endo_from_strava")));
+        $this->assertEquals('<br>Skipping <a target="_blank" href="\">494647884</a> (<a target="_blank" href="endo activity URL\">99999999</a>) because it has 1 kudo(s)<br>', $this->output);
+
+       // ride has photos
+        $rides = array('2016-01-01' =>
+            array(array('distance' => 17124.799999999999,
+                'name' => 'Afternoon Ride', 'strava_id' => 494647884, 'start_time' => '2016-01-01T15:59:17Z',
+                'bike' => 'b267883', 'moving_time' => 3800, 'elapsed_time' => 6897, 'max_speed' => 8.9000000000000004,
+                'total_elevation_gain' => 114.90000000000001, 'timezone' => 'Europe/London', 'kudos_count' => 0,
+                'photo_count' => 3, 'comment_count' => 0, 'description' => 'endo activity URL', 'endo_id' => 99999999)));
+        $strava->expects($this->at(0))->method('getRides')->willReturn($rides);
+        $endo->expects($this->at(0))->method('activityUrl')->willReturn('endo activity URL');
+        $endo->expects($this->at(1))->method('activityUrl')->willReturn('endo activity URL');
+        $this->output = "";
+        $this->assertEquals('', $execute->invokeArgs($this->mainPage, array("queue_delete_endo_from_strava")));
+        $this->assertEquals('<br>Skipping <a target="_blank" href="\">494647884</a> (<a target="_blank" href="endo activity URL\">99999999</a>) because it has 3 photo(s)<br>', $this->output);
+
+       // ride has comments
+        $rides = array('2016-01-01' =>
+            array(array('distance' => 17124.799999999999,
+                'name' => 'Afternoon Ride', 'strava_id' => 494647884, 'start_time' => '2016-01-01T15:59:17Z',
+                'bike' => 'b267883', 'moving_time' => 3800, 'elapsed_time' => 6897, 'max_speed' => 8.9000000000000004,
+                'total_elevation_gain' => 114.90000000000001, 'timezone' => 'Europe/London', 'kudos_count' => 0,
+                'photo_count' => 0, 'comment_count' => 2, 'description' => 'endo activity URL', 'endo_id' => 99999999)));
+        $strava->expects($this->at(0))->method('getRides')->willReturn($rides);
+        $endo->expects($this->at(0))->method('activityUrl')->willReturn('endo activity URL');
+        $endo->expects($this->at(1))->method('activityUrl')->willReturn('endo activity URL');
+        $this->output = "";
+        $this->assertEquals('', $execute->invokeArgs($this->mainPage, array("queue_delete_endo_from_strava")));
+        $this->assertEquals('<br>Skipping <a target="_blank" href="\">494647884</a> (<a target="_blank" href="endo activity URL\">99999999</a>) because it has 2 comment(s)<br>', $this->output);
+
+    }
+
+
     public function testCopy()
     {
         $copy = $this->getMethod('copy');

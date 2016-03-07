@@ -191,7 +191,7 @@ class RideWithGpsTest extends BaseTestClass
             ->willReturn(include('data/input/trip.php'));
 
         /** @var Points $points */
-        $points = $rideWithGps->getPoints("99999", "America/New_York", "2016-02-11");
+        $points = $rideWithGps->getPoints("99999", "America/New_York");
         $this->assertEquals("", $rideWithGps->getError());
         $this->assertNotNull($points);
         $splits = $points->getSplits();

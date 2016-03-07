@@ -69,6 +69,11 @@ abstract class trackerAbstract
 
     abstract public function getRides($start_date, $end_date);
     abstract public function getOvernightActivities();
+
+    /**
+     * @param $id
+     * @return array eg array('brand' => "Giant", 'model' => "Avail 2")
+     */
     abstract public function getBike($id);
     abstract public function bikeMatch($brand, $model, $id);
 
@@ -80,8 +85,8 @@ abstract class trackerAbstract
      */
     abstract public function addRide($date, $ride, $points);
     abstract public function activityUrl($id);
-//    abstract public function getPoints($id,$tz); // todo
-    abstract public function waitForPendingUploads();
+    abstract public function getPoints($id,$tz);
+    abstract public function waitForPendingUploads($sleep);
 
     public function getError()
     {

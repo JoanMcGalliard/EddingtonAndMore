@@ -242,7 +242,7 @@ class Endomondo extends trackerAbstract
         return parent::isOvernight($ride->start_time, $this->timezone, $ride->duration);
     }
 
-    public function getPoints($workoutId)
+    public function getPoints($workoutId, $tz)
     {
         $url = "api/workout/get";
         $params = ['fields' => 'points,simple', 'workoutId' => $workoutId];
@@ -298,7 +298,7 @@ class Endomondo extends trackerAbstract
         // TODO: Implement addRide() method.
     }
 
-    public function waitForPendingUploads()
+    public function waitForPendingUploads($sleep)
     {
         // TODO: Implement waitForPendingUploads() method.
     }

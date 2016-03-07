@@ -459,7 +459,7 @@ class RideWithGps extends TrackerAbstract
         return "https://ridewithgps.com/log";
     }
 
-    public function getPoints($tripId, $timezone, $start_day)
+    public function getPoints($tripId, $timezone)
     {
         $url = "/trips/$tripId.json";
         $page=$this->api->get($url);
@@ -479,6 +479,8 @@ class RideWithGps extends TrackerAbstract
             $this->error.="RWGps didn't return any points";
             return null;
         }
+        date_default_timezone_set($timezone);
+        $start_day=(isset($track_points[0]->t) && is_int($track_points[0]->t)) ? date("Y-m-d", $track_points[0]->t) : null;
         $points=new Points($start_day, $this->echoCallback, $this->googleMaps, $timezone);
         foreach ($track_points as $track_point)
         {

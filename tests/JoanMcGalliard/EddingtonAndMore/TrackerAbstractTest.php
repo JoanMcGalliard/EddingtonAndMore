@@ -85,8 +85,13 @@ class Tester extends TrackerAbstract {
         // TODO: Implement activityUrl() method.
     }
 
-    public function waitForPendingUploads()
+     public function waitForPendingUploads($sleep)
     {
         // TODO: Implement waitForPendingUploads() method.
+    }
+
+    public function getPoints($id, $tz)
+    {
+        // TODO: Implement getPoints() method.
     }
 }

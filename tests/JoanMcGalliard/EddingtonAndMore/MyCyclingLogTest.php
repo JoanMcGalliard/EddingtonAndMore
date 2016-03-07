@@ -119,44 +119,214 @@ class MyCyclingLogTest extends BaseTestClass
 
     }
 
-    public function testAddRide()
+    public function testPostPageDom()
     {
-        $mock = $this->getMockBuilder('MyCyclingLogApi')->setMethods(array('postPage'))->getMock();
+        $mock = $this->getMockBuilder('MyCyclingLogApi')->setMethods(array('postPage', 'setAuth'))->getMock();
         $myCyclingLog = new MyCyclingLog(array($this, 'myEcho'), $mock);
-
-        $params = array(
-            'event_date' => '02/07/2016',
-            'is_ride' => 'T',
-            'h' => 2,
-            'm' => 21,
-            's' => 24,
-            'distance' => 32000*0.00062137119224,
-            'user_unit' => 'mi',
+        $postPageDom = $this->getMethod('postPageDom');
+        $params = array('event_date' => '02/07/2016', 'is_ride' => 'T', 'h' => 2, 'm' => 21, 's' => 24,
+            'distance' => 32000 * 0.00062137119224, 'user_unit' => 'mi',
             'notes' => 'http://www.strava.com/activities/490216308',
-            'max_speed' => 7.8*3600*0.00062137119224,
-            'elevation' => 0,
-            'bid' => '');
+            'max_speed' => 7.8 * 3600 * 0.00062137119224, 'elevation' => 0, 'bid' => '');
         $mock->expects($this->at(0))->method('postPage')
             ->with('?method=ride.new', $params)
-            ->willReturn("blah");
+            ->willReturn("<?xml version=\"1.0\" encoding=\"UTF-8\"?><response>1212796</response>");
 
-        $ride =
-            array(
-                'distance' => 32000,
-                'name' => 'Lunch Ride',
-                'strava_id' => 490216308,
-                'start_time' => '2016-02-07T11:19:54Z',
-                'bike' => 'b267883',
-                'moving_time' => 8484,
-                'elapsed_time' => 2125,
-                'total_elevation_gain' => 0,
-                'max_speed' => 7.8,
-                'timezone' => 'Europe/London',
-                'endo_id' => 668479655,
-                'bike' => '',
-            );
+        $this->output = "";
+        $this->assertEquals("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<response>1212796</response>\n", $postPageDom->invokeArgs($myCyclingLog, array('?method=ride.new', $params))->saveXML());
+        $this->assertEquals("", $this->output);
 
-        $this->assertEquals("blah", $myCyclingLog->addRide('2016-02-07', $ride, null));
+
+        // mock returns null once, then works
+        $mock->expects($this->at(0))->method('postPage')
+            ->with('?method=ride.new', $params)
+            ->willReturn(null);
+        $mock->expects($this->at(1))->method('postPage')
+            ->with('?method=ride.new', $params)
+            ->willReturn("<?xml version=\"1.0\" encoding=\"UTF-8\"?><response>1212796</response>");
+
+        $this->output = "";
+        $this->assertEquals("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<response>1212796</response>\n", $postPageDom->invokeArgs($myCyclingLog, array('?method=ride.new', $params))->saveXML());
+        $this->assertEquals("", $this->output);
+
+        // mock returns not auth message, we need to set auth to null.
+        $mock->expects($this->at(0))->method('postPage')
+            ->with('?method=ride.new', $params)
+            ->willReturn("You are not authorized.");
+        $mock->expects($this->once())->method('setAuth')
+            ->with(null);
+
+        $this->output = "";
+        $this->assertEquals("", $postPageDom->invokeArgs($myCyclingLog, array('?method=ride.new', $params)));
+        $this->assertEquals("", $this->output);
+
+        // Unexpected non-xml value returned by API.
+        $mock->expects($this->at(0))->method('postPage')
+            ->with('?method=ride.new', $params)
+            ->willReturn("RANDOM STRING");
+
+        $this->output = "";
+        $this->assertEquals("", $postPageDom->invokeArgs($myCyclingLog, array('?method=ride.new', $params)));
+        $this->assertEquals("There is a problem with MyCyclingLog.  Please try again: RANDOM STRING", $this->output);
+
+        // mock returns null each time, so should try 3 times before return null
+        $mock->expects($this->exactly(3))->method('postPage')
+            ->with('?method=ride.new', $params)
+            ->willReturn(null);
+
+        $this->output = "";
+        $this->assertNull($postPageDom->invokeArgs($myCyclingLog, array('?method=ride.new', $params)));
+        $this->assertEquals("There is a problem with MyCyclingLog.  Please try again", $this->output);
+
+
+    }
+
+    public function testAddRide()
+    {
+        $mock = $this->getMockBuilder('MyCyclingLogApi')->setMethods(array('postPage', 'setAuth'))->getMock();
+        $myCyclingLog = new MyCyclingLog(array($this, 'myEcho'), $mock);
+
+        $params = array('event_date' => '02/07/2016', 'is_ride' => 'T', 'h' => 2, 'm' => 21, 's' => 24,
+            'distance' => 32000 * 0.00062137119224, 'max_speed' => 7.8 * 3600 * 0.00062137119224,
+            'notes' => 'http://www.strava.com/activities/490216308',
+            'elevation' => 0, 'bid' => 'b267883', 'user_unit' => 'mi');
+        $mock->expects($this->at(0))->method('postPage')
+            ->with('?method=ride.new', $params)
+            ->willReturn("<?xml version=\"1.0\" encoding=\"UTF-8\"?><response>1212796</response>");
+
+        $ride = array('distance' => 32000, 'name' => 'Lunch Ride', 'strava_id' => 490216308,
+            'start_time' => '2016-02-07T11:19:54Z', 'bike' => 'b267883', 'moving_time' => 8484,
+            'elapsed_time' => 2125, 'total_elevation_gain' => 0, 'max_speed' => 7.8,
+            'timezone' => 'Europe/London', 'endo_id' => 668479655,);
+
+        $this->assertEquals(1212796, $myCyclingLog->addRide('2016-02-07', $ride, null));
+        // no response from API
+        $this->assertEquals(null, $myCyclingLog->addRide('2016-02-07', $ride, null));
+        // api returns error
+        $mock->expects($this->at(0))->method('postPage')
+            ->with('?method=ride.new', $params)
+            ->willReturn("You are not authorized.");
+        $this->assertEquals(null, $myCyclingLog->addRide('2016-02-07', $ride, null));
+
+        // make sure correct values are passed to api
+        $params = array('event_date' => '02/07/2016', 'is_ride' => 'T', 'h' => 2, 'm' => 21, 's' => 24,
+            'distance' => 32000 * 0.00062137119224, 'max_speed' => 7.8 * 3600 * 0.00062137119224,
+            'elevation' => 400, 'bid' => null, 'user_unit' => 'mi');
+        $mock->expects($this->at(0))->method('postPage')
+            ->with('?method=ride.new', $params)
+            ->willReturn("<?xml version=\"1.0\" encoding=\"UTF-8\"?><response>1212796</response>");
+
+        $ride = array('bike' => null, 'max_speed' => 7.8, 'distance' => 32000, 'moving_time' => 8484,
+            'total_elevation_gain' => 400);
+        $this->assertEquals(1212796, $myCyclingLog->addRide('2016-02-07', $ride, null));
+
+        $this->setProperty('use_feet_for_elevation', true, $myCyclingLog);
+        $params['elevation'] = 1312;
+
+        $mock->expects($this->at(0))->method('postPage')
+            ->with('?method=ride.new', $params)
+            ->willReturn("<?xml version=\"1.0\" encoding=\"UTF-8\"?><response>1212796</response>");
+        $this->assertEquals(1212796, $myCyclingLog->addRide('2016-02-07', $ride, null));
+
+
+        $ride['moving_time'] = 10921;
+        $params['h'] = 3;
+        $params['m'] = 2;
+        $params['s'] = 1;
+
+        $mock->expects($this->at(0))->method('postPage')
+            ->with('?method=ride.new', $params)
+            ->willReturn("<?xml version=\"1.0\" encoding=\"UTF-8\"?><response>1212796</response>");
+        $this->assertEquals(1212796, $myCyclingLog->addRide('2016-02-07', $ride, null));
+
+        $params['event_date'] = '01/07/2015';
+        $mock->expects($this->at(0))->method('postPage')
+            ->with('?method=ride.new', $params)
+            ->willReturn("<?xml version=\"1.0\" encoding=\"UTF-8\"?><response>1212796</response>");
+        $this->assertEquals(1212796, $myCyclingLog->addRide('2015-01-07', $ride, null));
+
+        $ride['distance'] = 0;
+        $params['distance'] = 0;
+
+        $mock->expects($this->at(0))->method('postPage')
+            ->with('?method=ride.new', $params)
+            ->willReturn("<?xml version=\"1.0\" encoding=\"UTF-8\"?><response>1212796</response>");
+        $this->assertEquals(1212796, $myCyclingLog->addRide('2015-01-07', $ride, null));
+
+        $ride['distance'] = 16000;
+        $params['distance'] = 9.9419390758;
+
+        $mock->expects($this->at(0))->method('postPage')
+            ->with('?method=ride.new', $params)
+            ->willReturn("<?xml version=\"1.0\" encoding=\"UTF-8\"?><response>1212796</response>");
+        $this->assertEquals(1212796, $myCyclingLog->addRide('2015-01-07', $ride, null));
+
+        $ride['max_speed'] = 10;
+        $params['max_speed'] = 22.36936292064;
+
+        $mock->expects($this->at(0))->method('postPage')
+            ->with('?method=ride.new', $params)
+            ->willReturn("<?xml version=\"1.0\" encoding=\"UTF-8\"?><response>1212796</response>");
+        $this->assertEquals(1212796, $myCyclingLog->addRide('2015-01-07', $ride, null));
+    }
+
+    public function testGetBikes()
+    {
+        $mock = $this->getMockBuilder('MyCyclingLogApi')->setMethods(array('getPage'))->getMock();
+        $myCyclingLog = new MyCyclingLog(array($this, 'myEcho'), $mock);
+        $getBikes = $this->getMethod('getBikes');
+        $mock->expects($this->at(0))->method('getPage')
+            ->with('?method=bike.list&limit=0&offset=0')
+            ->willReturn(include('data/input/mclBikes0.php'));
+        $mock->expects($this->at(1))->method('getPage')
+            ->with('?method=bike.list&limit=20&offset=0')
+            ->willReturn(include('data/input/mclBikes1.php'));
+
+        $avail = array('brand' => 'Giant', 'model' => 'Avail 2', 'year' => 2012);
+        $mezzo = array('brand' => 'Mezzo', 'model' => 'D9', 'year' => 2008);
+        $this->assertEquals(array(18795 => $avail,18796 => $mezzo), $getBikes->invokeArgs($myCyclingLog, array()));
+
+        // more than one page of bikes
+        $myCyclingLog = new MyCyclingLog(array($this, 'myEcho'), $mock);
+        $mock->expects($this->at(0))->method('getPage')
+            ->with('?method=bike.list&limit=0&offset=0')
+            ->willReturn(include('data/input/mclBikes3.php'));
+        $mock->expects($this->at(1))->method('getPage')
+            ->with('?method=bike.list&limit=2&offset=0')
+            ->willReturn(include('data/input/mclBikes1.php'));
+        $mock->expects($this->at(2))->method('getPage')
+            ->with('?method=bike.list&limit=2&offset=2')
+            ->willReturn(include('data/input/mclBikes4.php'));
+        $mock->expects($this->at(3))->method('getPage')
+            ->with('?method=bike.list&limit=2&offset=4')
+            ->willReturn(include('data/input/mclBikes5.php'));
+
+        $this->assertEquals(array(18795 => $avail,18796 => $mezzo, 18797 => $avail,18798 => $mezzo, 18799 => $avail), $getBikes->invokeArgs($myCyclingLog, array(2)));
+
+        // no bikes store, empty array returned
+        $myCyclingLog = new MyCyclingLog(array($this, 'myEcho'), $mock);
+        $mock->expects($this->once())->method('getPage')
+            ->with('?method=bike.list&limit=0&offset=0')
+            ->willReturn(include('data/input/mclBikes2.php'));
+
+        $this->assertEquals([], $getBikes->invokeArgs($myCyclingLog, array()));
+
+    }
+    public function testGetBike()
+    {
+
+        $mock = $this->getMockBuilder('MyCyclingLogApi')->setMethods(array('getPage'))->getMock();
+        $myCyclingLog = new MyCyclingLog(array($this, 'myEcho'), $mock);
+        $getBikes = $this->getMethod('getBikes');
+        $mock->expects($this->at(0))->method('getPage')
+            ->with('?method=bike.list&limit=0&offset=0')
+            ->willReturn(include('data/input/mclBikes0.php'));
+        $mock->expects($this->at(1))->method('getPage')
+            ->with('?method=bike.list&limit=20&offset=0')
+            ->willReturn(include('data/input/mclBikes1.php'));
+        $this->assertEquals(array('brand' => "Giant", 'model' => "Avail 2", 'year' => '2012'), $myCyclingLog->getBike(18795));
+        $this->assertEquals(array('brand' => "Mezzo", 'model' => "D9", 'year' => '2008'), $myCyclingLog->getBike(18796));
+        $this->assertEquals(null, $myCyclingLog->getBike(18797));
     }
 
     public function testDeleteRides()

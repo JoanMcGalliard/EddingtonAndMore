@@ -272,82 +272,9 @@ class MainPage
             $str .= $this->copy($_POST['copySource'], $_POST['copyDestination'], $this->start_date, $this->end_date);
         } else if ($state == "copy_strava_to_mcl") {
             $str.=$this->processUploadedGpxFiles($this->strava->getUserId(), $scratchDirectory);
-            $str.=$this->copy('Strava', 'MyCyclingLog', $this->start_date, $this->end_date, $splitOvernight=$this->preferences->getStravaSplitRides());
+            $str.=$this->copy('Strava', 'MyCyclingLog', $this->start_date, $this->end_date, $this->preferences->getStravaSplitRides());
         } else if ($state == "copy_endo_to_strava") {
-            $this->output("<H3>Copying rides from Endomondo to Strava...</H3>");
-            set_time_limit(300);
-
-            $endo_rides_to_add = $this->endomondo->getRides($this->start_date, $this->end_date);
-            $this->strava_rides = $this->strava->getRides($this->start_date, $this->end_date);
-            if ($this->strava->getError()) {
-                return ("<br>There was a problem getting data from Strava.<br>" . $this->strava->getError() .
-                    "\n<br>Please try again\n");
-            } else {
-                foreach ($endo_rides_to_add as $date => $ride_list) {
-                    foreach ($ride_list as $ride) {
-                        $distance = $ride['distance'];
-                        $start_time = $ride['start_time'];
-                        $message = 'Ride with id <a target="_blank" href="' . $this->endomondo->activityUrl($ride['endo_id']) . '">' . $ride['endo_id'] . '</a>' . " on $start_time, distance " . round($distance * self::METRE_TO_MILE, 1) . " miles/" . round($distance * self::METRE_TO_KM, 1) . " kms. ";
-                        if (!$distance || $distance < 300) {
-                            $message .= "Skipping, too short: $distance metres";
-                        } else {
-                            if ($this->isDuplicateRide($ride, $this->strava_rides, 'endo_id')) {
-                                $message = "";
-                                $this->output(".");
-                            } else {
-                                $path = $scratchDirectory . DIRECTORY_SEPARATOR . "endomondo+" . $ride['endo_id'] . ".gpx";
-                                $points = $this->endomondo->getPoints($ride['endo_id']);
-                                if ($points->gpxBad()) {
-                                    $message .= '<span style="color:red;">' . $points->gpxBad() . '</span>';
-                                    $message .= 'To add manually, try going downloading GPX from  <a href="'
-                                        . $this->endomondo->gpxDownloadUrl($ride['endo_id']) . '" target="_blank">Endomondo</a>'
-                                        . ' then uploading it to <a href="' . $this->strava->uploadUrl() . '" target="_blank">Strava</a>.';
-
-                                } else {
-                                    file_put_contents($path, $points->gpx());
-                                    $ride['message']=$message;
-                                    $ride['description']=$this->endomondo->activityUrl($ride['endo_id']);
-                                    $result=$this->strava->addRide($date,$ride,$points);
-
-                                    if (!$result) {
-                                        $message = $message . '<span style="color:red;">Failed: </span>' . $this->strava->getError();
-                                    } else {
-                                        $message = $message . 'Queued for upload.';
-                                    }
-                                    unlink($path);
-                                }
-                                $points = null;
-                            }
-
-                        }
-                        if ($message) {
-                            $this->output("<br>$message ");
-                            flush();
-                        }
-
-                    }
-
-
-                }
-                $results = $this->strava->waitForPendingUploads();
-                $count = 0;
-
-                foreach ($results as $endo_id => $result) {
-                    if (isset($result->strava_id)) {
-                        $message = $result->message . ' Uploaded successfully, id: <a target="_blank" href="' . $this->strava->activityUrl($result->strava_id) .
-                            '">' . $result->strava_id . '</a>.';
-                        $count++;
-                    } else {
-                        $message = $result->message . '<span style="color:red;"> There was a problem. </span>' . $result->error;
-
-                    }
-                    $this->output("<br>$message");
-                    flush();
-
-
-                }
-                $str .= "<br>$count rides added.<br>\n";
-            }
+            $str.=$this->copy('Endomondo', 'Strava', $this->start_date, $this->end_date);
         } else if ($state == 'delete_mcl_rides') {
             $result = $this->myCyclingLog->deleteRides($this->start_date, $this->end_date, $_POST['mcl_username'], $_POST['mcl_password']);
             if (is_int($result)) {
@@ -379,6 +306,10 @@ class MainPage
                     }
                     if ($ride['kudos_count'] > 0) {
                         $this->output("<br>Skipping $stravaLink ($endoLink) because it has " . $ride['kudos_count'] . " kudo(s)<br>");
+                        continue;
+                    }
+                    if ($ride['photo_count'] > 0) {
+                        $this->output("<br>Skipping $stravaLink ($endoLink) because it has " . $ride['photo_count'] . " photo(s)<br>");
                         continue;
                     }
                     if ($ride['comment_count'] > 0) {
@@ -1466,13 +1397,7 @@ class MainPage
             $str.="Sorry, I don't know how to copy rides to $destinationName<br>";
             return $str;
         }
-//        $includeGpx=true;
-//        if ($destination=='MyCyclingLog' || $source == 'Strava' || $source == 'MyCyclingLog') {
-//            $includeGpx=false;
-//        }
         $this->output("<H3>Copying data from $sourceName to $destinationName...</H3>");
-
-
         set_time_limit(300);
         $sourceRides = $source->getRides($start_date, $end_date);
         $destinationRides = $destination->getRides($start_date, $end_date);
@@ -1492,7 +1417,6 @@ class MainPage
             // MCL doesn't record start times, so duplicate rides can only be detected by "foreign" keys or daily total.
             $useStartTime = false;
         }
-        $retries=[];
         foreach ($sourceRides as $date => $rides) {
             $sourceDay = $this->sumDay($rides);
             $destinationDay = isset($destinationRides[$date]) ? $this->sumDay($destinationRides[$date]) : 0;
@@ -1509,21 +1433,32 @@ class MainPage
                             if ($this->compareDistance($sourceDay, $destinationDay + $ride['distance']) <= 0) {
                                 $ride['distance'] = $sourceDay - $destinationDay;
                             }
+                            $distance = $ride['distance'];
+                            $message = 'Ride with id <a target="_blank" href="' . $source->activityUrl($ride[$foreign_key]) . '">'
+                                . $ride[$foreign_key] . '</a>' . " on ". $date.", distance " . round($distance * self::METRE_TO_MILE, 1)
+                                . " miles/" . round($distance * self::METRE_TO_KM, 1) . " kms. ";
 
-                            $this->output("Ride with id " . $ride[$foreign_key] . " on $date, distance " .
-                                round($ride['distance'] * self::METRE_TO_MILE, 1) . " miles/"
-                                . round($ride['distance'] * self::METRE_TO_KM, 1) . " kms. ");
-                            $bike = $source->getBike($ride["bike"]);
-                            $ride['bike'] = $destination->bikeMatch($bike['brand'], $bike['model'], $ride['bike']);
+                            if (isset($ride["bike"])) {
+                                $bike = $source->getBike($ride["bike"]);
+                                $ride['bike'] = $destination->bikeMatch($bike['brand'], $bike['model'], $ride['bike']);
+                            }
+                            $ride['message']=$message;
+                            $ride['description']=$source->activityUrl($ride[$foreign_key]);
 
-                            $new_id = $destination->addRide($date, $ride, null);
+                            $tz = isset($ride['timezone']) ? $ride['timezone'] : null;
+                            $points=$source->getPoints($ride[$foreign_key], $tz);
+                            $new_id = $destination->addRide($date, $ride, $points);
                             if ($new_id) {
-                                $this->output("Added new ride, id: $new_id <br>");
+                                if ($new_id === true) {
+                                    $message .= 'Queued for upload.';
+                                } else {
+                                    $message .= "Added new ride, id: $new_id ";
+                                }
+                                $this->output($message."<br>");
                                 $destinationDay += $ride['distance'];
                                 $count++;
                             } else {
-                                $this->output("Appears to be a problem. Queued to retry. <br>");
-                                $retries[$date][] = $ride;
+                                $message .= '<span style="color:red;"> There was a problem. </span>';
                             }
                         }
                     } else {
@@ -1533,26 +1468,27 @@ class MainPage
             }
         }
 
+        $results = $destination->waitForPendingUploads();
+        if ($results) {
+            $count = 0;
 
-        foreach ($retries as $date => $rides) {
-            foreach ($rides as $ride) {
-                for ($i = 0; $i < 2; $i++) {
-                    $this->output("Ride with id " . $ride[$foreign_key] . " on $date, distance " .
-                        round($ride['distance'] * self::METRE_TO_MILE, 1) . " miles/"
-                        . round($ride['distance'] * self::METRE_TO_KM, 1) . " kms. ");
-                    $new_id=$destination->addRide($date, $ride,null);
-                    if ($new_id) {
-                        $this->output("Added new ride, id: $new_id <br>");
-                        $count++;
-                    } else {
-                        $this->output("Appears to be a problem. Queued to retry. <br>");
-                    }
+            foreach ($results as $endo_id => $result) {
+                if (isset($result->strava_id)) {
+                    $message = $result->message . ' Uploaded successfully, id: <a target="_blank" href="' . $destination->activityUrl($result->strava_id) .
+                        '">' . $result->strava_id . '</a>.';
+                    $count++;
+                } else {
+                    $message = $result->message . '<span style="color:red;"> There was a problem. </span>' . $result->error;
 
                 }
+                $this->output("<br>$message");
+                flush();
+
+
             }
         }
 
-        $str .= "<br>$count rides added.<br>\n";
+        $str .= "<br>$count rides added.<br>";
         $str .= $this->askForStravaGpx($overnightRidesNeeded, $maxKmFileUploads, "copy_strava_to_mcl", "add to MyCyclingLog");
 
         return $str;

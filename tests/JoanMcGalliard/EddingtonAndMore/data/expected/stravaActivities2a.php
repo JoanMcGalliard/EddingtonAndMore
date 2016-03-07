@@ -17,7 +17,7 @@ return array(
                     'endo_id' => NULL,
                     'timezone' => 'Europe/London',
                     'kudos_count' => 0,
-                    'comment_count' => 0)
+                    'comment_count' => 0,  'photo_count' => 0)
         ),
     '2013-07-28' =>
         array(
@@ -36,7 +36,8 @@ return array(
                     'endo_id' => null,
                     'timezone' => 'Europe/London',
                     'kudos_count' => 3,
-                    'comment_count' => 1)
+                    'comment_count' => 1,
+                    'photo_count' => 0)
         ),
     '2013-07-29' =>
         array(
@@ -54,7 +55,8 @@ return array(
                     'endo_id' => null,
                     'timezone' => 'Europe/London',
                     'kudos_count' => 3,
-                    'comment_count' => 1
+                    'comment_count' => 1,
+                    'photo_count' => 0
                 ),
         ),
     '2013-07-30' =>
@@ -74,7 +76,8 @@ return array(
                     'endo_id' => null,
                     'timezone' => 'Europe/London',
                     'kudos_count' => 3,
-                    'comment_count' => 1
+                    'comment_count' => 1,
+                    'photo_count' => 0
                 ),
         ),
     '2013-07-31' =>
@@ -94,7 +97,8 @@ return array(
                     'endo_id' => null,
                     'timezone' => 'Europe/London',
                     'kudos_count' => 3,
-                    'comment_count' => 1),
+                    'comment_count' => 1,
+                    'photo_count' => 0),
         ),
     '2013-08-01' =>
         array(
@@ -113,7 +117,8 @@ return array(
                     'endo_id' => null,
                     'timezone' => 'Europe/London',
                     'kudos_count' => 3,
-                    'comment_count' => 1)
+                    'comment_count' => 1,
+                    'photo_count' => 0)
         ),
     '2013-08-18' =>
         array(
@@ -131,4 +136,4 @@ return array(
                     'endo_id' => NULL,
                     'timezone' => 'Europe/London',
                     'kudos_count' => 1,
-                    'comment_count' => 0)));
+                    'comment_count' => 0,  'photo_count' => 0)));

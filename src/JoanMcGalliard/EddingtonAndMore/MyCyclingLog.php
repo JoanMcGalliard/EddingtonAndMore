@@ -70,13 +70,19 @@ class MyCyclingLog extends trackerAbstract
         $parameters['s'] = $secs;
         $parameters['distance'] = $ride['distance'] * self::METRE_TO_MILE;
         $parameters['user_unit'] = 'mi';
-        $parameters['notes'] = self::STRAVA_NOTE_PREFIX . $ride['strava_id'];
-//        $parameters['heart_rate'] = $ride[''];
+        if (isset($ride['strava_id'])) {
+            $parameters['notes'] = self::STRAVA_NOTE_PREFIX . $ride['strava_id'];
+        }
         $parameters['max_speed'] = $ride['max_speed'] * 60 * 60 * self::METRE_TO_MILE;
         $parameters['elevation'] = $ride['total_elevation_gain'] * ($this->use_feet_for_elevation ? self::METRE_TO_FOOT : 1);
-//        $parameters['tags'] = $ride[''];
-        $parameters['bid'] = $ride['bike']; // bid. Optional. Bike ID as returned by New Bike API.
-        return $this->api->postPage("?method=ride.new", $parameters);
+        $parameters['bid'] = $ride['bike'];
+
+        $response = $this->postPageDom("?method=ride.new", $parameters);
+        if ($response && isset($response->getElementsByTagName("response")->item(0)->nodeValue)) {
+            return intval($response->getElementsByTagName("response")->item(0)->nodeValue);
+        } else {
+            return null;
+        }
     }
 
 
@@ -119,6 +125,32 @@ class MyCyclingLog extends trackerAbstract
         return $doc;
     }
 
+    protected function postPageDom($url,$params)
+    {
+        for ($i = 0; $i < self::RETRIES; $i++) {
+            $xml = $this->api->postPage($url,$params);
+            if ($xml) break;
+        }
+        if (!$xml) {
+            $this->output("There is a problem with MyCyclingLog.  Please try again");
+            return null;
+        }
+        if ($xml == "You are not authorized.") {
+            $this->setAuth(null);
+            return null;
+        }
+        $doc = new DOMDocument();
+        try {
+            $doc->loadXML($xml);
+        } catch (\Exception $e) {
+            $this->output("There is a problem with MyCyclingLog.  Please try again: $xml");
+            return null;
+
+        }
+        $doc->formatOutput = true;
+        return $doc;
+    }
+
 
     protected function removeCharactersInElement($element, $xml)
     {
@@ -152,12 +184,11 @@ class MyCyclingLog extends trackerAbstract
         return $this->strava_bike_match[$stravaId];
     }
 
-    protected function getBikes()
+    protected function getBikes($limit=20)
     {
         $records = [];
         $bikeCount = $this->getBikeCount();
         $offset = 0;
-        $limit = 20;
 
         while ($offset < $bikeCount) {
             $doc = $this->getPageDom("?method=bike.list&limit=$limit&offset=$offset");
@@ -262,22 +293,33 @@ class MyCyclingLog extends trackerAbstract
 
     public function getOvernightActivities()
     {
-        // TODO: Implement getOvernightActivities() method.
+        return [];
     }
 
     public function getBike($id)
     {
-        // TODO: Implement getBike() method.
+        if ($this->bikes == null) {
+            $this->bikes = $this->getBikes();
+        }
+        return isset($this->bikes[$id]) ? $this->bikes[$id] : null;
+
+
+
     }
 
     public function activityUrl($id)
     {
-        // TODO: Implement activityUrl() method.
+        return "http://www.mycyclinglog.com/add.php?lid=$id";
     }
 
-    public function waitForPendingUploads()
+    public function waitForPendingUploads($sleep=1)
     {
-        // TODO: Implement waitForPendingUploads() method.
+        return null;
+    }
+
+    public function getPoints($id, $tz)
+    {
+        return null;
     }
 }
 

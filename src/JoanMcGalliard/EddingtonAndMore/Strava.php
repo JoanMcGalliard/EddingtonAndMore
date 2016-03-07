@@ -185,8 +185,9 @@ class Strava extends trackerAbstract
                 };;
                 $next['kudos_count'] = $activity->kudos_count;
                 $next['comment_count'] = $activity->comment_count;
+                $next['photo_count'] = $activity->photo_count;
                 $date = date("Y-m-d", strtotime($activity->start_date_local));
-                $pattern = "/^endomondo_[^_]*_([0-9][0-9]*)\." . self::GPX_SUFFIX . "/";
+                $pattern = "/^endomondo.*_([0-9][0-9]*)\." . self::GPX_SUFFIX . "/";
                 if (preg_match($pattern, $activity->external_id, $matches) > 0) {
                     $next['endo_id'] = intval($matches[1]);
                 } else {
@@ -376,6 +377,7 @@ class Strava extends trackerAbstract
         // TODO: Implement bikeMatch() method.
     }
 
+    //TODO  If GPX is longer than $ride['distance'] we should trim gpx appropriately
     public function addRide($date, $ride, $points)
     {
         global $scratchDirectory;

@@ -17,7 +17,8 @@ return array(
                     'endo_id' => NULL,
                     'timezone' => 'Europe/London',
                     'kudos_count' => 0,
-                    'comment_count' => 0
+                    'comment_count' => 0,
+                    'photo_count' => 0
                 ),
             1 =>
                 array(
@@ -33,7 +34,8 @@ return array(
                     'endo_id' => NULL,
                     'timezone' => 'Europe/London',
                     'kudos_count' => 0,
-                    'comment_count' => 0
+                    'comment_count' => 0,
+                    'photo_count' => 0
                 ),
         ),
     '2016-01-10' =>
@@ -52,6 +54,7 @@ return array(
                     'endo_id' => NULL,
                     'timezone' => 'Europe/London',
                     'kudos_count' => 0,
-                    'comment_count' => 0
+                    'comment_count' => 0,
+                    'photo_count' => 0
                 )));
 ?>

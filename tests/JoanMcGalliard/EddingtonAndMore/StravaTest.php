@@ -56,6 +56,48 @@ class StravaTest extends BaseTestClass
         $this->assertEquals("Operation timed out after 0 milliseconds with 0 out of 0 bytes received<br>",
             $strava->getError());
 
+
+        // extract endo_id in if user id is included or not
+        $json = '[
+    {
+        "id": 470171383,
+        "external_id": "###EXTERNAL_ID###",
+        "name": "Afternoon Ride",
+        "distance": 2975.5,
+        "moving_time": 599,
+        "elapsed_time": 599,
+        "total_elevation_gain": 0.0,
+        "type": "Ride",
+        "start_date": "2016-01-08T13:20:00Z",
+        "start_date_local": "2016-01-08T13:20:00Z",
+        "timezone": "(GMT+00:00) Europe/London",
+
+        "kudos_count": 0,
+        "photo_count": 0,
+        "comment_count": 0,
+        "private": false,
+        "gear_id": "b267883",
+        "max_speed": 5.5,
+        "workout_type": null
+    }
+]';
+        $mock->expects($this->at(0))->method('get')
+            ->willReturn(json_decode( str_replace("###EXTERNAL_ID###", "not_and_endomondo_id",$json )));
+        $this->output = "";
+        $this->assertEquals(null , $strava->getRides(null, null)['2016-01-08'][0]['endo_id']);
+
+        $mock->expects($this->at(0))->method('get')
+            ->willReturn(json_decode( str_replace("###EXTERNAL_ID###", "endomondo_2859253_400874865.gpx",$json )));
+        $this->output = "";
+        $this->assertEquals('400874865' , $strava->getRides(null, null)['2016-01-08'][0]['endo_id']);
+
+        $mock->expects($this->at(0))->method('get')
+            ->willReturn(json_decode( str_replace("###EXTERNAL_ID###", "endomondo_672012172.gpx",$json )));
+        $this->output = "";
+        $this->assertEquals('672012172' , $strava->getRides(null, null)['2016-01-08'][0]['endo_id']);
+
+
+
         // split rides from gpx file
 
 //        Rides that would be split, if splitting was turned on
@@ -386,7 +428,6 @@ The server didn\'t respond in time.
         global $scratchDirectory;
         $scratchDirectory = ".";
         $mock = $this->getMockBuilder('StravaApi')->setMethods(array('post'))->getMock();
-        $cFile = new \CURLFile('./8719eb8.gpx', 'text', 'name');
         $mock->expects($this->at(0))->method('post')->with("uploads", $this->captureArg($params))
             ->willReturn(json_decode('{"id":546495227,"external_id":"endomondo_2859253_672012172.gpx","error":null,"status":"Your activity is still being processed.","activity_id":null}'));
         $points = $this->getMockBuilder('Points')->setMethods(array('gpx'))->getMock();

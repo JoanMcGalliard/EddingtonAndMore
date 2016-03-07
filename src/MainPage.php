@@ -263,8 +263,7 @@ class MainPage
     private function execute($state)
     {
         $str = "";
-        global $scratchDirectory, $maxKmFileUploads;
-        $source = "we should never see this value!";
+        global $scratchDirectory;
 
         if ($state == "calculate_from_strava" || $state == "calculate_from_mcl" || $state == "calculate_from_endo" || $state == "calculate_from_rwgps") {
             $str .= $this->calculate($state);
@@ -1177,6 +1176,7 @@ class MainPage
     private function calculate($state)
     {
         global $scratchDirectory, $maxKmFileUploads;
+        $source = "we should never see this value!";
         $str = "";
         set_time_limit(300);
         $this->output("<H3>Calculating....</H3>");
@@ -1404,6 +1404,9 @@ class MainPage
             $count = 0;
 
             foreach ($results as $endo_id => $result) {
+                if (isset($result->file) && file_exists($result->file)) {
+                    unlink($result->file);
+                }
                 if (isset($result->strava_id)) {
                     $message = $result->message . ' Uploaded successfully, id: <a target="_blank" href="' . $destination->activityUrl($result->strava_id) .
                         '">' . $result->strava_id . '</a>.';

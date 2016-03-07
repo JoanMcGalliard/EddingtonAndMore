@@ -130,7 +130,7 @@ class StravaTest extends BaseTestClass
         $this->assertEquals(include("data/expected/stravaActivities2a.php"), $strava->getRides(null, null, 200));
         $this->assertEquals("", $strava->getError());
 
-
+        $this->cleanDirectory($scratchDirectory);
     }
 
     public function testGetActivityDescription()
@@ -448,6 +448,7 @@ The server didn\'t respond in time.
         $this->assertEquals('name', $params['file']->postname);
         $this->assertFileExists($params['file']->name);
         $this->assertEquals("A load of text", file_get_contents($params['file']->name));
+        unlink($params['file']->name);
 
 
         $ride = array (
@@ -485,6 +486,7 @@ The server didn\'t respond in time.
 '));
         $this->assertFalse($strava->addRide("date", $ride, $points));
         $this->assertEquals("Improperly formatted data.",$strava->getError());
+        unlink($params['file']->name);
     }
 }
 

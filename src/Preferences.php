@@ -9,7 +9,7 @@ class Preferences
 
     const COOKIE_NAME = "EDDINGTON_AND_MORE";
 
-    const VERSION = 2;
+    const VERSION = 3;
 
 
     private $preferences;
@@ -25,7 +25,20 @@ class Preferences
             $this->preferences = json_decode($_COOKIE[self::COOKIE_NAME]);
             if ($this->preferences->version == 1) {
                 $this->preferences->rwgps = new stdClass();
-                $this->preferences->version=self::VERSION;
+                $this->preferences->version = 2;
+                $this->save();
+            }
+            if ($this->preferences->version == 2) {
+                if (isset($this->preferences->endo->splitRides) || isset($this->preferences->rwgps->splitRides) || isset($this->preferences->strava->splitRides)) {
+                    $this->preferences->general->splitRides = true;
+                } else {
+                    $this->preferences->general->splitRides = false;
+                }
+                unset($this->preferences->endo->splitRides);
+                unset($this->preferences->rwgps->splitRides);
+                unset($this->preferences->strava->splitRides);
+
+                $this->preferences->version = 3;
                 $this->save();
             }
         } else {
@@ -107,24 +120,18 @@ class Preferences
         return isset($this->preferences->mcl->use_feet) ? $this->preferences->mcl->use_feet : null;
     }
 
-    public function setEndoSplitRides($bool)
-    {
-        $this->preferences->endo->splitRides = $bool;
-        $this->save();
-    }
 
-    public function getEndoSplitRides()
+    /**
+     * @return null
+     */
+    public function getSplitRides()
     {
-        return isset($this->preferences->endo->splitRides) ? $this->preferences->endo->splitRides : null;
+        return isset($this->preferences->general->splitRides) ? $this->preferences->general->splitRides : false;
     }
-    public function setRwgpsSplitRides($bool)
+    public function setSplitRides($bool)
     {
-        $this->preferences->rwgps->splitRides = $bool;
+        $this->preferences->general->splitRides=$bool;
         $this->save();
-    }
-    public function getRwgpsSplitRides()
-    {
-        return isset($this->preferences->rwgps->splitRides) ? $this->preferences->rwgps->splitRides : null;
     }
 
     public function getEndoAuth()
@@ -148,17 +155,6 @@ class Preferences
     public function getStravaAccessToken()
     {
         return isset($this->preferences->strava->access_token) ? $this->preferences->strava->access_token : null;
-    }
-
-    public function setStravaSplitRides($bool)
-    {
-        $this->preferences->strava->splitRides = $bool;
-        $this->save();
-    }
-
-    public function getStravaSplitRides()
-    {
-        return isset($this->preferences->strava->splitRides) ? $this->preferences->strava->splitRides : null;
     }
 
 
@@ -212,13 +208,15 @@ class Preferences
 
     public function setStravaWriteScope($writeScope)
     {
-        $this->preferences->strava->writeScope=$writeScope;
+        $this->preferences->strava->writeScope = $writeScope;
         $this->save();
     }
+
     public function getStravaWriteScope()
     {
         return isset($this->preferences->strava->writeScope) ? $this->preferences->strava->writeScope : false;
     }
+
 }
 
 ?>

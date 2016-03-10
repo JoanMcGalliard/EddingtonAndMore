@@ -1371,9 +1371,9 @@ class MainPageTest extends JoanMcGalliard\EddingtonAndMore\BaseTestClass
         $mockTracker->expects($this->any())->method('isConnected')->willReturn(true);
 
         $mockPreferences = $this->getMockBuilder('Preferences')->disableOriginalConstructor()
-            ->setMethods(array('getTimezone', 'getStravaSplitRides', 'getEndoSplitRides', 'getRwgpsSplitRides', 'getMclUseFeet',
+            ->setMethods(array('getTimezone', 'getSplitRides', 'getMclUseFeet',
                 'getMclUsername', 'getStravaWriteScope', 'getMclAuth', 'getEndoAuth', 'getRwgpsAuth', 'getStravaAccessToken',
-                'setStravaSplitRides'
+                'setSplitRides'
             ))->getMock();
         $mockPreferences->expects($this->any())->method('getTimezone')->willReturn('UTC');
 

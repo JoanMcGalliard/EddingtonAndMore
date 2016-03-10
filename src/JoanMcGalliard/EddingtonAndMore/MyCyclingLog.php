@@ -11,7 +11,6 @@ use JoanMcGalliard;
 
 class MyCyclingLog extends trackerAbstract
 {
-    const STRAVA_NOTE_PREFIX = "http://www.strava.com/activities/";
     protected $connected = false;
     protected $bikes = null;
     protected $strava_bike_match = [];
@@ -60,7 +59,7 @@ class MyCyclingLog extends trackerAbstract
         $parameters = [];
         $parameters['event_date'] = date("m/d/Y", strtotime($date));
         $parameters['is_ride'] = 'T';
-        $time = $ride['moving_time'];
+        $time = isset($ride['moving_time']) ? $ride['moving_time'] : $ride['elapsed_time'];
         $secs = $time % 60;
         $time = ($time - $secs) / 60;
         $mins = $time % 60;
@@ -70,12 +69,12 @@ class MyCyclingLog extends trackerAbstract
         $parameters['s'] = $secs;
         $parameters['distance'] = $ride['distance'] * self::METRE_TO_MILE;
         $parameters['user_unit'] = 'mi';
-        if (isset($ride['strava_id'])) {
-            $parameters['notes'] = self::STRAVA_NOTE_PREFIX . $ride['strava_id'];
+        if (isset($ride['description'])) {
+            $parameters['notes'] = $ride['description'];
         }
-        $parameters['max_speed'] = $ride['max_speed'] * 60 * 60 * self::METRE_TO_MILE;
-        $parameters['elevation'] = $ride['total_elevation_gain'] * ($this->use_feet_for_elevation ? self::METRE_TO_FOOT : 1);
-        $parameters['bid'] = $ride['bike'];
+        $parameters['max_speed'] = isset($ride['max_speed']) ? $ride['max_speed'] * 60 * 60 * self::METRE_TO_MILE : 0;
+        $parameters['elevation'] = isset($ride['total_elevation_gain']) ? $ride['total_elevation_gain'] * ($this->use_feet_for_elevation ? self::METRE_TO_FOOT : 1) : 0;
+        $parameters['bid'] = isset($ride['bike']) ? $ride['bike'] : "";
 
         $response = $this->postPageDom("?method=ride.new", $parameters);
         if ($response && isset($response->getElementsByTagName("response")->item(0)->nodeValue)) {
@@ -223,8 +222,12 @@ class MyCyclingLog extends trackerAbstract
         $rides = $this->getRides($start_date, $end_date);
         foreach ($rides as $date => $ride_list) {
             foreach ($ride_list as $ride) {
-                if ($ride['strava_id'] <> null) {
-                    $this->output("Deleting " . $ride['mcl_id'] . " from " . $date . ", strava id " . $ride["strava_id"]);
+                if ($ride['strava_id'] <> null || $ride['endo_id'] <> null) {
+                    if ($ride['strava_id'] <> null) {
+                        $this->output("Deleting " . $ride['mcl_id'] . " from " . $date . ", strava id " . $ride["strava_id"]);
+                    } else {
+                        $this->output("Deleting " . $ride['mcl_id'] . " from " . $date . ", endomondo id " . $ride["endo_id"]);
+                    }
                     if($this->api->delete($ride['mcl_id'])) {
                         $count++;
                     } else {
@@ -265,11 +268,17 @@ class MyCyclingLog extends trackerAbstract
                 $record['mcl_id'] = $ride->getAttribute('id');
 
 
-                $pattern = "/" . str_replace("/", "\\/", self::STRAVA_NOTE_PREFIX) . "([1-9][0-9]*)$/";
+                $pattern = "/" . str_replace("/", "\\/", $this->stravaActivityUrl("([1-9][0-9]*)")) . "/" ;
                 if (preg_match($pattern, $ride->getElementsByTagName("notes")->item(0)->nodeValue, $matches) > 0) {
                     $record['strava_id'] = $matches[1];
                 } else {
                     $record['strava_id'] = null;
+                }
+                $pattern = "/" . str_replace("/", "\\/", $this->endomondoActivityUrl("([1-9][0-9]*)", ".*")) . "/" ;
+                if (preg_match($pattern, $ride->getElementsByTagName("notes")->item(0)->nodeValue, $matches) > 0) {
+                    $record['endo_id'] = $matches[1];
+                } else {
+                    $record['endo_id'] = null;
                 }
                 $record['moving_time'] = $ride->getElementsByTagName("time")->item(0)->nodeValue;
                 $record['max_speed'] = floatval($ride->getElementsByTagName("max_speed")->item(0)->nodeValue) / (60 * 60 * self::METRE_TO_MILE); // convert to m/s

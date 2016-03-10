@@ -15,6 +15,6 @@ it to 1000 kilometres or so at a time to keep the server behaving nicely. The ri
 <input type=\"hidden\" name=\"start_date\" value=\"01-01-2015\"/>
 <input type=\"hidden\" name=\"end_date\" value=\"31-12-2015\"/>
 <input type=\"hidden\" name=\"calculate_from_strava\" />
-<input type=\"hidden\" value=\"split\" checked name=\"strava_split_rides\"/><br>
+<input type=\"hidden\" value=\"split\" checked name=\"split_rides\"/><br>
 <strong>Finally</strong>, recalculate your E-Number:<br>
 <input type=\"submit\" value=\"Upload and recalculate your E-Number\" name=\"submit\"/></form>";

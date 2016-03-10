@@ -11,6 +11,6 @@ To split your strava rides, you'll need to download some of the GPX from Strava,
 <input type=\"hidden\" name=\"start_date\" value=\"01-01-2015\"/>
 <input type=\"hidden\" name=\"end_date\" value=\"31-12-2015\"/>
 <input type=\"hidden\" name=\"copy_strava_to_mcl\" />
-<input type=\"hidden\" value=\"split\" checked name=\"strava_split_rides\"/><br>
+<input type=\"hidden\" value=\"split\" checked name=\"split_rides\"/><br>
 <strong>Finally</strong>, add to MyCyclingLog:<br>
 <input type=\"submit\" value=\"Upload and add to MyCyclingLog\" name=\"submit\"/></form>";

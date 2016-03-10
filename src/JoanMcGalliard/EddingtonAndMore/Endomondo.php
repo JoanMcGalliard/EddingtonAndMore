@@ -61,7 +61,7 @@ class Endomondo extends trackerAbstract
             return null;
         }
 
-        return "https://www.endomondo.com/users/" . $this->getUserId() . "/workouts/$workoutId";
+        return $this->endomondoActivityUrl($workoutId,$this->getUserId());
     }
 
     public function gpxDownloadUrl($workoutId)
@@ -139,6 +139,7 @@ class Endomondo extends trackerAbstract
         return $workout;
     }
 
+    // todo split overnight rides
     public function getRides($start_date, $end_date)
     {
         $this->error = "";
@@ -167,7 +168,6 @@ class Endomondo extends trackerAbstract
                 /** @var \stdClass $json_decode */
                 $json_decode = json_decode($page);
                 if ($json_decode) break;
-                log_msg("retrying");
             }
             if (!$json_decode) {
                 // three tries, and we data
@@ -192,12 +192,13 @@ class Endomondo extends trackerAbstract
                     $date = date("Y-m-d", $timestamp);
                     $record['distance'] = $ride->distance / self::METRE_TO_KM;
                     $record['elapsed_time'] = $ride->duration;
+                    $record['moving_time'] = $ride->duration;
                     if (isset($ride->speed_max)) {
                         $record['max_speed'] = $ride->speed_max / (60 * 60 * self::METRE_TO_KM);
                     }
                     $record['endo_id'] = $id;
                     if (isset($ride->ascent)) {
-                        $record['ascent'] = $ride->ascent;
+                        $record['total_elevation_gain'] = $ride->ascent;
                     }
                     $record['start_time'] = $ride->start_time;
                     $record['name'] = isset($ride->name) ? $ride->name : '';
@@ -242,7 +243,7 @@ class Endomondo extends trackerAbstract
         return parent::isOvernight($ride->start_time, $this->timezone, $ride->duration);
     }
 
-    public function getPoints($workoutId, $tz)
+    public function getPoints($workoutId, $tz=null)
     {
         $url = "api/workout/get";
         $params = ['fields' => 'points,simple', 'workoutId' => $workoutId];
@@ -250,7 +251,6 @@ class Endomondo extends trackerAbstract
             $page = $this->getPageWithDot($url, $params);
             $json_decode = json_decode($page);
             if ($json_decode) break;
-            log_msg("retrying");
         }
         if (!$json_decode) {
             // three tries, and we can't get points

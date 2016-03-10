@@ -114,7 +114,7 @@ class MyCyclingLogTest extends BaseTestClass
             ->willReturn(include("data/input/mclActivities2c.php"));
         $rides = $myCyclingLog->getRides(strtotime("2016-02-03"), strtotime("2016-02-09"), 4);
         $this->assertEquals(6, $this->numberOfRides($rides));
-        $this->assertEquals(include('data/expected/mclActivities3.php'), $rides);
+        $this->assertEquals(include('data/expected/mclActivities2.php'), $rides);
 
 
     }
@@ -197,7 +197,7 @@ class MyCyclingLogTest extends BaseTestClass
         $ride = array('distance' => 32000, 'name' => 'Lunch Ride', 'strava_id' => 490216308,
             'start_time' => '2016-02-07T11:19:54Z', 'bike' => 'b267883', 'moving_time' => 8484,
             'elapsed_time' => 2125, 'total_elevation_gain' => 0, 'max_speed' => 7.8,
-            'timezone' => 'Europe/London', 'endo_id' => 668479655,);
+            'timezone' => 'Europe/London', 'endo_id' => 668479655, 'description'=> "http://www.strava.com/activities/490216308",);
 
         $this->assertEquals(1212796, $myCyclingLog->addRide('2016-02-07', $ride, null));
         // no response from API
@@ -350,7 +350,7 @@ class MyCyclingLogTest extends BaseTestClass
         $mock->expects($this->at(0))->method('login')
             ->with('username', 'password')
             ->willReturn("OK");
-        $mock->expects($this->any())->method('getPage')
+        $mock->expects($this->at(1))->method('getPage')
             ->with('?method=ride.list&limit=800&offset=0')
             ->willReturn(include("data/input/mclActivities1.php"));
         $mock->expects($this->at(2))->method('delete')->with(1210520)
@@ -385,7 +385,7 @@ class MyCyclingLogTest extends BaseTestClass
         $mock->expects($this->at(0))->method('login')
             ->with('username', 'password')
             ->willReturn("OK");
-        $mock->expects($this->any())->method('getPage')
+        $mock->expects($this->at(1))->method('getPage')
             ->with('?method=ride.list&limit=800&offset=0')
             ->willReturn(include("data/input/mclActivities1.php"));
         $mock->expects($this->at(2))->method('delete')->with(1210520)
@@ -413,6 +413,66 @@ class MyCyclingLogTest extends BaseTestClass
         $this->assertEquals(9,
             $myCyclingLog->deleteRides(null, null, 'username', 'password'));
         $this->assertEquals('Deleting 1210520 from 2016-02-09, strava id 490216193.<br>Deleting 1210521 from 2016-02-09, strava id 490216213.<br>Deleting 1210522 from 2016-02-09, strava id 490216220.<br>Deleting 1210523 from 2016-02-08, strava id 490216230.<br>Deleting 1210524 from 2016-02-08, strava id 490216249.<br>Deleting 1210528 from 2016-02-07, strava id 490216308: FAILED.<br>Deleting 1210525 from 2016-02-07, strava id 490216271.<br>Deleting 1210526 from 2016-02-07, strava id 490216294.<br>Deleting 1210527 from 2016-02-07, strava id 490216295.<br>Deleting 1209139 from 2016-02-02, strava id 484814865.<br>'
+            , $this->output);
+
+        // endomondo rides
+        $mock->expects($this->at(0))->method('login')
+            ->with('username', 'password')
+            ->willReturn("OK");
+        $mock->expects($this->at(1))->method('getPage')
+            ->with('?method=ride.list&limit=800&offset=0')
+            ->willReturn(include("data/input/mclActivities3.php"));
+        $mock->expects($this->at(2))->method('delete')->with(1210520)
+            ->willReturn(true);
+        $mock->expects($this->at(3))->method('delete')->with(1210521)
+            ->willReturn(true);
+        $mock->expects($this->at(4))->method('delete')->with(1210522)
+            ->willReturn(true);
+        $mock->expects($this->at(5))->method('delete')->with(1210523)
+            ->willReturn(true);
+        $mock->expects($this->at(6))->method('delete')->with(1210524)
+            ->willReturn(true);
+        $mock->expects($this->at(7))->method('delete')->with(1210528)
+            ->willReturn(true);
+        $mock->expects($this->at(8))->method('delete')->with(1210525)
+            ->willReturn(true);
+        $mock->expects($this->at(9))->method('delete')->with(1210526)
+            ->willReturn(true);
+        $mock->expects($this->at(10))->method('delete')->with(1210527)
+            ->willReturn(true);
+        $mock->expects($this->at(11))->method('delete')->with(1209139)
+            ->willReturn(true);
+        $mock->expects($this->at(12))->method('logout')->with();
+        $this->output = "";
+        $this->assertEquals(10,
+            $myCyclingLog->deleteRides(null, null, 'username', 'password'));
+        $this->assertEquals('Deleting 1210520 from 2016-02-09, endomondo id 490216193.<br>Deleting 1210521 from 2016-02-09, endomondo id 490216213.<br>Deleting 1210522 from 2016-02-09, endomondo id 490216220.<br>Deleting 1210523 from 2016-02-08, endomondo id 490216230.<br>Deleting 1210524 from 2016-02-08, endomondo id 490216249.<br>Deleting 1210528 from 2016-02-07, endomondo id 490216308.<br>Deleting 1210525 from 2016-02-07, endomondo id 490216271.<br>Deleting 1210526 from 2016-02-07, endomondo id 490216294.<br>Deleting 1210527 from 2016-02-07, endomondo id 490216295.<br>Deleting 1209139 from 2016-02-02, endomondo id 484814865.<br>'
+            , $this->output);
+
+        // mix of strava, endomondo and neither rides
+        $mock->expects($this->at(0))->method('login')
+            ->with('username', 'password')
+            ->willReturn("OK");
+        $mock->expects($this->at(1))->method('getPage')
+            ->with('?method=ride.list&limit=800&offset=0')
+            ->willReturn(include("data/input/mclActivities4.php"));
+        $mock->expects($this->at(2))->method('delete')->with(1210520)
+            ->willReturn(true);
+        $mock->expects($this->at(3))->method('delete')->with(1210522)
+            ->willReturn(true);
+        $mock->expects($this->at(4))->method('delete')->with(1210524)
+            ->willReturn(true);
+        $mock->expects($this->at(5))->method('delete')->with(1210528)
+            ->willReturn(true);
+        $mock->expects($this->at(6))->method('delete')->with(1210525)
+            ->willReturn(true);
+        $mock->expects($this->at(7))->method('delete')->with(1210527)
+            ->willReturn(true);
+        $mock->expects($this->at(8))->method('logout')->with();
+        $this->output = "";
+        $this->assertEquals(6,
+            $myCyclingLog->deleteRides(null, null, 'username', 'password'));
+        $this->assertEquals('Deleting 1210520 from 2016-02-09, endomondo id 490216193.<br>Deleting 1210522 from 2016-02-09, strava id 490216220.<br>Deleting 1210524 from 2016-02-08, endomondo id 490216249.<br>Deleting 1210528 from 2016-02-07, strava id 490216308.<br>Deleting 1210525 from 2016-02-07, endomondo id 490216271.<br>Deleting 1210527 from 2016-02-07, endomondo id 490216295.<br>'
             , $this->output);
     }
 }

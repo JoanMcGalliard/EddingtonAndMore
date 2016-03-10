@@ -21,7 +21,7 @@ class Points
 
     private $points;
     private $timezone;
-    private $splits;
+    private $splits=[];
     private $start_times;
     private $end_times;
     private $generateGPX = false;

@@ -64,7 +64,6 @@ class MainPage
             $this->output($this->connections());
         }
         $this->output($this->mainForm());
-        $this->output($this->copyForm());
         $this->output("<hr>\n");
         $this->output($this->notes($eddingtonAndMoreVersion));
         if ($this->isConnected()) {
@@ -117,16 +116,17 @@ class MainPage
         if (array_key_exists("tz", $_POST)) {
             $this->preferences->setTimezone($_POST["tz"]);
         }
-        if (array_key_exists("calculate_from_endo", $_POST)) {
-            $this->preferences->setEndoSplitRides(array_key_exists("endo_split_rides", $_POST));
-        }
-        if (array_key_exists("calculate_from_rwgps", $_POST)) {
-            $this->preferences->setRwgpsSplitRides(array_key_exists("rwgps_split_rides", $_POST));
-        }
-        if (array_key_exists("calculate_from_strava", $_POST) || array_key_exists("copy_strava_to_mcl", $_POST)) {
-            $this->preferences->setStravaSplitRides((array_key_exists("strava_split_rides", $_POST)));
-        }
 
+        if (array_key_exists("main_form", $_POST)) {
+            $this->preferences->setSplitRides(array_key_exists("split_rides", $_POST));
+            if (array_key_exists("elevation_units", $_POST)) {
+                $this->preferences->setMclUseFeet(true);
+                $this->myCyclingLog->setUseFeetForElevation(true);
+            } else {
+                $this->preferences->setMclUseFeet(false);
+                $this->myCyclingLog->setUseFeetForElevation(false);
+            }
+        }
 
         if (array_key_exists("clear_cookies", $_POST)) {
             $this->preferences->clear();
@@ -136,9 +136,9 @@ class MainPage
 
 
         $this->myCyclingLog->setUseFeetForElevation($this->preferences->getMclUseFeet());
-        $this->endomondo->setSplitOvernightRides($this->preferences->getEndoSplitRides());
-        $this->rideWithGps->setSplitOvernightRides($this->preferences->getRwgpsSplitRides());
-        $this->strava->setSplitOvernightRides($this->preferences->getStravaSplitRides());
+        $this->endomondo->setSplitOvernightRides($this->preferences->getSplitRides());
+        $this->rideWithGps->setSplitOvernightRides($this->preferences->getSplitRides());
+        $this->strava->setSplitOvernightRides($this->preferences->getSplitRides());
         $this->strava->setWriteScope($this->preferences->getStravaWriteScope());
 
 
@@ -226,14 +226,6 @@ class MainPage
             $state = "calculate_from_rwgps";
         } else if (array_key_exists("copy_strava_to_mcl", $_POST) && $this->myCyclingLog->isConnected() && $this->strava->isConnected()) {
             $state = "copy_strava_to_mcl";
-            if (array_key_exists("elevation_units", $_POST)) {
-                $this->preferences->setMclUseFeet(true);
-                $this->myCyclingLog->setUseFeetForElevation(true);
-            } else {
-                $this->preferences->setMclUseFeet(false);
-                $this->myCyclingLog->setUseFeetForElevation(false);
-            }
-
         } else if (array_key_exists("copy_endo_to_strava", $_POST) && $this->endomondo->isConnected() && $this->strava->isConnected()) {
             $state = "copy_endo_to_strava";
         } else if (array_key_exists("copy_endo_to_rwgps", $_POST) && $this->endomondo->isConnected() && $this->rideWithGps->isConnected()) {
@@ -271,7 +263,7 @@ class MainPage
             $str .= $this->copy($_POST['copySource'], $_POST['copyDestination'], $this->start_date, $this->end_date);
         } else if ($state == "copy_strava_to_mcl") {
             $str.=$this->processUploadedGpxFiles($this->strava->getUserId(), $scratchDirectory);
-            $str.=$this->copy('Strava', 'MyCyclingLog', $this->start_date, $this->end_date, $this->preferences->getStravaSplitRides());
+            $str.=$this->copy('Strava', 'MyCyclingLog', $this->start_date, $this->end_date, $this->preferences->getSplitRides());
         } else if ($state == "copy_endo_to_strava") {
             $str.=$this->copy('Endomondo', 'Strava', $this->start_date, $this->end_date);
         } else if ($state == 'delete_mcl_rides') {
@@ -602,9 +594,18 @@ class MainPage
     {
         $str = "";
         $str .= "<form action=\"$this->here\" method=\"post\" name=\"main_form\">";
+        $str .= '<input type="hidden" name="main_form"/>';
         if ($this->isConnected()) {
             $str .= "<hr>";
+            $str .= 'Split multiday rides?:
+            <input type="checkbox" value="split" ' . ($this->preferences->getSplitRides() ? "checked" : "") .
+                '  name="split_rides"/>';
+            $str .= '<br>Save elevation as feet (MyCyclingLog only): <input type="checkbox" name="elevation_units" value="feet" ' .
+                ($this->preferences->getMclUseFeet() ? "checked" : "") . "/>";
+            $str .= "<hr>\n";
             $str .= $this->dateButtons($this->preferences->getTimezone());
+
+
         }
 
         $str .= "<table class=\"w3-table-all\">";
@@ -617,35 +618,25 @@ class MainPage
             $colSpan = '';
         }
         if ($this->strava->isConnected()) {
-            $str .= '<tr><td' . $colSpan . '><input type="submit" name="calculate_from_strava" value="Eddington Number from Strava"/><br>';
-            $str .= 'Split multiday rides?:
-            <input type="checkbox" value="split" ' . ($this->preferences->getStravaSplitRides() ? "checked" : "") .
-                ' id="strava_split_1" name="strava_split_rides"/>';
+            $str .= '<tr><td' . $colSpan . '><input type="submit" name="calculate_from_strava" value="Eddington Number from Strava"/>';
             $str .= '</td></tr>';
+            $str .= "\n";
         }
         if ($this->myCyclingLog->isConnected()) {
 
             $str .= '<tr><td' . $colSpan . '><input type="submit" name="calculate_from_mcl" value="Eddington Number from MyCyclingLog"/></td></tr>';
+            $str .= "\n";
         }
         if ($this->endomondo->isConnected()) {
-            $str .= '<tr><td' . $colSpan . '><input type="submit" name="calculate_from_endo" value="Eddington Number from Endomondo"/><br>';
-            $str .= 'Split multiday rides?:
-            <input type="checkbox" value="split" ' . ($this->preferences->getEndoSplitRides() ? "checked" : "") .
-                ' name="endo_split_rides"/></td></tr>';
+            $str .= '<tr><td' . $colSpan . '><input type="submit" name="calculate_from_endo" value="Eddington Number from Endomondo"/></td></tr>';
+            $str .= "\n";
         }
         if ($this->rideWithGps->isConnected()) {
-            $str .= '<tr><td' . $colSpan . '><input type="submit" name="calculate_from_rwgps" value="Eddington Number from RideWithGPS"/><br>';
-            $str .= 'Split multiday rides?:
-            <input type="checkbox" value="split" ' . ($this->preferences->getRwgpsSplitRides() ? "checked" : "") .
-                ' name="rwgps_split_rides"/></td></tr>';
+            $str .= '<tr><td' . $colSpan . '><input type="submit" name="calculate_from_rwgps" value="Eddington Number from RideWithGPS"/></td></tr>';
+            $str .= "\n";
         }
         if ($this->strava->isConnected() && $this->myCyclingLog->isConnected()) {
-            $str .= '<tr><td' . $colSpan . '><input type="submit" name="copy_strava_to_mcl" value="Copy ride data from Strava to MyCyclingLog"/>  <br>';
-            $str .= 'Save elevation as feet: <input type="checkbox" name="elevation_units" value="feet" ' .
-                ($this->preferences->getMclUseFeet() ? "checked" : "") . "/>";
-            $str .= '<br>Split multiday rides?:
-            <input type="checkbox" value="split" ' . ($this->preferences->getStravaSplitRides() ? "checked" : "") .
-                ' id="strava_split_2" name="strava_split_rides"/>';
+            $str .= '<tr><td' . $colSpan . '><input type="submit" name="copy_strava_to_mcl" value="Copy ride data from Strava to MyCyclingLog"/>';
             $str .= "</td></tr>";
         }
         if ($this->strava->isConnected() && $this->endomondo->isConnected() && $this->strava->writeScope()) {
@@ -653,6 +644,7 @@ class MainPage
             $str .= "</td></tr>";
             $str .= "\n<tr><td" . $colSpan . '><input type="submit" name="queue_delete_endo_from_strava" value="Delete Strava rides copied from Endomondo"/>  <br>';
             $str .= "</td></tr>";
+
         }
         if ($this->rideWithGps->isConnected() && $this->endomondo->isConnected()) {
             $str .= "\n<tr><td" . $colSpan . '><input type="submit" name="copy_endo_to_rwgps" value="Copy rides and routes from Endomondo to RideWithGPS"/>  <br>';
@@ -662,6 +654,8 @@ class MainPage
         if ($this->myCyclingLog->isConnected()) {
             $str .= "\n<tr><td" . $colSpan . '>' . $this->mclDeleteButton($this->preferences->getMclUsername());
             $str .= "</td></tr>";
+            $str .= "\n";
+
         }
         $str .= " <tr>
             <td $colSpan><input type=\"submit\" name=\"clear_cookies\" value=\"Delete Cookies\"/></td>
@@ -671,21 +665,16 @@ class MainPage
             </td>
         </tr>
     </table>";
+        $str .= $this->copyForm();
+        $str.="<hr>";
+
 
         if (!$this->connectedToAll()) {
             $str .= '<p>More options are available if you connect to <a href="#services">other services</a>.</p>';
         }
 
 
-        $str .= "<script> $(\"#strava_split_1\").click(function () {
-            $(\"#strava_split_2\").prop('checked', $(\"#strava_split_1\").prop('checked'));
-        });
-        $(\"#strava_split_2\").click(function () {
-            $(\"#strava_split_1\").prop('checked', $(\"#strava_split_2\").prop('checked'));
-        });
-
-    </script>
-</form>";
+        $str .= "</form>";
         return $str;
     }
 
@@ -1069,7 +1058,7 @@ class MainPage
             $str .= "\n<input type=\"hidden\" name=\"start_date\" value=\"" . $_POST["start_date"] . "\"/>";
             $str .= "\n<input type=\"hidden\" name=\"end_date\" value=\"" . $_POST["end_date"] . "\"/>";
             $str .= "\n<input type=\"hidden\" name=\"$state\" />";
-            $str .= "\n<input type=\"hidden\" value=\"split\" checked name=\"strava_split_rides\"/>";
+            $str .= "\n<input type=\"hidden\" value=\"split\" checked name=\"split_rides\"/>";
             $str .= "<br>\n<strong>Finally</strong>, $message:";
             $str .= "<br>\n<input type=\"submit\" value=\"Upload and $message\" name=\"submit\"/>";
             $str .= "</form>";
@@ -1156,7 +1145,6 @@ class MainPage
             $list .= "<option>$service</option>\n";
         }
         $str = "<hr><H3>Copy rides....</H3>";
-        $str .= "<form action=\"$this->here\" method=\"post\" name=\"copy_rides_form\">\n";
         $str .= "<table><tr><td>";
         $str .= "<select name=\"copySource\" >\n";
         $str .= "<option value=''>From</option>\n";
@@ -1167,7 +1155,6 @@ class MainPage
         $str .= "$list\n</select>";
         $str .= "</td><td>";
         $str .= "<input type=\"submit\" name=\"copy_rides\" value=\"Go\"/>  ";
-        $str .= "</form>";
         $str .= "</td></tr></table>";
 
         return $str;
@@ -1201,7 +1188,7 @@ class MainPage
             }
 
             $overnight_rides = $this->strava->getOvernightActivities();
-            if ($this->preferences->getStravaSplitRides() && $overnight_rides) {
+            if ($this->preferences->getSplitRides() && $overnight_rides) {
                 $str .= $this->askForStravaGpx($overnight_rides, $maxKmFileUploads, "calculate_from_strava", "recalculate your E-Number");
 
             }
@@ -1344,9 +1331,12 @@ class MainPage
         }
         $count = 0;
         $useStartTime = true;
+        $usePoints = true;
+
         if ($sourceName == 'MyCyclingLog' || $destinationName == 'MyCyclingLog') {
             // MCL doesn't record start times, so duplicate rides can only be detected by "foreign" keys or daily total.
             $useStartTime = false;
+            $usePoints = false;
         }
         foreach ($sourceRides as $date => $rides) {
             $sourceDay = $this->sumDay($rides);
@@ -1377,7 +1367,7 @@ class MainPage
                             $ride['description']=$source->activityUrl($ride[$foreign_key]);
 
                             $tz = isset($ride['timezone']) ? $ride['timezone'] : null;
-                            $points=$source->getPoints($ride[$foreign_key], $tz);
+                            $points= $usePoints ? $source->getPoints($ride[$foreign_key], $tz) : null;
                             $new_id = $destination->addRide($date, $ride, $points);
                             if ($new_id) {
                                 if ($new_id === true) {

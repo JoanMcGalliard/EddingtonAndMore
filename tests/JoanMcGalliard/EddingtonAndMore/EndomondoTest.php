@@ -208,7 +208,7 @@ class EndomondoTest extends BaseTestClass
         $mock->expects($this->at(0))->method('get')->with('api/workout/get',
             $params)->willReturn('{"distance": 10.8,"owner_id": 9999999, "start_time": "2015-12-27 21:56:00 UTC", "id": 123456, "is_valid": true, "sport": 1}');
         $this->setProperty('error', "", $endomondo);
-        $this->assertEquals($result,$endomondo->getWorkout($workoutId));
+        $this->assertEquals($result, $endomondo->getWorkout($workoutId));
         $this->assertEquals("", $endomondo->getError());
 
 
@@ -232,7 +232,7 @@ class EndomondoTest extends BaseTestClass
         $mock->expects($this->at(0))->method('get')->with('api/workout/get',
             $params)->willReturn('{"distance": 10.8,"owner_id": 9999999, "start_time": "2015-12-27 21:56:00 UTC", "id": 123456, "is_valid": true, "sport": 2}');
         $this->setProperty('error', "", $endomondo);
-        $this->assertEquals($result,$endomondo->getWorkout($workoutId));
+        $this->assertEquals($result, $endomondo->getWorkout($workoutId));
         $this->assertEquals("", $endomondo->getError());
 
 
@@ -240,7 +240,7 @@ class EndomondoTest extends BaseTestClass
         $mock->expects($this->at(0))->method('get')->with('api/workout/get',
             $params)->willReturn('{"distance": 10.8,"owner_id": 9999999, "start_time": "2015-12-27 21:56:00 UTC", "id": 123456, "is_valid": true, "sport": 3}');
         $this->setProperty('error', "", $endomondo);
-        $this->assertEquals($result,$endomondo->getWorkout($workoutId));
+        $this->assertEquals($result, $endomondo->getWorkout($workoutId));
         $this->assertEquals("", $endomondo->getError());
 
 
@@ -252,7 +252,7 @@ class EndomondoTest extends BaseTestClass
         $this->assertEquals("Not a valid ride", $endomondo->getError());
 
 
-       // sport is missing
+        // sport is missing
         $mock->expects($this->at(0))->method('get')->with('api/workout/get',
             $params)->willReturn('{"distance": 10.8,"owner_id": 9999999, "start_time": "2015-12-27 21:56:00 UTC", "id": 123456, "is_valid": true}');
         $this->setProperty('error', "", $endomondo);
@@ -261,7 +261,7 @@ class EndomondoTest extends BaseTestClass
 
 
         // distance is missing
-        $json='{"owner_id": 9999999, "start_time": "2015-12-27 21:56:00 UTC", "id": 123456, "is_valid": true, "sport": 1}';
+        $json = '{"owner_id": 9999999, "start_time": "2015-12-27 21:56:00 UTC", "id": 123456, "is_valid": true, "sport": 1}';
         $mock->expects($this->at(0))->method('get')->with('api/workout/get',
             $params)->willReturn($json);
         $this->setProperty('error', "", $endomondo);
@@ -294,8 +294,49 @@ class EndomondoTest extends BaseTestClass
         $this->setProperty('error', "", $endomondo);
         $this->assertNull($endomondo->getWorkout($workoutId));
         $this->assertEquals("Response not in a recognised format: $json", $endomondo->getError());
+    }
+
+    public function testGetRides()
+    {
+        $mock = $this->getMockBuilder('EndomondoApi')->setMethods(array('get'))->getMock();
+        $endomondo = new Endomondo("", "", "UTC", array($this, 'myEcho'), $mock);
+
+        // no rides returned
+        $mock->expects($this->at(0))->method('get')->with('api/workouts', $this->captureArg($params))->willReturn('{"data":[]}');
+        $this->assertEquals([], $endomondo->getRides(null, null));
+        $before = strtotime($params['before']);
+        $this->assertTrue((time() - $before) <= 1); // the time of the before parameter should be about now, so in the last second
+        $this->assertEquals(500, $params['maxResults']);
+        $this->assertEquals('simple,basic', $params['fields']);
+
+        //one ride returned
+        $result = '{"data":[{"owner":{"premium_type":"pro","name":"joan m","last_name":"m","id":2859253,"first_name":"joan","picture":848122},"distance":1.9844679832458496,"speed_avg":0.887574200482676,"privacy_map":2,"owner_id":2859253,"privacy_workout":2,"calories":302,"duration":8049,"start_time":"2015-12-27 21:56:00 UTC","is_valid":true,"id":655334427,"burgers_burned":0.55925924,"sport":1,"live":false}]}';
+        $mock->expects($this->at(0))->method('get')->with('api/workouts', $this->captureArg($params))->willReturn($result);
+
+        $expected = array('2015-12-27' => array(array('elapsed_time' => 8049, 'distance' => 1984.4679832458496,
+            'endo_id' => 655334427,
+            'start_time' => '2015-12-27 21:56:00 UTC',
+            'name' => '',
+            'moving_time'=>8049)));
 
 
+        $this->assertEquals($expected, $endomondo->getRides(null, null));
+
+
+        //all possible data included
+        $result = '{"data":[{"owner":{"premium_type":"pro","name":"joan m","last_name":"m","id":2859253,"first_name":"joan","picture":848122},"distance":1.9844679832458496,"speed_avg":0.887574200482676,"privacy_map":2,"owner_id":2859253,"privacy_workout":2,"calories":302,"duration":8049,"start_time":"2015-12-27 21:56:00 UTC","is_valid":true,"id":655334427,"speed_max": 23.0271,"name": "My Ride","burgers_burned":0.55925924,"sport":1,"live":false,"ascent": 69.4}]}';
+        $mock->expects($this->at(0))->method('get')->with('api/workouts', $this->captureArg($params))->willReturn($result);
+
+        $expected = array('2015-12-27' => array(array('elapsed_time' => 8049, 'distance' => 1984.4679832458496,
+            'endo_id' => 655334427,
+            'start_time' => '2015-12-27 21:56:00 UTC',
+            'name' => 'My Ride',
+            'max_speed' => 6.39641666666667,
+            'total_elevation_gain' => 69.4,
+            'moving_time'=>8049)));
+
+
+        $this->assertEquals($expected, $endomondo->getRides(null, null));
 
 
     }

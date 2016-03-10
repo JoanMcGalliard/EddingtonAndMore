@@ -264,7 +264,7 @@ class Strava extends trackerAbstract
 
     public function activityUrl($activityId)
     {
-        return "http://www.strava.com/activities/$activityId";
+        return $this->stravaActivityUrl($activityId);
     }
 
     public function waitForPendingUploads($sleep = 1)

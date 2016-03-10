@@ -1,4 +1,6 @@
-<?php return "<form action=\"\" method=\"post\" name=\"main_form\"><hr><script> function populateDates(start, end) {
+<?php return "<form action=\"\" method=\"post\" name=\"main_form\"><input type=\"hidden\" name=\"main_form\"/><hr>Split multiday rides?:
+            <input type=\"checkbox\" value=\"split\"   name=\"split_rides\"/><br>Save elevation as feet (MyCyclingLog only): <input type=\"checkbox\" name=\"elevation_units\" value=\"feet\" /><hr>
+<script> function populateDates(start, end) {
             document.getElementById(\"datepicker_start\").value = start;
             document.getElementById(\"datepicker_end\").value = end;
             }
@@ -21,11 +23,11 @@
         $(\"#datepicker_end\").datepicker({changeMonth: true, changeYear: true, dateFormat: 'dd-mm-yy'});
         $(\"#tz\").timezones();
         $(\"#tz\").val('UTC');</script>
-<tr><td colspan=\"3\"><input type=\"submit\" name=\"calculate_from_strava\" value=\"Eddington Number from Strava\"/><br>Split multiday rides?:
-            <input type=\"checkbox\" value=\"split\"  id=\"strava_split_1\" name=\"strava_split_rides\"/></td></tr><tr><td colspan=\"3\"><input type=\"submit\" name=\"calculate_from_mcl\" value=\"Eddington Number from MyCyclingLog\"/></td></tr><tr><td colspan=\"3\"><input type=\"submit\" name=\"calculate_from_endo\" value=\"Eddington Number from Endomondo\"/><br>Split multiday rides?:
-            <input type=\"checkbox\" value=\"split\"  name=\"endo_split_rides\"/></td></tr><tr><td colspan=\"3\"><input type=\"submit\" name=\"calculate_from_rwgps\" value=\"Eddington Number from RideWithGPS\"/><br>Split multiday rides?:
-            <input type=\"checkbox\" value=\"split\"  name=\"rwgps_split_rides\"/></td></tr><tr><td colspan=\"3\"><input type=\"submit\" name=\"copy_strava_to_mcl\" value=\"Copy ride data from Strava to MyCyclingLog\"/>  <br>Save elevation as feet: <input type=\"checkbox\" name=\"elevation_units\" value=\"feet\" /><br>Split multiday rides?:
-            <input type=\"checkbox\" value=\"split\"  id=\"strava_split_2\" name=\"strava_split_rides\"/></td></tr>
+<tr><td colspan=\"3\"><input type=\"submit\" name=\"calculate_from_strava\" value=\"Eddington Number from Strava\"/></td></tr>
+<tr><td colspan=\"3\"><input type=\"submit\" name=\"calculate_from_mcl\" value=\"Eddington Number from MyCyclingLog\"/></td></tr>
+<tr><td colspan=\"3\"><input type=\"submit\" name=\"calculate_from_endo\" value=\"Eddington Number from Endomondo\"/></td></tr>
+<tr><td colspan=\"3\"><input type=\"submit\" name=\"calculate_from_rwgps\" value=\"Eddington Number from RideWithGPS\"/></td></tr>
+<tr><td colspan=\"3\"><input type=\"submit\" name=\"copy_strava_to_mcl\" value=\"Copy ride data from Strava to MyCyclingLog\"/></td></tr>
 <tr><td colspan=\"3\"><input type=\"submit\" name=\"copy_endo_to_strava\" value=\"Copy rides and routes from Endomondo to Strava\"/>  <br></td></tr>
 <tr><td colspan=\"3\"><input type=\"submit\" name=\"queue_delete_endo_from_strava\" value=\"Delete Strava rides copied from Endomondo\"/>  <br></td></tr>
 <tr><td colspan=\"3\"><input type=\"submit\" name=\"copy_endo_to_rwgps\" value=\"Copy rides and routes from Endomondo to RideWithGPS\"/>  <br></td></tr>
@@ -67,19 +69,26 @@ var username = prompt(\"Please enter your MyCyclingLog username\");var password 
             else
                 return false;
         }
-        </script></td></tr> <tr>
+        </script></td></tr>
+ <tr>
             <td  colspan=\"3\"><input type=\"submit\" name=\"clear_cookies\" value=\"Delete Cookies\"/></td>
         </tr>
         <tr>
             <td  colspan=\"3\"><input type=\"submit\" name=\"delete_files\" value=\"Delete temporary files\"/>
             </td>
         </tr>
-    </table><script> $(\"#strava_split_1\").click(function () {
-            $(\"#strava_split_2\").prop('checked', $(\"#strava_split_1\").prop('checked'));
-        });
-        $(\"#strava_split_2\").click(function () {
-            $(\"#strava_split_1\").prop('checked', $(\"#strava_split_2\").prop('checked'));
-        });
+    </table><hr><H3>Copy rides....</H3><table><tr><td><select name=\"copySource\" >
+<option value=''>From</option>
+<option>MyCyclingLog</option>
+<option>Strava</option>
+<option>RideWithGps</option>
+<option>Endomondo</option>
 
-    </script>
-</form>";
+</select></td><td><select name=\"copyDestination\" >
+<option value=''>To</option>
+<option>MyCyclingLog</option>
+<option>Strava</option>
+<option>RideWithGps</option>
+<option>Endomondo</option>
+
+</select></td><td><input type=\"submit\" name=\"copy_rides\" value=\"Go\"/>  </td></tr></table><hr></form>";

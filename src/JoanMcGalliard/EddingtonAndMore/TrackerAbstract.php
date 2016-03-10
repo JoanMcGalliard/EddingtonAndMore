@@ -134,6 +134,17 @@ abstract class trackerAbstract
         }
         return null;
     }
+
+    public function stravaActivityUrl($activityId)
+    {
+        return "http://www.strava.com/activities/$activityId";
+    }
+    public function endomondoActivityUrl($workoutId, $useriId)
+    {
+        return "https://www.endomondo.com/users/" . $useriId . "/workouts/$workoutId";
+    }
+
+
 }
 
 ?>

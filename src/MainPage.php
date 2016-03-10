@@ -260,7 +260,7 @@ class MainPage
         if ($state == "calculate_from_strava" || $state == "calculate_from_mcl" || $state == "calculate_from_endo" || $state == "calculate_from_rwgps") {
             $str .= $this->calculate($state);
         } else if ($state == 'copy_rides') {
-            $str .= $this->copy($_POST['copySource'], $_POST['copyDestination'], $this->start_date, $this->end_date);
+            $str .= $this->copy($_POST['copySource'], $_POST['copyDestination'], $this->start_date, $this->end_date, $this->preferences->getSplitRides());
         } else if ($state == "copy_strava_to_mcl") {
             $str.=$this->processUploadedGpxFiles($this->strava->getUserId(), $scratchDirectory);
             $str.=$this->copy('Strava', 'MyCyclingLog', $this->start_date, $this->end_date, $this->preferences->getSplitRides());

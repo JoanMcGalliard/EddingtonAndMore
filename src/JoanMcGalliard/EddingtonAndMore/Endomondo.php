@@ -280,7 +280,7 @@ class Endomondo extends trackerAbstract
 
     public function getOvernightActivities()
     {
-        // TODO: Implement getOvernightActivities() method.
+        return [];
     }
 
     public function getBike($id)

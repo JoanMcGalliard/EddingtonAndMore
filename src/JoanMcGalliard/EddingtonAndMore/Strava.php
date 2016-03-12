@@ -49,7 +49,6 @@ class Strava extends trackerAbstract
         if (isset($tokenExchange->access_token)) {
             $token = $tokenExchange->access_token;
             $this->setAccessToken($token);
-            $this->connected = true;
             return $token;
         }
         return null;
@@ -315,7 +314,7 @@ class Strava extends trackerAbstract
     public function getPoints($start_date, $tz)
     {
         global $scratchDirectory;
-        $gpx_file = $scratchDirectory . DIRECTORY_SEPARATOR . $this->userId . "-" .
+        $gpx_file = $scratchDirectory . DIRECTORY_SEPARATOR . $this->getUserId() . "-" .
             preg_replace("/:/", "_", $start_date) . "." . self::GPX_SUFFIX;
         if (!file_exists($gpx_file)) {
             return null;
@@ -402,6 +401,13 @@ class Strava extends trackerAbstract
         }
         return true; // can't return id as it's queued for upload
     }
+
+    public function getUserId()
+    {
+        $this->isConnected();
+        return $this->userId;
+    }
+
 }
 
 ?>

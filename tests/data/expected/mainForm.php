@@ -77,18 +77,4 @@ var username = prompt(\"Please enter your MyCyclingLog username\");var password 
             <td  colspan=\"3\"><input type=\"submit\" name=\"delete_files\" value=\"Delete temporary files\"/>
             </td>
         </tr>
-    </table><hr><H3>Copy rides....</H3><table><tr><td><select name=\"copySource\" >
-<option value=''>From</option>
-<option>MyCyclingLog</option>
-<option>Strava</option>
-<option>RideWithGps</option>
-<option>Endomondo</option>
-
-</select></td><td><select name=\"copyDestination\" >
-<option value=''>To</option>
-<option>MyCyclingLog</option>
-<option>Strava</option>
-<option>RideWithGps</option>
-<option>Endomondo</option>
-
-</select></td><td><input type=\"submit\" name=\"copy_rides\" value=\"Go\"/>  </td></tr></table><hr></form>";
+    </table><hr></form>";

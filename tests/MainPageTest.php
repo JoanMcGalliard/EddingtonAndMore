@@ -1095,10 +1095,11 @@ class MainPageTest extends JoanMcGalliard\EddingtonAndMore\BaseTestClass
     public function testNextGoals()
     {
         $nextGoals = $this->getMethod('nextGoals');
-        $this->assertEquals(array(2, 5, 10, 50, 100), $nextGoals->invokeArgs($this->mainPage, array(1)));
-        $this->assertEquals(array(51, 55, 60, 100), $nextGoals->invokeArgs($this->mainPage, array(50)));
-        $this->assertEquals(array(104, 105, 110, 150, 200), $nextGoals->invokeArgs($this->mainPage, array(103)));
-        $this->assertEquals(array(50, 100), $nextGoals->invokeArgs($this->mainPage, array(49)));
+        $this->assertEquals(array(2, 3, 4, 5, 10, 50, 100), $nextGoals->invokeArgs($this->mainPage, array(1)));
+        $this->assertEquals(array(51, 52, 53, 55, 60, 100), $nextGoals->invokeArgs($this->mainPage, array(50)));
+        $this->assertEquals(array(104, 105, 106, 110, 150, 200), $nextGoals->invokeArgs($this->mainPage, array(103)));
+        $this->assertEquals(array(50, 51, 52, 55, 60, 100), $nextGoals->invokeArgs($this->mainPage, array(49)));
+        $this->assertEquals(array(108, 109, 110, 115, 120, 150, 200), $nextGoals->invokeArgs($this->mainPage, array(107)));
     }
 
     public function testNumberOfDaysToGoal()

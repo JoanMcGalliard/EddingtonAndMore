@@ -1,10 +1,16 @@
 <?php return "<p>According to $source, for the period from $start_date to today, $elapsed_days elapsed days</p>
 <br><a href=\"#imperial\">Your imperial Eddington Number</a> is <strong>9</strong>.<br>
 You need to do 1 ride(s) of at least 10 to increase it to 10.<br>
+You need to do 3 ride(s) of at least 11 to increase it to 11.<br>
+You need to do 4 ride(s) of at least 12 to increase it to 12.<br>
+You need to do 8 ride(s) of at least 15 to increase it to 15.<br>
+You need to do 16 ride(s) of at least 20 to increase it to 20.<br>
 You need to do 49 ride(s) of at least 50 to increase it to 50.<br>
 You need to do 100 ride(s) of at least 100 to increase it to 100.<br>
 <br><a href=\"#metric\">Your metric Eddington Number</a> is <strong>10</strong><br>
 You need to do 1 ride(s) of at least 11 to increase it to 11.<br>
+You need to do 2 ride(s) of at least 12 to increase it to 12.<br>
+You need to do 3 ride(s) of at least 13 to increase it to 13.<br>
 You need to do 5 ride(s) of at least 15 to increase it to 15.<br>
 You need to do 12 ride(s) of at least 20 to increase it to 20.<br>
 You need to do 46 ride(s) of at least 50 to increase it to 50.<br>

@@ -665,7 +665,7 @@ class MainPage
             </td>
         </tr>
     </table>";
-        $str .= $this->copyForm();
+//        $str .= $this->copyForm();
         $str.="<hr>";
 
 
@@ -834,7 +834,9 @@ class MainPage
     private function nextGoals($x)
     {
         $next = [];
-        $next[$x + 1] = 1;
+        $next[++$x] = 1;
+        $next[++$x] = 1;
+        $next[++$x] = 1;
         $mod = ($x % 10);
         if ($mod < 5) {
             $next[$x - $mod + 5] = 1;
@@ -1172,8 +1174,8 @@ class MainPage
         $end_text = "today";
         $activities = [];
         $timestamp = time();
-        if (isset($_POST["start_date"])) $start_text = $_POST["start_date"];
-        if (isset($_POST["end_date"])) $end_text = $_POST["end_date"];
+        if (isset($_POST["start_date"]) && $_POST["start_date"] != "" ) $start_text = $_POST["start_date"];
+        if (isset($_POST["end_date"]) && $_POST["end_date"] != "") $end_text = $_POST["end_date"];
         if ($state == "calculate_from_strava") {
 
             $this->processUploadedGpxFiles($this->strava->getUserId(), $scratchDirectory);

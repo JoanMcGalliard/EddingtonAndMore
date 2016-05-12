@@ -50,7 +50,42 @@ class EndomondoApi
             return $this->error;
         }
     }
-
+    public function post($url, $params = [], $body="")
+    {
+        //this functionality is part of addtrack for endomondo, and not working yet.
+        if (!$this->auth) {
+            return null;
+        }
+        if (!$params) {
+            $params = [];
+        }
+        $params["authToken"] = $this->auth;
+        $path = self::BASE_URL . $url . "?" . http_build_query($params);
+        $process = curl_init($path);
+//        $process = curl_init("http://localhost/~jem/EddingtonAndMore/j.php". "?" . http_build_query($params));
+        curl_setopt($process, CURLOPT_HEADER, 0);
+        vd("about to curl");
+        vd($body);
+        curl_setopt($process, CURLOPT_HTTPHEADER, array('Content-Type' => 'application/octet-stream'));
+        curl_setopt($process, CURLOPT_TIMEOUT, 30);
+        curl_setopt($process, CURLOPT_RETURNTRANSFER, TRUE);
+        curl_setopt($process, CURLOPT_POST, 1);
+        curl_setopt($process, CURLOPT_CUSTOMREQUEST, 'POST' );
+        curl_setopt($process, CURLOPT_POSTFIELDS, $body);
+        $page = curl_exec($process);
+        $this->error = curl_error($process);
+        log_msg("endomondo post " . $path );
+        log_msg($params );
+        log_msg($page);
+        if ($this->error) log_msg("ERROR: " . $this->error);
+        log_msg("Total time: " . curl_getinfo($process)["total_time"]);
+        curl_close($process);
+        if ($page) {
+            return $page;
+        } else {
+            return $this->error;
+        }
+    }
 
     public function connect($username, $password, $deviceId)
     {

@@ -6,8 +6,8 @@ namespace JoanMcGalliard;
 class MyCyclingLogApi
 {
 
-    const REST_SERVER_BASE_URL = "http://www.mycyclinglog.com/api/restserver.php";
-    const WEB_PAGE_BASE_URL = 'http://www.mycyclinglog.com';
+    const REST_SERVER_BASE_URL = "https://www.mycyclinglog.com/api/restserver.php";
+    const WEB_PAGE_BASE_URL = 'https://www.mycyclinglog.com';
     protected $auth = null;
     private $session = null;
 

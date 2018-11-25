@@ -101,8 +101,13 @@ class MainPage
     private function setup()
     {
         global $scratchDirectory, $workingEmailAddress;
+        $protocol = "http";
+        if ($_SERVER["HTTPS"] == "on") {
+            $protocol="https";
+        }
 
-        $this->here = "http://$_SERVER[HTTP_HOST]$_SERVER[SCRIPT_NAME]";
+
+        $this->here = "$protocol://$_SERVER[HTTP_HOST]$_SERVER[SCRIPT_NAME]";
         $state = null;
 
         $this->start_date = null;
@@ -702,7 +707,7 @@ class MainPage
             if (!$strava->isConnected()) {
                 $str .= "Read acccess (You need this to calculate E-number from Strava):<br>\n";
                 $str .= '<a href="' .
-                    $strava->authenticationUrl($this->here, 'auto', null, "read_only") .
+                    $strava->authenticationUrl($this->here, 'auto', "activity:read_all", "read_only") .
                     "\"> <img src=\"images/ConnectWithStrava@2x.png\" alt=\"Connect with Strava\"></a><br><br>\n";
             }
             $str .= "Read/write acccess (only click this if you want to upload rides from Endomondo to Strava): <br>\n";

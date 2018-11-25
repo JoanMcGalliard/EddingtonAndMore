@@ -107,7 +107,7 @@ class MainPage
         }
 
 
-        $this->here = "$protocol://$_SERVER[HTTP_HOST]$_SERVER[SCRIPT_NAME]";
+        $this->here = "$protocol://$_SERVER[HTTP_HOST]$_SERVER[REQUEST_URI]";
         $state = null;
 
         $this->start_date = null;

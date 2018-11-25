@@ -698,8 +698,10 @@ class MainPage
         $endomondo = $this->endomondo;
 
         $str = "<hr><h3 id=\"services\">Connect to services</h3>
-    <p>Click the buttons below to authorise access to your strava account and/or mycyclinglog accounts.</p>
-    <p><em>This website uses cookies. If you have a problem with that, there are millions of other sites out there
+    <p>Click the buttons below to authorise access to your accounts.</p>
+    <p><em>This website uses cookies to give you privacy.  None of your personal data is stored remotely,  all login details are 
+    saved to cookies on
+    your own device or computer.  If you have a problem with that, there are millions of other sites out there
             &#9786; Oh, and there is a button to delete the cookies when you are done. </em></p><table>
         <tr>\n";
         if (!$strava->isConnected() || !$strava->writeScope()) {

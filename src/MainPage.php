@@ -422,6 +422,10 @@ class MainPage
  accounts, or
     transfer rides from Strava
     to MyCyclingLog, from Endomondo to Strava or from Endomondo to RideWithGPS</p>\n";
+        $str .= "\n<p><b>We've moved to a new site!</b>  You will have reauthorize your accounts (the buttons are below)\n
+        before you can use it. Due to a change in Strava privacy control, private rides weren't being counted in the previous version, \n
+        so you may notice your E-number increasing slightly.
+       </p>\n";
         $str .= "<hr>\n";
         $str .= "<p>The Eddington Number is a metric for long distance cyclists.  It's the largest value of E where you
     have cycled at least E miles on E days. So if you have
